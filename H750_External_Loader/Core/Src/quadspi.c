@@ -41,8 +41,8 @@ void MX_QUADSPI_Init(void)
 
   /* USER CODE END QUADSPI_Init 1 */
   hqspi.Instance = QUADSPI;
-  hqspi.Init.ClockPrescaler = 2;
-  hqspi.Init.FifoThreshold = 4;
+  hqspi.Init.ClockPrescaler = 1;
+  hqspi.Init.FifoThreshold = 32;
   hqspi.Init.SampleShifting = QSPI_SAMPLE_SHIFTING_HALFCYCLE;
   hqspi.Init.FlashSize = QSPI_W25QXX_SIZE_2N_OFFSET;
   hqspi.Init.ChipSelectHighTime = QSPI_CS_HIGH_TIME_2_CYCLE;
@@ -230,7 +230,7 @@ uint8_t CSP_QSPI_Erase_Chip(void) {
 }
 
 uint8_t QSPI_AutoPollingMemReady(void) {
-
+#if 1
 	QSPI_CommandTypeDef sCommand;
 	 QSPI_AutoPollingTypeDef sConfig;
 
@@ -258,6 +258,39 @@ uint8_t QSPI_AutoPollingMemReady(void) {
 	}
 
 	return HAL_OK;
+#else
+	QSPI_CommandTypeDef     sCommand = {0};
+	QSPI_AutoPollingTypeDef sConfig = {0};
+
+
+	/* 基本配置 */
+	sCommand.InstructionMode   = QSPI_INSTRUCTION_1_LINE;    /* 1线方式发送指令 */
+	sCommand.AddressSize       = QSPI_ADDRESS_24_BITS;     /* 地址位数 */
+	sCommand.AlternateByteMode = QSPI_ALTERNATE_BYTES_NONE;  /* 无交替字节 */
+	sCommand.DdrMode           = QSPI_DDR_MODE_DISABLE;      /* W25Q256JV不支持DDR */
+	sCommand.DdrHoldHalfCycle  = QSPI_DDR_HHC_ANALOG_DELAY;  /* DDR模式，数据输出延迟 */
+	sCommand.SIOOMode          = QSPI_SIOO_INST_EVERY_CMD;	 /* 每次传输都发指令 */
+
+	/* 读取状态*/
+	sCommand.Instruction       = READ_STATUS_REG_CMD; /* 读取状态命令 */
+	sCommand.AddressMode       = QSPI_ADDRESS_NONE;   /* 无需地址 */
+	sCommand.DataMode          = QSPI_DATA_1_LINE;    /* 1线数据 */
+	sCommand.DummyCycles       = 0;                   /* 无需空周期 */
+
+	/* 屏蔽位设置的bit0，匹配位等待bit0为0，即不断查询状态寄存器bit0，等待其为0 */
+	sConfig.Mask            = 0x01;
+	sConfig.Match           = 0x00;
+	sConfig.MatchMode       = QSPI_MATCH_MODE_AND;
+	sConfig.StatusBytesSize = 1;
+	sConfig.Interval        = 0x10;
+	sConfig.AutomaticStop   = QSPI_AUTOMATIC_STOP_ENABLE;
+
+	if (HAL_QSPI_AutoPolling(&hqspi, &sCommand, &sConfig, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
+	{
+		return HAL_ERROR;
+	}
+	return HAL_OK;
+#endif
 }
 
 static uint8_t QSPI_WriteEnable(void) {
@@ -533,7 +566,7 @@ uint8_t CSP_QSPI_WriteMemory(uint8_t* buffer, uint32_t address,uint32_t buffer_s
 
 
 uint8_t CSP_QSPI_EnableMemoryMappedMode(void) {
-
+#if 0
 	QSPI_CommandTypeDef sCommand;
 	QSPI_MemoryMappedTypeDef sMemMappedCfg;
 
@@ -558,6 +591,34 @@ uint8_t CSP_QSPI_EnableMemoryMappedMode(void) {
 		return HAL_ERROR;
 	}
 	return HAL_OK;
+#else
+	QSPI_CommandTypeDef s_command = {0};
+	QSPI_MemoryMappedTypeDef s_mem_mapped_cfg = {0};
+
+	/* 基本配置 */
+	s_command.InstructionMode = QSPI_INSTRUCTION_1_LINE;      /* 1线方式发送指令 */
+	s_command.AddressSize       = QSPI_ADDRESS_24_BITS;     /* 地址位数 */
+	s_command.AlternateByteMode = QSPI_ALTERNATE_BYTES_NONE;  /* 无交替字节 */
+	s_command.DdrMode = QSPI_DDR_MODE_DISABLE;                /* W25Q256JV不支持DDR */
+	s_command.DdrHoldHalfCycle = QSPI_DDR_HHC_ANALOG_DELAY;   /* DDR模式，数据输出延迟 */
+	s_command.SIOOMode = QSPI_SIOO_INST_EVERY_CMD;            /* 每次传输都发指令 */
+
+	/* 全部采用4线 */
+	s_command.Instruction = QUAD_READ_IO_CMD;			/* 快速读取命令 */
+	s_command.AddressMode = QSPI_ADDRESS_4_LINES;                 /* 4个地址线 */
+	s_command.DataMode = QSPI_DATA_4_LINES;                       /* 4个数据线 */
+	s_command.DummyCycles = 6;                                    /* 空周期 */
+
+	/* 关闭溢出计数 */
+	s_mem_mapped_cfg.TimeOutActivation = QSPI_TIMEOUT_COUNTER_DISABLE;
+	s_mem_mapped_cfg.TimeOutPeriod = 0;
+
+	if (HAL_QSPI_MemoryMapped(&hqspi, &s_command, &s_mem_mapped_cfg) != HAL_OK)
+	{
+		return HAL_ERROR;
+	}
+	return HAL_OK;
+#endif
 }
 
 /*Send reset in 1,2 and 4 lines*/

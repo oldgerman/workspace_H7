@@ -85,6 +85,13 @@ int Write(uint32_t Address, uint32_t Size, uint8_t* buffer) {
 	return LOADER_OK;
 }
 
+/*
+ * 为啥没有Read?那STM32Cube如何读取外部FLASH的
+ * ArmFLy V7 P2006解释：
+ * 如果程序中未做读取函数，那么STM32CubeProg会以总线方式进行读取，
+ * 这也是为什么每 个函数执行完毕都设置为内存映射模式的原因
+*/
+
 /**
  * @brief   Sector erase.
  * @param   EraseStartAddress :  erase start address
