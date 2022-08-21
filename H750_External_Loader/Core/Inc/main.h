@@ -32,7 +32,7 @@ extern "C" {
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-//#include "bsp_qspi_w25qxx.h"
+#include "bsp_qspi_w25qxx.h"
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
