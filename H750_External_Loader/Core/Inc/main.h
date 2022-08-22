@@ -58,12 +58,12 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define QSPI_W25QXX_SIZE_2N_OFFSET 22
+#define QSPI_FLASH_SIZE_2N_OFFSET 0
 /* USER CODE BEGIN Private defines */
-#define QSPI_W25QXX_SIZE_OFFSET 1
-#ifdef QSPI_W25QXX_SIZE_2N_OFFSET
-#undef QSPI_W25QXX_SIZE_2N_OFFSET
-#define QSPI_W25QXX_SIZE_2N_OFFSET (QSPI_FLASH_SIZE_2N - QSPI_W25QXX_SIZE_OFFSET)
+#define QSPI_FLASH_SIZE_OFFSET 1
+#ifdef QSPI_FLASH_SIZE_2N_OFFSET
+#undef QSPI_FLASH_SIZE_2N_OFFSET
+#define QSPI_FLASH_SIZE_2N_OFFSET (QSPI_FLASH_SIZE_2N - QSPI_FLASH_SIZE_OFFSET)
 #endif
 /* USER CODE END Private defines */
 

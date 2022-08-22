@@ -100,6 +100,7 @@ int main(void)
   MX_QUADSPI_Init();
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
+  QSPI_MemoryMapped();
   setup();
   /* USER CODE END 2 */
 

@@ -223,7 +223,6 @@
 		<project id="H750VBT6.null.1435305667" name="H750VBT6"/>
 	</storageModule>
 	<storageModule moduleId="org.eclipse.cdt.core.LanguageSettingsProviders"/>
-	<storageModule moduleId="org.eclipse.cdt.make.core.buildtargets"/>
 	<storageModule moduleId="refreshScope"/>
 	<storageModule moduleId="scannerConfiguration">
 		<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
@@ -239,5 +238,8 @@
 		<scannerConfigBuildInfo instanceId="com.st.stm32cube.ide.mcu.gnu.managedbuild.config.exe.release.1038778773;com.st.stm32cube.ide.mcu.gnu.managedbuild.config.exe.release.1038778773.;com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.242296818;com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.input.c.1858861986">
 			<autodiscovery enabled="false" problemReportingEnabled="true" selectedProfileId=""/>
 		</scannerConfigBuildInfo>
+	</storageModule>
+	<storageModule moduleId="org.eclipse.cdt.make.core.buildtargets">
+		<buildTargets/>
 	</storageModule>
 </cproject>
