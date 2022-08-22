@@ -58,13 +58,14 @@ void setup(){
 }
 
 void loop(){
-//	uint8_t read;
-//	const char buf1[] = "接收到串口命令 1\r\n";
-//	const char buf2[] = "接收到串口命令 2\r\n";
-//	const char buf3[] = "接收到串口命令 3\r\n";
-//	const char buf4[] = "接收到串口命令 4\r\n";
 	while(1) {
 #if 0
+/* 安富莱串口FIFO例程 */
+		uint8_t read;
+		static const char buf1[] = "接收到串口命令 1\r\n";
+		static const char buf2[] = "接收到串口命令 2\r\n";
+		static const char buf3[] = "接收到串口命令 3\r\n";
+		static const char buf4[] = "接收到串口命令 4\r\n";
 		printf("Hello World!\r\n");
 		HAL_Delay(500);
 		//		uint8_t rd[10] = {0};
@@ -82,9 +83,11 @@ void loop(){
 			default: break;
 			}
 		}
-#else
+#elif 1
+/* 安富莱QSPI FLASH读写例程 */
 		PrintfInfo();	/* 打印例程名称和版本等信息 */
 		DemoSpiFlash();   /* QSPI Flash测试 */
+#elif 1
 #endif
 	}
 }

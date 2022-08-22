@@ -1,6 +1,11 @@
 ﻿/*
- * Modified By: OldGerman
- * 2022/08/20: 原仅支持W25Q256, 适配W25Q16~W25Q512, 因此本驱动的文件名称也改为25Qxx
+ * bsp_qspi_w25qxx.h
+ *
+ *  Created on: 2022年8月20日
+ *      Author: OldGerman (过气德国佬)
+ *
+ *  Modified:
+ *      2022/08/21: 适配W25Q16~W25Q512
  */
 
 #ifndef _BSP_QSPI_W25QXX_H
@@ -10,41 +15,36 @@
 extern "C" {
 #endif
 /* USER CODE BEGIN Includes */
-//#include "main.h"
-#include "quadspi.h"
 #include <stdio.h>
-//#include <string.h>
-//#include <stdlib.h>
 /* USER CODE END Includes */
 
 /* USER CODE BEGIN Private defines */
+/*
+ * 备注CSP前缀：
+ * 	在计算机科学中，交談循序程式（英語：Communicating sequential processes，縮寫為CSP），
+ * 	又譯為通信顺序进程、交換訊息的循序程式，是一種形式語言，用來描述並行性系統間進行互動的模式
+ */
 uint8_t CSP_QUADSPI_Init(void);
 uint8_t CSP_QSPI_EraseSector(uint32_t EraseStartAddress ,uint32_t EraseEndAddress);
 uint8_t CSP_QSPI_WriteMemory(uint8_t* buffer, uint32_t address, uint32_t buffer_size);
 uint8_t CSP_QSPI_EnableMemoryMappedMode(void);
 uint8_t CSP_QSPI_Erase_Chip (void);
+//以下是External Laoder工程没有用到的函数
+uint8_t CSP_QSPI_ReadID(uint32_t *uiID);
+uint8_t CSP_QSPI_ReadBuffer(uint8_t * _pBuf, uint32_t _uiReadAddr, uint32_t _uiSize);
+uint8_t CSP_QSPI_WriteBuffer(uint8_t *_pBuf, uint32_t _uiWriteAddr, uint16_t _usWriteSize);
+uint8_t CSP_QSPI_EraseOneSector(uint32_t EraseStartAddress);
 /* USER CODE END Private defines */
 
 /* USER CODE BEGIN Prototypes */
+
+
 /* W25Qxx不同容量以幂运算 2^n Byte表示*/
-#ifndef QSPI_W25Q16_SIZE_2N
 #define QSPI_W25Q16_SIZE_2N 21		/* 2^21 = 2097152 Byte => 2 MB */
-#endif
-#ifndef QSPI_W25Q32_SIZE_2N
 #define QSPI_W25Q32_SIZE_2N 22		/* 2^22 = 4194304 Byte => 4 MB */
-#endif
-#ifndef QSPI_W25Q64_SIZE_2N
 #define QSPI_W25Q64_SIZE_2N 23		/* 2^23 = 8388608 Byte => 8 MB */
-#endif
-#ifndef QSPI_W25Q128_SIZE_2N
 #define QSPI_W25Q128_SIZE_2N 24		/* 2^24 = 16777216 Byte => 16 MB */
-#endif
-#ifndef QSPI_W25Q256_SIZE_2N
 #define QSPI_W25Q256_SIZE_2N 25		/* 2^25 = 33554432 Byte => 32 MB */
-#endif
-#ifndef QSPI_W25Q512_SIZE_2N
-#define QSPI_W25Q512_SIZE_2N 26		/* 2^26 = 67108864 Byte => 64 MB */
-#endif
 
 /*W25Qxx memory parameters*/
 #define QSPI_FLASH_SIZE_2N    		QSPI_W25Q64_SIZE_2N    				/* Flash大小：幂运算 2^QSPI_W25Q64_SIZE = 8388608, 单位Byte*/
@@ -70,6 +70,7 @@ uint8_t CSP_QSPI_Erase_Chip (void);
 #define QPI_ENABLE_CMD 0x35			//64JV不支持ADS位，但是支持这个命令
 #define RESET_ENABLE_CMD 0x66
 #define RESET_EXECUTE_CMD 0x99
+#define READ_ID_CMD2          0x9F         /* 读取ID命令 */
 
 /*W25Qxx 读写擦除命令 */
 /* W25Q128JV及以下容量只支持24bit地址命令 */
@@ -98,6 +99,20 @@ uint8_t CSP_QSPI_Erase_Chip (void);
 #define CMPT_CMD_QUAD_IN_FAST_PROG		QUAD_IN_FAST_4_BYTE_ADDR_PROG_CMD	/* 32bit地址的4线快速写入命令 */
 #define CMPT_CMD_QUAD_INOUT_FAST_READ	QUAD_READ_IO_4_BYTE_ADDR_CMD		/* 32bit地址的4线快速读取命令 */
 #endif
+
+/* JEDEC Manufacturer ID */
+#define MF_ID	(OxEF)
+
+/* JEDEC Device ID: Memory type and Capacity */
+#define MTC_W25Q80_BV 		(0x4014)	/* W25Q80BV*/
+#define MTC_W25Q16_BV_CL_CV	(0x4015) 	/* W25Q16BV W25Q16CL W25Q16CV */
+#define MTC_W25Q16_DW		(0x6015)	/* W25Q16DW*/
+#define MTC_W25Q32_BV		(0X4016)	/* W25Q32BV*/
+#define MTC_W25Q32_DW		(0x6016) 	/* W25Q32DW*/
+#define MTC_W25Q64_BV_CV 	(0x4017)	/* W25Q648V W25Q64CV */
+#define MTC_W25Q64_DW		(0x4017)	/* W25Q64DW */
+#define MTC_W25Q128_BV		(0x4018)	/* W25Q128BV	*/
+#define MTC_W25Q256_FV		(TBD)		/* W25Q256FV*/
 
 /* USER CODE END Prototypes */
 #ifdef __cplusplus

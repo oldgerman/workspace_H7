@@ -48,8 +48,10 @@ void DemoSpiFlash(void)
 	uint32_t uiReadPageNo = 0, id;
 
 	/* 检测串行Flash OK */
-	id = QSPI_ReadID();
-	printf("检测到串行Flash, ID = %08X, 型号: WM25Q%dJV\r\n", (unsigned int)id, QSPI_FLASH_SIZE_MBit);
+	if(CSP_QSPI_ReadID(&id) != HAL_OK){
+		printf("读串行Flash出错！\r\n");
+	}
+	printf("检测到串行Flash, ID = %08X, 型号: W25Q%dJV\r\n", (unsigned int)id, QSPI_FLASH_SIZE_Mb);
 //	printf(" 容量 : 32M字节, 扇区大小 : 4096字节, 页大小：256字节\r\n");
 
 	sfDispMenu();		/* 打印命令提示 */
@@ -86,7 +88,7 @@ void DemoSpiFlash(void)
 					break;
 
 				case '4':
-					printf("\r\n【4 - 读整个QSPI Flash, %dM字节】\r\n", QSPI_FLASH_SIZES/(1024*1024));
+					printf("\r\n【4 - 读整个QSPI Flash, %dM字节】\r\n", QSPI_FLASH_SIZE_MB);
 					sfTestReadSpeed(); /* 读整个串行Flash数据，测试速度 */
 					break;
 				
@@ -112,7 +114,7 @@ void DemoSpiFlash(void)
 
 				case 'x':
 				case 'X': /* 读取后1K */
-					if (uiReadPageNo < QSPI_FLASH_SIZES / 1024 - 1)
+					if (uiReadPageNo < MEMORY_FLASH_SIZE / 1024 - 1)
 					{
 						uiReadPageNo++;
 					}
@@ -145,13 +147,13 @@ static void sfReadTest(void)
 
 	/* 清缓冲区为0x55 */
 	memset(buf, 0x55, TEST_SIZE);
-	QSPI_ReadBuffer(buf, 0, 1);
+	CSP_QSPI_ReadBuffer(buf, 0, 1);
 	printf("读取第1个字节，数据如下\r\n");
 	printf(" %02X \r\n", buf[0]);
 	
 	/* 清空缓冲区为AA */
 	memset(buf, 0xAA, TEST_SIZE);
-	QSPI_ReadBuffer(buf, 0, 10);
+	CSP_QSPI_ReadBuffer(buf, 0, 10);
 	printf("读取前10个字节，数据如下\r\n");	
 	for (i = 0; i < 10; i++)
 	{
@@ -161,7 +163,7 @@ static void sfReadTest(void)
 	
 	/* 清空缓冲区 */
 	memset(buf, 0, TEST_SIZE);
-	QSPI_ReadBuffer(buf, 0, TEST_SIZE);
+	CSP_QSPI_ReadBuffer(buf, 0, TEST_SIZE);
 	printf("读串行Flash成功，数据如下\r\n");
 
 	/* 打印数据 */
@@ -199,12 +201,12 @@ static void sfWriteTest(void)
 		buf[i] = i;
 	}
 
-	QSPI_EraseSector(TEST_ADDR);
+	CSP_QSPI_EraseOneSector(TEST_ADDR);
 	
 	iTime1 = bsp_GetRunTime();	/* 记下开始时间 */
-	for(i = 0; i< TEST_SIZE; i += QSPI_PAGE_SIZE)
+	for(i = 0; i< TEST_SIZE; i += MEMORY_PAGE_SIZE)
 	{
-		if (QSPI_WriteBuffer(buf, TEST_ADDR + i, QSPI_PAGE_SIZE) == 0)
+		if (CSP_QSPI_WriteBuffer(buf, TEST_ADDR + i, MEMORY_PAGE_SIZE) == HAL_ERROR)
 		{
 			printf("写串行Flash出错！\r\n");
 			return;
@@ -215,8 +217,8 @@ static void sfWriteTest(void)
 	printf("写串行Flash成功！\r\n");
 	
 	/* 打印读速度 */
-	printf("数据长度: %d字节, 写耗时: %ldms, 写速度: %ldB/s\r\n", TEST_SIZE, iTime2 - iTime1, (TEST_SIZE * 1000) / (iTime2 - iTime1));
-//	printf("数据长度: %d字节\r\n", TEST_SIZE);
+	printf("数据长度: %d字节, 写耗时: %ldms, 写速度: %ldB/s\r\n",
+			TEST_SIZE, iTime2 - iTime1, (TEST_SIZE * 1000) / (iTime2 - iTime1));
 }
 
 /*
@@ -236,14 +238,14 @@ static void sfTestReadSpeed(void)
 	
 	iTime1 = bsp_GetRunTime();	/* 记下开始时间 */
 	uiAddr = 0;
-	for (i = 0; i < QSPI_FLASH_SIZES / (16*1024); i++, uiAddr += 16*1024)
+	for (i = 0; i < MEMORY_FLASH_SIZE / (16*1024); i++, uiAddr += 16*1024)
 	{
-		QSPI_ReadBuffer(SpeedTestbuf, uiAddr, 16*1024);
+		CSP_QSPI_ReadBuffer(SpeedTestbuf, uiAddr, 16*1024);
 	}
 	iTime2 = bsp_GetRunTime();	/* 记下结束时间 */
 
 	/* 打印读速度 */
-	printf("数据长度: %d字节, 读耗时: %ldms, 读速度: %ld KB/s\r\n", QSPI_FLASH_SIZES, iTime2 - iTime1, QSPI_FLASH_SIZES / (iTime2 - iTime1));
+	printf("数据长度: %d字节, 读耗时: %ldms, 读速度: %ld KB/s\r\n", MEMORY_FLASH_SIZE, iTime2 - iTime1, MEMORY_FLASH_SIZE / (iTime2 - iTime1));
 }
 
 /*
@@ -267,16 +269,16 @@ static void sfWriteAll(uint8_t _ch)
 	}
 	
 	/* 先擦除前12KB空间 */
-	QSPI_EraseSector(0);
-	QSPI_EraseSector(4096);
-	QSPI_EraseSector(8192);
+	CSP_QSPI_EraseOneSector(0);
+	CSP_QSPI_EraseOneSector(4096);
+	CSP_QSPI_EraseOneSector(8192);
 	
 	iTime1 = bsp_GetRunTime();	/* 记下开始时间 */
 	uiAddr = 0;
-	for (i = 0; i < 10*1024/QSPI_PAGE_SIZE; i++, uiAddr += QSPI_PAGE_SIZE)
+	for (i = 0; i < 10*1024/MEMORY_PAGE_SIZE; i++, uiAddr += MEMORY_PAGE_SIZE)
 	{
 		
-		QSPI_WriteBuffer(buf, uiAddr, QSPI_PAGE_SIZE);
+		CSP_QSPI_WriteBuffer(buf, uiAddr, MEMORY_PAGE_SIZE);
 		printf(".");
 		if (((i + 1) % 128) == 0)
 		{
@@ -310,14 +312,14 @@ static void sfErase(void)
 	
 	uiAddr = 0;
 	printf("\r\n");
-	for (i = 0; i < QSPI_FLASH_SIZES / QSPI_SECTOR_SIZE; i++, uiAddr += QSPI_SECTOR_SIZE)
+	for (i = 0; i < MEMORY_FLASH_SIZE / MEMORY_SECTOR_SIZE; i++, uiAddr += MEMORY_SECTOR_SIZE)
 	{
-		QSPI_EraseSector(uiAddr);
+		CSP_QSPI_EraseOneSector(uiAddr);
 		
 		printf(".");
 		if (((i + 1) % 128) == 0)
 		{
-			printf("%ld%%\r\n", i*100 /(QSPI_FLASH_SIZES / QSPI_SECTOR_SIZE));
+			printf("%ld%%\r\n", i*100 /(MEMORY_FLASH_SIZE / MEMORY_SECTOR_SIZE));
 		}
 	}
 	
@@ -340,7 +342,7 @@ static void sfViewData(uint32_t _uiAddr)
 {
 	uint32_t i;
 
-	QSPI_ReadBuffer(buf, _uiAddr,  1024);		/* 读数据 */
+	CSP_QSPI_ReadBuffer(buf, _uiAddr,  1024);		/* 读数据 */
 	printf("地址：0x%08X; 数据长度 = 1024\r\n", (unsigned int)_uiAddr);
 
 	/* 打印数据 */
@@ -377,7 +379,7 @@ static void sfDispMenu(void)
 	printf("【4 - 读整个串行Flash, 测试读速度】\r\n");
 	printf("【Z - 读取前1K，地址自动减少】\r\n");
 	printf("【X - 读取后1K，地址自动增加】\r\n");
-	printf("【Y - 擦除整个串行Flash，整片32MB擦除大概300秒左右】\r\n");
+	printf("【Y - 擦除整个串行Flash，整片擦除大概几分钟】\r\n");
 	printf("其他任意键 - 显示命令提示\r\n");
 	printf("\r\n");
 }

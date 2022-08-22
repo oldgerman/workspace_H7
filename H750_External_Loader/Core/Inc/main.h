@@ -64,6 +64,8 @@ void Error_Handler(void);
 #ifdef QSPI_FLASH_SIZE_2N_OFFSET
 #undef QSPI_FLASH_SIZE_2N_OFFSET
 #define QSPI_FLASH_SIZE_2N_OFFSET (QSPI_FLASH_SIZE_2N - QSPI_FLASH_SIZE_OFFSET)
+#else
+#error "QSPI_FLASH_SIZE_2N_OFFSET undefined"
 #endif
 /* USER CODE END Private defines */
 

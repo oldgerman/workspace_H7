@@ -1,12 +1,12 @@
 ﻿/*
- * bsp_W25Qxx.h
+ * bsp_template.h
  *
  *  Created on: Aug 18, 2022
- *      Author: PSA
+ *      Author: OldGerman
  */
 
-#ifndef BSP_BSP_W25QXX_H_
-#define BSP_BSP_W25QXX_H_
+#ifndef BSP_BSP_TEMPLATE_H_
+#define BSP_BSP_TEMPLATE_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -46,4 +46,4 @@ extern "C" {
 }
 #endif
 
-#endif /* BSP_BSP_W25QXX_H_ */
+#endif /* BSP_BSP_TEMPLATE_H_ */
