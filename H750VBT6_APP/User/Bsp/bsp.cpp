@@ -7,7 +7,13 @@
 
 #include "bsp.h"
 
-bool firstPwrOffToRUN = true;
+
+void bsp_Init()
+{
+	;
+}
+
+
 /* @brief 在main()执行完MX_XXX_Init()函数们，到执行setup()之前插入的函数
  * @param None
  * @return None
@@ -15,7 +21,6 @@ bool firstPwrOffToRUN = true;
 void preSetupInit(void){
 	;
 }
-
 
 /* 非阻塞下等待固定的时间
  * @param timeOld 必须传入局部静态变量或全局变量
@@ -30,4 +35,3 @@ bool waitTime(uint32_t *timeOld, uint32_t wait) {
 	}
 	return false;
 }
-

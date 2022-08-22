@@ -32,7 +32,7 @@ extern "C" {
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "bsp_qspi_w25qxx.h"
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
@@ -66,7 +66,13 @@ void Error_Handler(void);
 #define LRGB_R_Pin GPIO_PIN_1
 #define LRGB_R_GPIO_Port GPIOA
 /* USER CODE BEGIN Private defines */
-
+#define QSPI_FLASH_SIZE_OFFSET 1
+#ifdef QSPI_FLASH_SIZE_2N_OFFSET
+#undef QSPI_FLASH_SIZE_2N_OFFSET
+#define QSPI_FLASH_SIZE_2N_OFFSET (QSPI_FLASH_SIZE_2N - QSPI_FLASH_SIZE_OFFSET)
+#else
+#error "QSPI_FLASH_SIZE_2N_OFFSET undefined"
+#endif
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus
