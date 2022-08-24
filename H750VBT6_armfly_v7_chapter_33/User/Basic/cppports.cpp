@@ -86,6 +86,7 @@ void loop(){
 			if(HAL_GPIO_ReadPin(KEY_B_GPIO_Port, KEY_B_Pin) == GPIO_PIN_RESET) {
 				bsp_tim6_disable_IT();
 				printf("检测到KEY B 按下，关闭tim6中断\r\n");
+				HAL_GPIO_WritePin(LRGB_G_GPIO_Port, LRGB_G_Pin, GPIO_PIN_SET);
 			}
 		}
 	}

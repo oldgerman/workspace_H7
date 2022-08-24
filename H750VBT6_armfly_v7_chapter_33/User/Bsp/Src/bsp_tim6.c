@@ -22,8 +22,6 @@ void bsp_tim6_disable_IT(){
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 	if(htim == &htim6)
 	{
-//		TIM6->SR = ~TIM_FLAG_UPDATE; //GPIOB->ODR ^= GPIO_PIN_1;
-//		/* 使用通用 GPIO */ HC574_TogglePin(GPIO_PIN_23); /* 使用的 FMC 扩展 IO */
-		HAL_GPIO_WritePin(LRGB_G_GPIO_Port, LRGB_G_Pin, !HAL_GPIO_ReadPin(LRGB_G_GPIO_Port, LRGB_G_Pin));
+		HAL_GPIO_TogglePin(LRGB_G_GPIO_Port, LRGB_G_Pin);
 	}
 }
