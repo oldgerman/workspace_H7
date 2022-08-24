@@ -7,6 +7,10 @@
 
 #include "bsp.h"
 
+void bsp_Init(){
+	bsp_InitUart();
+}
+
 bool firstPwrOffToRUN = true;
 /* @brief 在main()执行完MX_XXX_Init()函数们，到执行setup()之前插入的函数
  * @param None

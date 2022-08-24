@@ -4,10 +4,11 @@
  *  Created on: 2022年8月20日
  *      Author: OldGerman (过气德国佬)
  */
+#include "bsp_config.h"
+#if EN_BSP_QSPI_W25QXX
 
 #include "bsp_qspi_w25qxx.h"
 #include "quadspi.h"
-
 static uint8_t QSPI_WriteEnable(void);
 static uint8_t QSPI_AutoPollingMemReady(void);
 static uint8_t QSPI_Configuration(void);
@@ -649,3 +650,4 @@ uint8_t CSP_QSPI_WriteBuffer(uint8_t *_pBuf, uint32_t _uiWriteAddr, uint16_t _us
 
 	return HAL_OK;
 }
+#endif /* EN_BSP_QSPI_W25QXX */

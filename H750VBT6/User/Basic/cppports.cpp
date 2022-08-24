@@ -63,7 +63,7 @@ static void PrintfInfo(void)
 
 
 void setup(){
-	bsp_InitUart();
+	bsp_Init();
 	PrintfInfo();
 }
 

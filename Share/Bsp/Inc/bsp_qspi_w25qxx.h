@@ -8,8 +8,8 @@
  *      2022/08/21: 适配W25Q16~W25Q512
  */
 
-#ifndef _BSP_QSPI_W25QXX_H
-#define _BSP_QSPI_W25QXX_H
+#ifndef BSP_QSPI_W25QXX_H_
+#define BSP_QSPI_W25QXX_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -119,4 +119,4 @@ uint8_t CSP_QSPI_EraseOneSector(uint32_t EraseStartAddress);
 }
 #endif
 
-#endif
+#endif	/* BSP_QSPI_W25QXX_H_ */

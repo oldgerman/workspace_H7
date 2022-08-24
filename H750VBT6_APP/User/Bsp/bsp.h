@@ -64,6 +64,7 @@ extern "C" {
 
 /* Exported functions prototypes ---------------------------------------------*/
 /* USER CODE BEGIN EFP */
+void bsp_Init();
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
