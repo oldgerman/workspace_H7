@@ -8,7 +8,7 @@ DIY的[micespring](https://oshwhub.com/micespring)设计的[STM32H750VB/H7B0VB�
 
 ![DIY的micespring设计的板子，主控H750VBT6_W25Q64JV两片，调试器是自制的ST-LINK_v2.1](Image/DIY的micespring设计的板子，主控H750VBT6_W25Q64JV两片，调试器是自制的ST-LINK_v2.1.JPG)
 
-## release [v0.1] - 2022-8-24
+## [Release [v0.1] - 2022-8-24](https://github.com/oldgerman/workspace_H7/releases/tag/publish)
 
 ### 根目录文件夹介绍
 
