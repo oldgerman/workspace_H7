@@ -26,7 +26,8 @@ extern "C" {
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "bsp_qspi_w25qxx.h"
-//#include "bsp_uart_fifo.h"
+#include "bsp_uart_fifo.h"
+#include "demo_spi_flash.h"
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
@@ -63,7 +64,6 @@ extern "C" {
 
 /* Exported functions prototypes ---------------------------------------------*/
 /* USER CODE BEGIN EFP */
-void bsp_Init();
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
@@ -73,6 +73,8 @@ void bsp_Init();
 
 
 #ifdef __cplusplus
+
+bool waitTime(uint32_t *timeOld, uint32_t wait);
 }
 #endif
 #endif /* BSP_BSP_H_ */

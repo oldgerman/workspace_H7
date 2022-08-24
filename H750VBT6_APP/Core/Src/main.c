@@ -67,7 +67,7 @@ static void MPU_Config(void);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-
+	SCB->VTOR = 0x90000000; /* 设置中断向量表地址 */
   /* USER CODE END 1 */
 
   /* MPU Configuration--------------------------------------------------------*/
@@ -97,7 +97,7 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_QUADSPI_Init();
+//  MX_QUADSPI_Init();
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
   setup();

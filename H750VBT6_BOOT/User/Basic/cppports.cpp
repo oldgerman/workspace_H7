@@ -50,8 +50,8 @@ static void JumpToApp(void)
 {
 	uint32_t i=0;
 	void (*AppJump)(void);         /* 声明一个函数指针 */
-	__IO uint32_t AppAddr = 0x90000000;  /* APP 地址 */
-
+//	__IO uint32_t AppAddr = 0x90000000;  /* APP 地址 */
+	volatile uint32_t AppAddr = 0x90000000;  /* APP 地址 */
 
     /* 关闭全局中断 */
 	DISABLE_INT();
@@ -89,6 +89,6 @@ static void JumpToApp(void)
 	/* 跳转成功的话，不会执行到这里，用户可以在这里添加代码 */
 	while (1)
 	{
-
+		;
 	}
 }

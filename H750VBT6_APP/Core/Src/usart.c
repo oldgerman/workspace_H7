@@ -66,7 +66,9 @@ void MX_USART1_UART_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN USART1_Init 2 */
-
+	SET_BIT(USART1->ICR, USART_ICR_TCCF);	/* 清除TC发�?�完成标�??? */
+	SET_BIT(USART1->RQR, USART_RQR_RXFRQ);/* 清除RXNE接收标志 */
+	SET_BIT(USART1->CR1, USART_CR1_RXNEIE);	/* 使能PE. RX接受中断 */
   /* USER CODE END USART1_Init 2 */
 
 }

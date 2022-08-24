@@ -63,13 +63,13 @@ SECTIONS
 	KEEP(*(.isr_vector)) /* Startup code */
 	. = ALIGN(4);
   } >FLASH_QSPI
-
+  
   /* The program code and other data goes into FLASH_QSPI */
   .text :
   {
 	. = ALIGN(4);
 	*(.text)           /* .text sections (code) */
-	*(.text*)          /* .text* sections (code) */
+    *(.text*)          /* .text* sections (code) */
 	*(.glue_7)         /* glue arm to thumb code */
 	*(.glue_7t)        /* glue thumb to arm code */
 	*(.eh_frame)
@@ -79,8 +79,8 @@ SECTIONS
 
 	. = ALIGN(4);
 	_etext = .;        /* define a global symbols at end of code */
-  } >FLASH_QSPI
-
+  } >FLASH_QSPI  
+  
   /* Constant data goes into FLASH_QSPI */
   .rodata :
   {
@@ -163,6 +163,8 @@ SECTIONS
 	. = . + _Min_Stack_Size;
 	. = ALIGN(8);
   } >DTCMRAM
+
+  
 
   /* Remove information from the standard libraries */
   /DISCARD/ :

@@ -74,6 +74,8 @@ extern "C" {
 
 
 #ifdef __cplusplus
+
+bool waitTime(uint32_t *timeOld, uint32_t wait);
 }
 #endif
 #endif /* BSP_BSP_H_ */
