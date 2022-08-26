@@ -62,7 +62,7 @@ static void PrintfInfo(void)
 static void PrintfHelp(void)
 {
 	printf("*************************************************************\n\r");
-	printf("定时器周期性中断(驱动支持TIM6), 在TIM6中断回调函数控制PC3 io翻转周期为100ms\r\n");
+	printf("定时器周期性中断(驱动支持TIM6), 在TIM6中断回调函数控制PC3 io翻转周期为50ms\r\n");
 	printf("操作提示:\r\n");
 	printf("1. KEY A按下，开启TIM6的周期性中断\r\n");
 	printf("2. KEY B按下，关闭TIM6的周期性中断\r\n");
