@@ -2,7 +2,7 @@
  * bsp_pwm.h
  *
  *  Created on: Aug 25, 2022
- *      Author: PSA
+ *      Author: OldGerman
  */
 
 #ifndef BSP_INC_BSP_TIMX_PWM_H_

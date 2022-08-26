@@ -2,7 +2,7 @@
  * bsp_pwm.c
  *
  *  Created on: Aug 25, 2022
- *      Author: PSA
+ *      Author: OldGerman
  */
 
 #include "bsp.h"
@@ -66,7 +66,7 @@ HAL_StatusTypeDef bsp_TIMx_PWM_En(TIM_HandleTypeDef* htim, uint32_t Channel, boo
  * @param  Channel:				tim的通道
  * @param  timBusCLK: 			htim所挂在总线的时钟频率				单位: Hz
  * @param  pwmFrequency: 		pwm频率，  范围 1 ~ timBusCLK	单位: Hz
- * @paeam  pwmDutyCycle: 		pwm占空比，范围 0.0... ~ 100.0...，	单位: %
+ * @param  pwmDutyCycle: 		pwm占空比，范围 0.0... ~ 100.0...，	单位: %
  * @param  pwmPref: 			pwm偏好，侧重 频率步幅精度 或 占空比步幅精度
  * @retval pwmSet_InfoTypeDef 	经归并计算后的实际情况
  */
@@ -97,7 +97,7 @@ pwmSet_InfoTypeDef bsp_TIMx_PWM_Set(
 	{
 		/*
 		 * 牺牲频率步幅精度，换取占空比步幅精度
-		 * 备注，对于16bit ARR寄存器的TIM，PSC和ARR寄存器都是16bit，对于32bit,,,要再考虑一下
+		 * 备注，PSC都是16bit，暂时只管16bit ARR寄存器的TIM，而32bit的ARR以后再说
 		 */
 
 		/*对于PSC的确定需要递归算法 */
@@ -117,7 +117,7 @@ pwmSet_InfoTypeDef bsp_TIMx_PWM_Set(
 		}
 		pwmT_ns = (float)1000000000 / pwmFrequency;					/* 计算PWM周期，单位ns*/
 		pwmStep_Dutycycle_ns = pwmT_ns / ARR;						/* 计算PWM占空比步幅，单位ns*/
-		pwmDutyCycle_ns = fmap(pwmDutyCycle, 0, 100, 0, pwmT_ns);	//映射0-100%到0-1000000000ns
+		pwmDutyCycle_ns = fmap(pwmDutyCycle, 0, 100, 0, pwmT_ns);	//映射0-100%到0-pwmT_ns
 		pwmDutyCycle_ns = pwmDutyCycle_ns - fmod(pwmDutyCycle_ns, pwmStep_Dutycycle_ns);	/*对浮点型进行取模运算, 归并pwmDutyCycle */
 		CCR = pwmDutyCycle_ns / pwmStep_Dutycycle_ns;
 		pwmDutyCycle = fmap(pwmDutyCycle_ns, 0, pwmT_ns, 0, 100);
@@ -136,7 +136,7 @@ pwmSet_InfoTypeDef bsp_TIMx_PWM_Set(
 	pwmSetInfo.pwm_Frequency = pwmFrequency;
 	pwmSetInfo.pwmStep_Frequency = 0;
 
-	/* 更新TIMx要修的的寄存器 */
+	/* 更新TIMx要修改的的寄存器 */
 	htim->Instance->PSC = PSC - 1;
 	htim->Instance->ARR = ARR - 1;
 	CCR -= 1;

@@ -2,7 +2,7 @@
  * bsp_tim6.h
  *
  *  Created on: Aug 24, 2022
- *      Author: PSA
+ *      Author: OldGerman
  */
 
 #ifndef BSP_INC_BSP_TIM6_H_

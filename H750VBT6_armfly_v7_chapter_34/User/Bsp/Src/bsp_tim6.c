@@ -2,7 +2,7 @@
  * bsp_tim6.c
  *
  *  Created on: Aug 24, 2022
- *      Author: PSA
+ *      Author: OldGerman
  */
 #include "bsp.h"
 #include "tim.h"
