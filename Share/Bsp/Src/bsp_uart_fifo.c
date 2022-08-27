@@ -1,5 +1,5 @@
 ﻿#include "bsp_config.h"
-#if EN_BSP_UART_FIFO
+#ifdef EN_BSP_UART_FIFO
 
 #include "bsp.h"
 #include "usart.h"

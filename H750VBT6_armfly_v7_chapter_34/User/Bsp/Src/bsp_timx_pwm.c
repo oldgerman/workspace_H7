@@ -83,6 +83,10 @@ pwmSet_InfoTypeDef bsp_TIMx_PWM_Set(
 	HAL_TIM_PWM_Stop(htim, Channel);
 
 	pwmSet_InfoTypeDef pwmSetInfo = {0};
+	//存入期望值
+	pwmSetInfo.pwm_Frequency_Expect = pwmFrequency;
+	pwmSetInfo.pwm_Dutycycle_Expect = pwmDutyCycle;
+
 	pwmSetInfo.pwmSetPref = pwmSetPref;				/* 保存pwm偏好 */
 
 	uint32_t product_PSC_ARR = timBusCLK;			/* PSC和ARR的乘积总是等于TIM所挂在总线的时钟频率 */

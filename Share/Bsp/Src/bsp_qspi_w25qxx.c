@@ -5,7 +5,7 @@
  *      Author: OldGerman (过气德国佬)
  */
 #include "bsp_config.h"
-#if EN_BSP_QSPI_W25QXX
+#ifdef EN_BSP_QSPI_W25QXX
 
 #include "bsp_qspi_w25qxx.h"
 #include "quadspi.h"

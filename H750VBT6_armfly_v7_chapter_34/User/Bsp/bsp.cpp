@@ -12,6 +12,7 @@ void bsp_Init(){
 	bsp_tim6_Init();
 	bsp_TIMx_PWM_En(&htim3, TIM_CHANNEL_4, 1);
 	bsp_TIMx_PWM_En(&htim12, TIM_CHANNEL_2, 1);
+	bsp_Button_Init();
 }
 
 bool firstPwrOffToRUN = true;

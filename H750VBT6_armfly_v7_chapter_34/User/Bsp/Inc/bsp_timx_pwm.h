@@ -16,11 +16,13 @@ typedef enum pwmSetPref{
 }pwmSet_PrefTypeDef;
 
 typedef struct pwmSetInfo{
+	float pwm_Dutycycle_Expect;		/* 期望的pwm占空比 */
+	uint32_t pwm_Frequency_Expect;	/* 期望的pwm频率 */
 	pwmSet_PrefTypeDef pwmSetPref;
-	float pwm_Dutycycle;		/* pwm占空比 */
-	float pwmStep_Dutycycle;	/* pwm占空比步幅 */
-	float pwm_Frequency;		/* pwm频率 */
-	float pwmStep_Frequency;	/* pwm频率步幅 */
+	float pwm_Dutycycle;		/* 实际pwm占空比 */
+	float pwmStep_Dutycycle;	/* 实际pwm占空比步幅 */
+	uint32_t pwm_Frequency;		/* 实际pwm频率 */
+	float pwmStep_Frequency;	/* 实际pwm频率步幅 */
 }pwmSet_InfoTypeDef;
 
 HAL_StatusTypeDef bsp_TIMx_PWM_En(TIM_HandleTypeDef* htim, uint32_t Channel, bool enable);

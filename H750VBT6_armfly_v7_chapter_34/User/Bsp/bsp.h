@@ -25,6 +25,8 @@ extern "C" {
 #include "stdbool.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "bsp_config.h"
+#include "bsp_button.h"
 #include "bsp_uart_fifo.h"
 #include "bsp_tim6.h"
 #include "tim.h"
