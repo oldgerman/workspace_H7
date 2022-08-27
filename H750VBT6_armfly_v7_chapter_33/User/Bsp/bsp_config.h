@@ -8,7 +8,8 @@
 #ifndef _BSP_CONFOG_H
 #define _BSP_CONFOG_H
 
-#define EN_BSP_UART_FIFO 1
-#define EN_BSP_QSPI_W25QXX 0
+/* Uncomment the macro to enable bsp module*/
+#define EN_BSP_UART_FIFO
+//#define EN_BSP_QSPI_W25QXX
 
 #endif /* _BSP_CONFOG_H */

@@ -9,7 +9,6 @@
 #define _BSP_CONFOG_H
 
 /* Uncomment the macro to enable bsp module*/
-
 #define EN_BSP_BUTTON
 #define EN_BSP_UART_FIFO
 //#define EN_BSP_QSPI_W25QXX
