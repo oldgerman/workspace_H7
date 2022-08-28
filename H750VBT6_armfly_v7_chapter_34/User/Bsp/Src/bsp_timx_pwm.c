@@ -6,7 +6,6 @@
  */
 
 #include "bsp.h"
-//#include <math.h>
 
 /**
   * @brief  将一个数字(浮点型)从一个范围重新映射到另一个区域
@@ -22,29 +21,13 @@ static double fmap(double x, double in_min, double in_max, double out_min, doubl
     return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
 
-
-static uint32_t binPower(uint8_t power){
-	return 1 << power;
-}
-
-
-static void setPSC(uint32_t *ptrPSC, uint32_t *ptrARR, uint32_t pwmFrequency, uint32_t product_PSC_ARR){
-	uint32_t ARR = *ptrARR;
-	uint32_t PSC = *ptrPSC;
-
-	for(uint16_t i = 1; ; i++){
-//		PSC = binPower(i);	// log 2 N 时间复杂度
-		PSC = i;			// N 时间复杂度, pwm=1Hz时，N最大1525
-		ARR = product_PSC_ARR / PSC / pwmFrequency;		/* 下列计算时暂时不减去1，最后设置时才减去1 */
-		if(ARR <= 65536){
-			break;
-		}
-	}
-
-	*ptrARR = ARR;
-	*ptrPSC = PSC;
-}
-
+/**
+ * @brief  开启或关闭tim pwm的通道
+ * @param  htim:				htim句柄指针
+ * @param  Channel:				tim的通道
+ * @param  enable:				true:打开对应通道的pwm; false:关闭对应通道的pwm
+ * @retval HAL Status
+ */
 HAL_StatusTypeDef bsp_TIMx_PWM_En(TIM_HandleTypeDef* htim, uint32_t Channel, bool enable){
 	HAL_TIM_Base_Start(htim);
 	if(enable){
@@ -59,86 +42,82 @@ HAL_StatusTypeDef bsp_TIMx_PWM_En(TIM_HandleTypeDef* htim, uint32_t Channel, boo
 }
 
 /**
- * @brief  设置tim pwm的频率和占空比，会按照pwm偏好计算
- * @author OldGerman
- * @Date   2022/08/26
+ * @brief  设置tim pwm的频率和占空比
  * @param  htim:				htim句柄指针
  * @param  Channel:				tim的通道
- * @param  timBusCLK: 			htim所挂在总线的时钟频率				单位: Hz
  * @param  pwmFrequency: 		pwm频率，  范围 1 ~ timBusCLK	单位: Hz
  * @param  pwmDutyCycle: 		pwm占空比，范围 0.0... ~ 100.0...，	单位: %
- * @param  pwmPref: 			pwm偏好，侧重 频率步幅精度 或 占空比步幅精度
- * @retval pwmSet_InfoTypeDef 	经归并计算后的实际情况
+ * @retval pwmSet_InfoTypeDef 	经计算后的实际情况
  */
-/* stm32 float: -2,147,483,648 ~ 2,147,483,647 */
 pwmSet_InfoTypeDef bsp_TIMx_PWM_Set(
 		TIM_HandleTypeDef* htim,
 		uint32_t Channel,
-		uint32_t timBusCLK,
 		uint32_t pwmFrequency,
-		float pwmDutyCycle,
-		pwmSet_PrefTypeDef pwmSetPref)
+		float pwmDutyCycle)
 {
-	//关闭调节对通道的PWM
+	/* 关闭调节对通道的PWM */
 	HAL_TIM_PWM_Stop(htim, Channel);
 
+	/* 确定定时器的时钟源频率，以及定时器是16bit还是32bit的 */
+	uint32_t timBusCLK;						//	htim所挂在总线的时钟频率：单位: Hz
+	TIM_TypeDef* TIMx = htim->Instance;
+	if ((TIMx == TIM1) || (TIMx == TIM8) || (TIMx == TIM15) || (TIMx == TIM16) || (TIMx == TIM17)) {
+		timBusCLK = SystemCoreClock / 2;	// APB2 定时器时钟 = 200M
+	}
+	else {
+		timBusCLK = SystemCoreClock / 2; 	// APB1 定时器 = 200M
+	}
+
+	/* 确定定时器位数 */
+	uint32_t tim_count_max;
+	if((TIMx == TIM2) || (TIMx == TIM5)){	// TIM2 和 TIM5是 32 位定时器，其它都是 16 位定时器
+		tim_count_max = 0xffffffff;			// 32bit  0 ~ 4,294,967,295
+	}else{
+		tim_count_max = 0xffff;				// 16bit  0 ~ 65535
+	}
+
+	/* 声明或初始化局部变量 */
 	pwmSet_InfoTypeDef pwmSetInfo = {0};
-	//存入期望值
 	pwmSetInfo.pwm_Frequency_Expect = pwmFrequency;
 	pwmSetInfo.pwm_Dutycycle_Expect = pwmDutyCycle;
-
-	pwmSetInfo.pwmSetPref = pwmSetPref;				/* 保存pwm偏好 */
-
-	uint32_t product_PSC_ARR = timBusCLK;			/* PSC和ARR的乘积总是等于TIM所挂在总线的时钟频率 */
+	uint32_t product_PSC_ARR = timBusCLK;			// PSC和ARR的乘积总是等于TIM所挂在总线的时钟频率
 	uint32_t ARR = 0;
 	uint32_t PSC = 0;
 	uint32_t CCR = 0;
-	float pwmT_ns = 0;
+	float pwmT_ns = 0;								// stm32 float: -2,147,483,648 ~ 2,147,483,647
 	float pwmStep_Dutycycle_ns = 0;
 	float pwmDutyCycle_ns = 0;
 
-	if(pwmSetPref == pwmSetPref_Dutycycle)			/* 侧重占空比步幅精度 */
-	{
-		/*
-		 * 牺牲频率步幅精度，换取占空比步幅精度
-		 * 备注，PSC都是16bit，暂时只管16bit ARR寄存器的TIM，而32bit的ARR以后再说
-		 */
+	/*
+	 * 下列计算时暂时不减去1，最后设置时才减去1
+	 * 备注，PSC都是16bit，暂时只管16bit ARR寄存器的TIM，而32bit的ARR以后再说
+	 */
 
-		/*对于PSC的确定需要递归算法 */
-		setPSC(&PSC, &ARR, pwmFrequency, product_PSC_ARR);
-
-		for(uint8_t i = 0; ; i++){
-			if(binPower(i) > ARR){
-				/* 对ARR做二进制的幂次"四舍五入",ARR取2幂次 */
-				if(abs((binPower(i) - ARR)) > abs(binPower(i - 1) - ARR)){
-					ARR = binPower(i - 1);
-				}else{
-					ARR = binPower(i);
-				}
-				pwmFrequency = (float)product_PSC_ARR / PSC /ARR + 0.5;	// 归并pwmFrequency, 并仅保留整数，小数部分四舍五入到整数
-				break;
-			}
+	/* 计算有效范围内的PSC和ARR */
+	for(uint16_t i = 1; ; i++){
+		/* 这里可以用二分法更快, 得考虑一下 */
+		PSC = i;			// N 时间复杂度, pwm=1Hz时，N最大1525
+		ARR = (float)product_PSC_ARR / PSC / pwmFrequency + 0.5;	// 注意对ARR进行了四舍五入
+		if(ARR <= tim_count_max){
+			break;
 		}
-		pwmT_ns = (float)1000000000 / pwmFrequency;					/* 计算PWM周期，单位ns*/
-		pwmStep_Dutycycle_ns = pwmT_ns / ARR;						/* 计算PWM占空比步幅，单位ns*/
-		pwmDutyCycle_ns = fmap(pwmDutyCycle, 0, 100, 0, pwmT_ns);	//映射0-100%到0-pwmT_ns
-		pwmDutyCycle_ns = pwmDutyCycle_ns - fmod(pwmDutyCycle_ns, pwmStep_Dutycycle_ns);	/*对浮点型进行取模运算, 归并pwmDutyCycle */
-		CCR = pwmDutyCycle_ns / pwmStep_Dutycycle_ns;
-		pwmDutyCycle = fmap(pwmDutyCycle_ns, 0, pwmT_ns, 0, 100);
 	}
-	else if(pwmSetPref == pwmSetPref_Frequency) /* 侧重频率步幅精度，占空比固定50%*/
-	{
-		/*
-		 * 牺牲占空比步幅精度，换取频率步幅精度
-		 */
-		;
-	}
+
+	/* 计算实际pwm参数 */
+	float pwmFrequency_float = (float)product_PSC_ARR / PSC /ARR;
+	pwmT_ns = (float)1000000000 / pwmFrequency_float;			// 计算PWM周期，单位ns
+	pwmStep_Dutycycle_ns = pwmT_ns / ARR;						// 计算PWM占空比步幅，单位ns
+	pwmDutyCycle_ns = fmap(pwmDutyCycle, 0, 100, 0, pwmT_ns);	// 映射0-100%到0-pwmT_ns
+//	pwmDutyCycle_ns = pwmDutyCycle_ns - fmod(pwmDutyCycle_ns, pwmStep_Dutycycle_ns);	// 对浮点型进行取模运算
+	pwmDutyCycle = fmap(pwmDutyCycle_ns, 0, pwmT_ns, 0, 100);
+
+	/* 计算有效范围内的CCR */
+	CCR = pwmDutyCycle_ns / pwmStep_Dutycycle_ns + 0.5;			// 注意对CCR进行了四舍五入
 
 	/* 更新pwmSetInfo */
 	pwmSetInfo.pwm_Dutycycle = pwmDutyCycle;
 	pwmSetInfo.pwmStep_Dutycycle = fmap(pwmStep_Dutycycle_ns, 0, pwmT_ns, 0, 100);
-	pwmSetInfo.pwm_Frequency = pwmFrequency;
-	pwmSetInfo.pwmStep_Frequency = 0;
+	pwmSetInfo.pwm_Frequency = pwmFrequency_float;
 
 	/* 更新TIMx要修改的的寄存器 */
 	htim->Instance->PSC = PSC - 1;

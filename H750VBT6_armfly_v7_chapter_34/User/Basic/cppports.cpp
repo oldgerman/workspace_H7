@@ -60,22 +60,20 @@ static void Printf_pwmSetInfo_TIMx(pwmSet_InfoTypeDef *pwmSetInfo)
 {
 	printf("期望pwm占空比： %f%%\r\n", pwmSetInfo->pwm_Dutycycle_Expect);
 	printf("期望pwm频率： %ldHz\r\n", pwmSetInfo->pwm_Frequency_Expect);
-	printf("定时器pwm偏好(0：侧重占空比，1：侧重频率)：%d\r\n", pwmSetInfo->pwmSetPref);
 	printf("实际pwm占空比： %f%%\r\n", pwmSetInfo->pwm_Dutycycle);
 	printf("实际pwm占空比步幅： %f%%\r\n", pwmSetInfo->pwmStep_Dutycycle);
-	printf("实际pwm频率： %ldHz\r\n", pwmSetInfo->pwm_Frequency);
-	printf("实际pwm频率步幅： %fHz\r\n", pwmSetInfo->pwmStep_Frequency);
+	printf("实际pwm频率： %fHz\r\n", pwmSetInfo->pwm_Frequency);
 	printf("\r\n");
 }
 
-#define APB1_TIMER_CLK 200000000	//200MHz
+
 uint32_t tim3_pwm_hz = 7;
 uint32_t tim12_pwm_hz = 3;
 
 void btA_CLICKED_func(){
 	bsp_tim6_enable_IT();
 	printf("TIM3:\r\n");
-	pwmSetInfo_TIM3 = bsp_TIMx_PWM_Set(&htim3, TIM_CHANNEL_4, APB1_TIMER_CLK, tim3_pwm_hz, 50.0, pwmSetPref_Dutycycle);
+	pwmSetInfo_TIM3 = bsp_TIMx_PWM_Set(&htim3, TIM_CHANNEL_4, tim3_pwm_hz, 50.0);
 	bsp_TIMx_PWM_En(&htim3, TIM_CHANNEL_4, true);
 	Printf_pwmSetInfo_TIMx(&pwmSetInfo_TIM3);
 }
@@ -84,8 +82,7 @@ void btB_CLICKED_func(){
 	bsp_tim6_disable_IT();
 	printf("TIM12:\r\n");
 	HAL_GPIO_WritePin(LRGB_G_GPIO_Port, LRGB_G_Pin, GPIO_PIN_SET);
-
-	pwmSetInfo_TIM12 = bsp_TIMx_PWM_Set(&htim12, TIM_CHANNEL_2, APB1_TIMER_CLK, tim12_pwm_hz, 66.6, pwmSetPref_Dutycycle);
+	pwmSetInfo_TIM12 = bsp_TIMx_PWM_Set(&htim12, TIM_CHANNEL_2, tim12_pwm_hz, 66.6);
 	bsp_TIMx_PWM_En(&htim12, TIM_CHANNEL_2, true);
 	Printf_pwmSetInfo_TIMx(&pwmSetInfo_TIM12);
 }
@@ -93,8 +90,8 @@ void btB_CLICKED_func(){
 void btA_LONG_PRESSED_func(){
 	printf("TIM3:\r\n");
 	static uint8_t cnt = 0;
-	tim3_pwm_hz *= 10;
 	++cnt;
+	tim3_pwm_hz *= 10;
 	if(cnt > 7){
 		tim3_pwm_hz /= 100000000;
 		cnt = 0;
@@ -105,8 +102,8 @@ void btA_LONG_PRESSED_func(){
 void btB_LONG_PRESSED_func(){
 	printf("TIM12:\r\n");
 	static uint8_t cnt = 0;
-	tim12_pwm_hz *= 10;
 	++cnt;
+	tim12_pwm_hz *= 10;
 	if(cnt > 7){
 		tim12_pwm_hz /= 100000000;
 		cnt = 0;
@@ -159,33 +156,6 @@ void loop(){
 	TIM3:
 	修改期望pwm频率： 70000000Hz
 
-	TIM3:
-	期望pwm占空比： 50.000000%
-	期望pwm频率： 70000Hz
-	定时器pwm偏好(0：侧重占空比，1：侧重频率)：0
-	实际pwm占空比： 50.000000%
-	实际pwm占空比步幅： 0.048828%
-	实际pwm频率： 97656Hz
-	实际pwm频率步幅： 0.000000Hz
-
-	TIM3:
-	期望pwm占空比： 50.000000%
-	期望pwm频率： 7000000Hz
-	定时器pwm偏好(0：侧重占空比，1：侧重频率)：0
-	实际pwm占空比： 50.000000%
-	实际pwm占空比步幅： 3.125000%
-	实际pwm频率： 6250000Hz
-	实际pwm频率步幅： 0.000000Hz
-
-	TIM3:
-	期望pwm占空比： 50.000000%
-	期望pwm频率： 70000000Hz
-	定时器pwm偏好(0：侧重占空比，1：侧重频率)：0
-	实际pwm占空比： 50.000000%
-	实际pwm占空比步幅： 50.000000%
-	实际pwm频率： 100000000Hz
-	实际pwm频率步幅： 0.000000Hz
-
 	TIM12:
 	修改pwm频率： 3Hz
 	TIM12:
@@ -203,30 +173,34 @@ void loop(){
 	TIM12:
 	修改pwm频率： 30000000Hz
 
-	TIM12:
-	期望pwm占空比： 66.599998%
-	期望pwm频率： 30000Hz
-	定时器pwm偏好(0：侧重占空比，1：侧重频率)：0
-	实际pwm占空比： 66.589355%
-	实际pwm占空比步幅： 0.012207%
-	实际pwm频率： 24414Hz
-	实际pwm频率步幅： 0.000000Hz
 
 	TIM12:
 	期望pwm占空比： 66.599998%
-	期望pwm频率： 3000000Hz
-	定时器pwm偏好(0：侧重占空比，1：侧重频率)：0
-	实际pwm占空比： 65.625000%
-	实际pwm占空比步幅： 1.562500%
-	实际pwm频率： 3125000Hz
-	实际pwm频率步幅： 0.000000Hz
+	期望pwm频率： 3Hz
+	实际pwm占空比： 66.599998%
+	实际pwm占空比步幅： 0.001527%
+	实际pwm频率： 2.999995Hz
+
+	TIM3:
+	期望pwm占空比： 50.000000%
+	期望pwm频率： 7Hz
+	实际pwm占空比： 50.000000%
+	实际pwm占空比步幅： 0.001526%
+	实际pwm频率： 6.999979Hz
+
+	......
 
 	TIM12:
 	期望pwm占空比： 66.599998%
 	期望pwm频率： 30000000Hz
-	定时器pwm偏好(0：侧重占空比，1：侧重频率)：0
-	实际pwm占空比： 62.500000%
-	实际pwm占空比步幅： 12.500000%
-	实际pwm频率： 25000000Hz
-	实际pwm频率步幅： 0.000000Hz
+	实际pwm占空比： 66.599998%
+	实际pwm占空比步幅： 14.285714%
+	实际pwm频率： 28571428.000000Hz
+
+	TIM3:
+	期望pwm占空比： 50.000000%
+	期望pwm频率： 70000000Hz
+	实际pwm占空比： 50.000000%
+	实际pwm占空比步幅： 33.333332%
+	实际pwm频率： 66666668.000000Hz
 */
