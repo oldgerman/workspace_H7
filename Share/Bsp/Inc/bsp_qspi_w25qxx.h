@@ -5,7 +5,7 @@
  *      Author: OldGerman (过气德国佬)
  *
  *  Modified:
- *      2022/08/21: 适配W25Q16~W25Q512
+ *      2022/08/21: 适配W25Q16~W25Q256
  */
 
 #ifndef BSP_QSPI_W25QXX_H_
