@@ -25,8 +25,11 @@ extern "C" {
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "bsp_config.h"
+#include "bsp_redirect_callback.h"
 #include "bsp_uart_fifo.h"
 #include "bsp_tim6.h"
+
 //#include "bsp_qspi_w25qxx.h"
 //#include "demo_spi_flash.h"
 /* USER CODE END Includes */

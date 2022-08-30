@@ -25,6 +25,8 @@ extern "C" {
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "bsp_config.h"
+#include "bsp_redirect_callback.h"
 #include "bsp_qspi_w25qxx.h"
 /* USER CODE END Includes */
 

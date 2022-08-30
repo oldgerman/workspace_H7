@@ -26,6 +26,7 @@ extern "C" {
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "bsp_config.h"
+#include "bsp_redirect_callback.h"
 #include "bsp_button.h"
 #include "bsp_uart_fifo.h"
 #include "bsp_tim6.h"

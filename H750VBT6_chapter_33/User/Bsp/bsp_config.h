@@ -10,6 +10,6 @@
 
 /* Uncomment the macro to enable bsp module*/
 #define EN_BSP_UART_FIFO
-//#define EN_BSP_QSPI_W25QXX
+#define EN_BSP_TIM6
 
 #endif /* _BSP_CONFOG_H */

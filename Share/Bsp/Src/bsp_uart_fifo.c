@@ -1,4 +1,20 @@
-﻿#include "bsp_config.h"
+﻿/*
+*********************************************************************************************************
+*
+*	模块名称 : 串口中断+FIFO驱动模块
+*	文件名称 : bsp_uart_fifo.h
+*	说    明 : 头文件
+*
+*	Copyright (C), 2015-2020, 安富莱电子 www.armfly.com
+*
+*	@Modified By OldGerman
+*	@Modified 2022/08
+*			  	为Stm32CubeIDE环境重定向printf和scanf，目前仅支持PA9 PA10 的 USART1
+*
+*********************************************************************************************************
+*/
+
+#include "bsp_config.h"
 #ifdef EN_BSP_UART_FIFO
 
 #include "bsp.h"
@@ -649,105 +665,9 @@ void UartIRQ(UART_HandleTypeDef *huart)
 	SET_BIT(_pUart->uart->ICR, UART_CLEAR_WUF);
 	SET_BIT(_pUart->uart->ICR, UART_CLEAR_TXFECF);
 
-//	  *            @arg UART_CLEAR_PEF: Parity Error Clear Flag
-//  *            @arg UART_CLEAR_FEF: Framing Error Clear Flag
-//  *            @arg UART_CLEAR_NEF: Noise detected Clear Flag
-//  *            @arg UART_CLEAR_OREF: OverRun Error Clear Flag
-//  *            @arg UART_CLEAR_IDLEF: IDLE line detected Clear Flag
-//  *            @arg UART_CLEAR_TCF: Transmission Complete Clear Flag
-//  *            @arg UART_CLEAR_LBDF: LIN Break Detection Clear Flag
-//  *            @arg UART_CLEAR_CTSF: CTS Interrupt Clear Flag
-//  *            @arg UART_CLEAR_RTOF: Receiver Time Out Clear Flag
-//  *            @arg UART_CLEAR_CMF: Character Match Clear Flag
-//  *            @arg.UART_CLEAR_WUF:  Wake Up from stop mode Clear Flag
-//  *            @arg UART_CLEAR_TXFECF: TXFIFO empty Clear Flag
-
 	return;	//防止调用HAL_UART_IRQHandler();
 }
 
-
-
-
-
-
-#if 0
-static void UartCleanIntFlag(UART_HandleTypeDef *huart){
-#if 1
-	SET_BIT(huart->Instance->ICR, UART_CLEAR_PEF);
-	SET_BIT(huart->Instance->ICR, UART_CLEAR_FEF);
-	SET_BIT(huart->Instance->ICR, UART_CLEAR_NEF);
-	SET_BIT(huart->Instance->ICR, UART_CLEAR_OREF);
-	SET_BIT(huart->Instance->ICR, UART_CLEAR_IDLEF);
-	SET_BIT(huart->Instance->ICR, UART_CLEAR_TCF);
-	SET_BIT(huart->Instance->ICR, UART_CLEAR_LBDF);
-	SET_BIT(huart->Instance->ICR, UART_CLEAR_CTSF);
-	SET_BIT(huart->Instance->ICR, UART_CLEAR_CMF);
-	SET_BIT(huart->Instance->ICR, UART_CLEAR_WUF);
-	SET_BIT(huart->Instance->ICR, UART_CLEAR_TXFECF);
-#else
-	 //__HAL_UART_CLEAR_PEFLAG(&huart);
-	 //等等。。。。
-#endif
-}
-
-
-
-/*Keil重定向*/
-#define PUTCHAR_PROTOTYPE int fputc(int ch, FILE *f)
-#define GETCHAR_PROTOTYPE int fgetc(FILE *f)
-
-/*
-*********************************************************************************************************
-*	函 数 名: fputc
-*	功能说明: 重定义putc函数，这样可以使用printf函数从串口1打印输出
-*	形    参: 无
-*	返 回 值: 无
-*********************************************************************************************************
-*/
-int fputc(int ch, FILE *f)
-{
-#if 0	/* 将需要printf的字符通过串口中断FIFO发送出去，printf函数会立即返回 */
-	comSendChar(COM1, ch);
-
-	return ch;
-#else	/* 采用阻塞方式发送每个字符,等待数据发送完毕 */
-	/* 写一个字节到USART1 */
-	USART1->TDR = ch;
-
-	/* 等待发送结束 */
-	while((USART1->ISR & USART_ISR_TC) == 0)
-	{}
-
-	return ch;
-#endif
-}
-
-
-/*
-*********************************************************************************************************
-*	函 数 名: fgetc
-*	功能说明: 重定义getc函数，这样可以使用getchar函数从串口1输入数据
-*	形    参: 无
-*	返 回 值: 无
-*********************************************************************************************************
-*/
-int fgetc(FILE *f)
-{
-
-#if 1	/* 从串口接收FIFO中取1个数据, 只有取到数据才返回 */
-	uint8_t ucData;
-
-	while(comGetChar(COM1, &ucData) == 0);
-
-	return ucData;
-#else
-	/* 等待接收到数据 */
-	while((USART1->ISR & USART_ISR_RXNE) == 0)
-	{}
-
-	return (int)USART1->RDR;
-#endif
-}
-#endif
-
 #endif /* EN_BSP_UART_FIFO */
+
+/***************************** 安富莱电子 www.armfly.com (END OF FILE) *********************************/
