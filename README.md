@@ -16,4 +16,4 @@ DIY的[micespring](https://oshwhub.com/micespring)设计的[STM32H750VB/H7B0VB�
 
 ## 实际测试
 
-必要用示波器测试的，在该工程的根目录README.md文件中有测试记录
+若有时间整理，相应工程的根目录README.md文件中有测试记录
