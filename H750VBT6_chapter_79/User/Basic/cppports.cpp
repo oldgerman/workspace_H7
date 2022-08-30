@@ -69,7 +69,7 @@ void setup(){
 
 void loop(){
 	while(1) {
-#if 1
+#if 0
 /* 安富莱串口FIFO例程 */
 		/*
 		 * 这个例程是非阻塞编程, 中途任何地方不要用HAL_Delay()，会卡死，但可以用下面的waitTime()套路
@@ -100,7 +100,6 @@ void loop(){
 /* 安富莱QSPI FLASH读写例程 */
 		PrintfInfo();	/* 打印例程名称和版本等信息 */
 		DemoSpiFlash();   /* QSPI Flash测试 */
-#elif 1
 #endif
 	}
 }
