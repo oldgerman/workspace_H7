@@ -24,7 +24,7 @@ extern "C" {
 #include <stdlib.h>
 #include "stdbool.h"
 /* Private includes ----------------------------------------------------------*/
-#include "tim.h"
+#include "lptim.h"
 /* USER CODE BEGIN Includes */
 #include "bsp_config.h"
 #include "bsp_redirect_callback.h"
@@ -32,6 +32,8 @@ extern "C" {
 #include "bsp_uart_fifo.h"
 #include "bsp_tim6.h"
 #include "bsp_timx_pwm.h"
+#include "bsp_timer.h"
+#include "bsp_lptim_pwm.h"
 //#include "bsp_qspi_w25qxx.h"
 //#include "demo_spi_flash.h"
 /* USER CODE END Includes */

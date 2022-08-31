@@ -22,9 +22,6 @@
 	#endif
 #endif
 
-//static void PrintfLogo(void);
-//extern void DemoSpiFlash(void);
-
 static pwmSet_InfoTypeDef pwmSetInfo_TIM3;
 static pwmSet_InfoTypeDef pwmSetInfo_TIM12;
 
@@ -73,7 +70,7 @@ uint32_t tim12_pwm_hz = 3;
 void btA_CLICKED_func(){
 	bsp_tim6_enable_IT();
 	printf("TIM3:\r\n");
-	pwmSetInfo_TIM3 = bsp_TIMx_PWM_Set(&htim3, TIM_CHANNEL_4, tim3_pwm_hz, 50.0);
+	pwmSetInfo_TIM3 = bsp_TIMx_PWM_Set(&htim3, TIM_CHANNEL_4, tim3_pwm_hz, 100.0);
 	bsp_TIMx_PWM_En(&htim3, TIM_CHANNEL_4, true);
 	Printf_pwmSetInfo_TIMx(&pwmSetInfo_TIM3);
 }
@@ -81,7 +78,6 @@ void btA_CLICKED_func(){
 void btB_CLICKED_func(){
 	bsp_tim6_disable_IT();
 	printf("TIM12:\r\n");
-	HAL_GPIO_WritePin(LRGB_G_GPIO_Port, LRGB_G_Pin, GPIO_PIN_SET);
 	pwmSetInfo_TIM12 = bsp_TIMx_PWM_Set(&htim12, TIM_CHANNEL_2, tim12_pwm_hz, 66.6);
 	bsp_TIMx_PWM_En(&htim12, TIM_CHANNEL_2, true);
 	Printf_pwmSetInfo_TIMx(&pwmSetInfo_TIM12);

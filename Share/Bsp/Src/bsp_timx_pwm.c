@@ -56,9 +56,8 @@ pwmSet_InfoTypeDef bsp_TIMx_PWM_Set(
 		uint32_t pwmFrequency,
 		float pwmDutyCycle)
 {
-	/* 关闭调节对通道的PWM */
+	/* 关闭PWM */
 	HAL_TIM_PWM_Stop(htim, Channel);
-
 	/* 确定定时器的时钟源频率，以及定时器是16bit还是32bit的 */
 	uint32_t timBusCLK;						//	htim所挂在总线的时钟频率：单位: Hz
 	TIM_TypeDef* TIMx = htim->Instance;
@@ -93,6 +92,9 @@ pwmSet_InfoTypeDef bsp_TIMx_PWM_Set(
 	 * 下列计算时暂时不减去1，最后设置时才减去1
 	 * 备注，PSC都是16bit，暂时只管16bit ARR寄存器的TIM，而32bit的ARR以后再说
 	 */
+	/* 检测pwmFrequency的有效范围 */
+	if(pwmFrequency * 2 > timBusCLK)
+		pwmFrequency = timBusCLK / 2;
 
 	/* 计算有效范围内的PSC和ARR */
 	for(uint16_t i = 1; ; i++){
@@ -109,7 +111,7 @@ pwmSet_InfoTypeDef bsp_TIMx_PWM_Set(
 	pwmT_ns = (float)1000000000 / pwmFrequency_float;			// 计算PWM周期，单位ns
 	pwmStep_Dutycycle_ns = pwmT_ns / ARR;						// 计算PWM占空比步幅，单位ns
 	pwmDutyCycle_ns = fmap(pwmDutyCycle, 0, 100, 0, pwmT_ns);	// 映射0-100%到0-pwmT_ns
-//	pwmDutyCycle_ns = pwmDutyCycle_ns - fmod(pwmDutyCycle_ns, pwmStep_Dutycycle_ns);	// 对浮点型进行取模运算
+	pwmDutyCycle_ns = pwmDutyCycle_ns - fmod(pwmDutyCycle_ns, pwmStep_Dutycycle_ns);	// 对浮点型进行取模运算
 	pwmDutyCycle = fmap(pwmDutyCycle_ns, 0, pwmT_ns, 0, 100);
 
 	/* 计算有效范围内的CCR */
