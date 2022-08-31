@@ -23,3 +23,13 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 #endif
 }
 #endif
+
+
+#ifdef HAL_LPTIM_MODULE_ENABLED
+/* 比较匹配中断回调函数 */
+void HAL_LPTIM_CompareMatchCallback(LPTIM_HandleTypeDef *hlptim){
+#ifdef EN_BSP_LPTIM_TIME_OUT
+	bsp_lptim_timeOut_LPTIM_CompareMatchCallback(hlptim);
+#endif
+}
+#endif

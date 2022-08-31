@@ -124,7 +124,7 @@ pwmSet_InfoTypeDef bsp_LPTIMx_PWM_Set(
 	pwmSetInfo.pwmStep_Dutycycle = fmap(pwmStep_Dutycycle_ns, 0, pwmT_ns, 0, 100);
 	pwmSetInfo.pwm_Frequency = pwmFrequency_float;
 
-	/* 更新LPTIMx要修改的的寄存器 */
+	/* 更新LPTIMx要修改的寄存器 */
 	// ARR
 	__HAL_LPTIM_AUTORELOAD_SET(hlptim, ARR - 1);
 	// CMP
