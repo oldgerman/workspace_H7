@@ -106,8 +106,8 @@ static void PrintfHelp(void)
 	printf("*************************************************************\n\r");
 	printf("BDMA应用之控制任意IO做PWM和脉冲数控制:\r\n");
 	printf("BDMA请求生成信号 为LPTIM2 ，LPTIM2时钟源频率：100MHz，默认PWM频率1KHz，占空比50%%\r\n");
-	printf("BDMA + LPTIM2 控制的IO为PE0，需要使用示波器测量");
-	printf("LPTIM本身输出的PWM引脚为PB13（虽然没有必要让LPTIM2 生成的PWM输出到io，但还是启用以方便测试）");
+	printf("BDMA + LPTIM2 控制的IO为PE0，需要使用示波器测量\r\n");
+	printf("LPTIM本身输出的PWM引脚为PB13（虽然没有必要让LPTIM2 生成的PWM输出到io，但还是启用以方便测试）\r\n");
 	printf("操作提示:\r\n");
 	printf("1. KEY A 长按或连续长按，以2倍增量修改LPTIM2 pwm频率，短按以应用PWM修改，并打开PWM\r\n");
 	printf("2. KEY B 长按或连续长按以10%%增量修改LPTIM2 pwm占空比，短按关闭PWM\r\n");
