@@ -2,7 +2,7 @@
  * bsp_lptim_wkup.c
  *
  *  Created on: Aug 31, 2022
- *      Author: PSA
+ *      Author: OldGerman
  */
 
 

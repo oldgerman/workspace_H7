@@ -48,7 +48,7 @@ HAL_StatusTypeDef bsp_TIMx_PWM_En(TIM_HandleTypeDef* htim, uint32_t Channel, boo
  * @param  Channel:				tim的通道
  * @param  pwmFrequency: 		pwm频率，  范围 1 ~ timBusCLK	单位: Hz
  * @param  pwmDutyCycle: 		pwm占空比，范围 0.0... ~ 100.0...，	单位: %
- * @retval pwmSet_InfoTypeDef 	经计算后的实际情况
+ * @retval pwmSet_InfoTypeDef 	经计算后的情况
  */
 pwmSet_InfoTypeDef bsp_TIMx_PWM_Set(
 		TIM_HandleTypeDef* htim,
@@ -56,8 +56,6 @@ pwmSet_InfoTypeDef bsp_TIMx_PWM_Set(
 		uint32_t pwmFrequency,
 		float pwmDutyCycle)
 {
-	/* 关闭PWM */
-	HAL_TIM_PWM_Stop(htim, Channel);
 	/* 确定定时器的时钟源频率，以及定时器是16bit还是32bit的 */
 	uint32_t timBusCLK;						//	htim所挂在总线的时钟频率：单位: Hz
 	TIM_TypeDef* TIMx = htim->Instance;
@@ -87,6 +85,14 @@ pwmSet_InfoTypeDef bsp_TIMx_PWM_Set(
 	float pwmT_ns = 0;								// stm32 float: -2,147,483,648 ~ 2,147,483,647
 	float pwmStep_Dutycycle_ns = 0;
 	float pwmDutyCycle_ns = 0;
+
+	/* 关闭PWM */
+	if(HAL_TIM_PWM_Stop(htim, Channel) != HAL_OK){
+		pwmSetInfo.hal_Status = HAL_ERROR;
+		return pwmSetInfo;
+	}
+	else
+		pwmSetInfo.hal_Status = HAL_OK;
 
 	/*
 	 * 下列计算时暂时不减去1，最后设置时才减去1

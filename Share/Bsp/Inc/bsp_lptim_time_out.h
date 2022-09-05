@@ -2,7 +2,7 @@
  * bsp_lptim_wkup.h
  *
  *  Created on: Aug 31, 2022
- *      Author: PSA
+ *      Author: OldGerman
  *
  *  @Notice 需要事先在CubeMX中选择一个LPTIM（仅支持LPTIM1）
  *  		并在CubeMX时钟树中配置该LPTIM的时钟源为LSI或LSE，还要勾选LPTIM的NVIC中断，优先级不必太高，其他参数默认

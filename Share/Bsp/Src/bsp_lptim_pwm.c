@@ -64,7 +64,7 @@ HAL_StatusTypeDef bsp_LPTIMx_PWM_En(LPTIM_HandleTypeDef *hlptim, bool enable){
  * @param  LptimClockFreq:		lptim的时钟源频率，单位Hz （这个可以在CubeMX的时钟树配置并看到频率，因为从hlptim获取LPTIMx时钟源频率很麻烦，所以麻烦你一下~）
  * @param  pwmFrequency: 		pwm频率，  范围 1 ~ LptimClockFreq	单位: Hz
  * @param  pwmDutyCycle: 		pwm占空比，范围 0.0... ~ 100.0...，	单位: %
- * @retval pwmSet_InfoTypeDef 	经计算后的实际情况
+ * @retval pwmSet_InfoTypeDef 	经计算后的情况
  */
 pwmSet_InfoTypeDef bsp_LPTIMx_PWM_Set(
 		LPTIM_HandleTypeDef *hlptim,
@@ -72,8 +72,6 @@ pwmSet_InfoTypeDef bsp_LPTIMx_PWM_Set(
 		uint32_t pwmFrequency,
 		float pwmDutyCycle)
 {
-	/* 关闭PWM后进行寄存器配置，实测若不关闭会产生设定值异常（似乎是访问冲突） */
-	HAL_LPTIM_PWM_Stop(hlptim);
 	/* 确定定时器位数 */
 	uint32_t lptim_count_max = 0xffff;				// 16bit  0 ~ 65535
 
@@ -88,6 +86,14 @@ pwmSet_InfoTypeDef bsp_LPTIMx_PWM_Set(
 	float pwmT_ns = 0;								// stm32 float: -2,147,483,648 ~ 2,147,483,647
 	float pwmStep_Dutycycle_ns = 0;
 	float pwmDutyCycle_ns = 0;
+
+	/* 关闭PWM后进行寄存器配置，实测若不关闭会产生设定值异常（似乎是访问冲突） */
+	if(HAL_LPTIM_PWM_Stop(hlptim) != HAL_OK){
+		pwmSetInfo.hal_Status = HAL_ERROR;
+		return pwmSetInfo;
+	}
+	else
+		pwmSetInfo.hal_Status = HAL_OK;
 
 	/*
 	 * 下列计算时暂时不减去1，最后设置时才减去1

@@ -6,7 +6,7 @@
  */
 
 #include "bsp_config.h"
-#if EN_BSP_TEMPLATE
+#ifdef EN_BSP_TEMPLATE
 #include "bsp_template.h"
 
 
