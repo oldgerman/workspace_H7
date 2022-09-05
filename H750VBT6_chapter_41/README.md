@@ -127,7 +127,7 @@ B
 
 ### BDMA写入BSSR寄存器是否会干扰同一GPIO组的其他引脚？
 
-默认LPTIM2+BDMA作用的GPIO是PE0，与开发板现有的GPIO组引脚不存在交集
+默认LPTIM2+BDMA作用的GPIO是PE0，与本例程开发板已使用的引脚所在的GPIO组不存在交集
 
 现在将作用的引脚改为GPIOC组的PC1，同时TIM6的中断控制了PC3的LRGB_G指示灯以20Hz闪烁指示系统运行，那么BDMA写入BSSR寄存器对PC1的电平修改会干扰PC3的电平嘛，答案是不会的：
 
