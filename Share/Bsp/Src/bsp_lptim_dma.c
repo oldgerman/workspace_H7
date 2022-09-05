@@ -1,5 +1,5 @@
 /*
- * bsp_tim_dma.c
+ * bsp_lptim_dma.c
  *
  *  Created on: Sep 4, 2022
  *      Author: OldGerman
