@@ -8,7 +8,6 @@
 #include "bsp_config.h"
 #ifdef EN_BSP_TIM_DMA
 #include "bsp.h"
-#include "bsp_tim_dma.h"
 
 /**
  * @brief  单独设置DMA，双缓冲中断模式
@@ -36,18 +35,7 @@ HAL_StatusTypeDef bsp_Tim_DMA_DMA_Set(
 	status += HAL_DMAEx_EnableMuxRequestGenerator (hdma);
 
 	/* 启动DMA双缓冲传输，若不使能DMA请求发生器，则DMA无法开始传输 */
-    /*
-        1、此函数会开启DMA的TC，TE和DME中断
-        2、如果用户配置了回调函数DMA_Handle.XferHalfCpltCallback，那么函数HAL_DMA_Init会开启半传输完成中断。
-        3、如果用户使用了DMAMUX的同步模式，此函数会开启同步溢出中断。
-        4、如果用户使用了DMAMUX的请求发生器，此函数会开始请求发生器溢出中断。
-    */
 	status += HAL_DMAEx_MultiBufferStart_IT(hdma, SrcAddress, DstAddress, SecondMemAddress, DataLength);
-
-    /* 用不到的中断可以直接关闭 */
-    //DMA1_Stream1->CR &= ~DMA_IT_DME;
-    //DMA1_Stream1->CR &= ~DMA_IT_TE;
-    //DMAMUX1_RequestGenerator0->RGCR &= ~DMAMUX_RGxCR_OIE;
 
 	return status;
 }
@@ -56,7 +44,7 @@ HAL_StatusTypeDef bsp_Tim_DMA_DMA_Set(
  * @brief  单独设置PWM，占空比建议固定为50%
  * @param  htim					htim句柄指针
  * @param  Channel:				tim的通道
- * @param  pwmFrequency 		pwm频率，  范围 1 ~ LptimClockFreq	单位: Hz
+ * @param  pwmFrequency 		pwm频率，  范围 1 ~ timBusCLK	单位: Hz
  * @param  pwmDutyCycle  		pwm占空比，范围 0.0... ~ 100.0...，	单位: %
  * @retval pwmSet_InfoTypeDef 	经计算后的情况
  */
@@ -66,14 +54,14 @@ pwmSet_InfoTypeDef bsp_Tim_DMA_PWM_Set(
 		uint32_t pwmFrequency,
 		float pwmDutyCycle)
 {
-	/* 配置LPTIM触发DMAMUX
-	 * 占空比建议固定为50%，方便使用数组合成LPTIM PWM 1/2 周期整数倍数的GPIO脉冲
+	/* 配置TIM触发DMAMUX
+	 * 占空比建议固定为50%，方便使用数组合成TIM PWM 1/2 周期整数倍数的GPIO脉冲
 	 */
 	return bsp_TIMx_PWM_Set(htim, Channel, pwmFrequency, pwmDutyCycle);
 }
 
 /**
- * @brief  打开或关闭LPTIM以开关DMA PWM，仅通过开关LPTIM PWM就行
+ * @brief  打开或关闭TIM以开关DMA PWM，仅通过开关TIM PWM就行
  * @param  htim:				htim句柄指针
  * @param  Channel:				tim的通道
  * @param  enable:				true:打开对应通道的pwm; false:关闭对应通道的pwm
