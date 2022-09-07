@@ -22,18 +22,19 @@
  *  		方向：内存到外设
  *  		优先级：低
  *  		----------
- *  		DMA requestSettings：
+ *  		DMA Request Settings：
  *  		循环模式：打开
  *  		地址自增：外设禁止自增，内存使能自增
  *  		数据宽度：源数据，目标数据都是 Word宽度(32bit)
  *  		----------
- *  		DMA request Generator设置
+ *  		DMA Request Generator Settings：
  *  		请求生成信号：LPTIM2 OUTPUT
  *  		信号极性：双沿触发
  *  		请求数量：1	（指信号触发DMA请求发生器后，进行1次DMA传输）
  *  		----------
- *  	3.NVIC开启BDMA全局中断，不开启LPTIM2中断，因为要在传输半满和完成中断中修改双缓冲区的其中一半的数据以控制PWM脉冲
- *  	4.MPU设置中，需要挑选一个SRAM区存放任意PWM波形数据，且负责这部分内存的Cache要配置为Write through, read allocate，no write allocate
+ *  	3.NVIC开启DMA全局中断，不开启LPTIM2中断，因为要在传输半满和完成中断中修改双缓冲区的其中一半的数据以控制PWM脉冲
+ *  	4.MPU设置中，需要挑选一个SRAM区存放任意PWM波形数据，且负责这部分内存的Cache要配置为
+ *  		Write through, read allocate，no write allocate，并且要保证DMA能访问这个域的SRAM
  *  		备注：使用安富莱v7 41.2.3节的方法1，以保证写入的PWM波形数据能立即更新到SRAM区里
  *  	5.ld文件需要在Section段新建一个段运行域选择上面运行的SRAM，加载域选择FLASH，段名字可以根据pwm的数据取名（需要地址对齐嘛？）
  *  	6.pwm波形数据全局变量定义声明时，使用__artribute__指定该数据对象到上一条新建的section段里
@@ -68,7 +69,7 @@
 #ifndef BSP_INC_BSP_LPTIM_DMA_H_
 #define BSP_INC_BSP_LPTIM_DMA_H_
 
-void bsp_Lptim_DMA_convertLevelToBSRR(uint8_t *ptrBitArray, uint32_t bitArrayLengthInByte, uint32_t* ptrBSRRLArray, uint16_t GPIO_Pin);
+#include "bsp_functions.h"	//提供 bsp_convertLevelToBSRR()
 
 HAL_StatusTypeDef bsp_Lptim_DMA_DMA_Set(
 		DMA_HandleTypeDef *hdma, uint32_t SrcAddress, uint32_t DstAddress, uint32_t DataLength,

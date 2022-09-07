@@ -65,7 +65,7 @@ void bsp_Lptim_DMA_PWM_XferCpltCallback(DMA_HandleTypeDef * hdma){
        3、不配置MPU的话，也可以通过Cahce的函数SCB_CleanDCache_by_Addr做Clean操作。
     */
 	if(hdma == &hdma_bdma_generator0){
-		bsp_Lptim_DMA_convertLevelToBSRR(&bitLVL[1], 1, &IO_Toggle[8], LPTIM_DMA_PWM_Pin);
+		bsp_convertLevelToBSRR(&bitLVL[1], 1, &IO_Toggle[8], LPTIM_DMA_PWM_Pin);
 	}
 }
 
@@ -79,7 +79,7 @@ void bsp_Lptim_DMA_PWM_XferHalfCpltCallback(DMA_HandleTypeDef * hdma){
        3、不配置MPU的话，也可以通过Cahce的函数SCB_CleanDCache_by_Addr做Clean操作。
     */
 	if(hdma == &hdma_bdma_generator0){
-		bsp_Lptim_DMA_convertLevelToBSRR(&bitLVL[0], 1, &IO_Toggle[0], LPTIM_DMA_PWM_Pin);
+		bsp_convertLevelToBSRR(&bitLVL[0], 1, &IO_Toggle[0], LPTIM_DMA_PWM_Pin);
 	}
 }
 
@@ -155,7 +155,7 @@ void setup(){
 
 	bsp_tim6_enable_IT();	//指示系统正在运行
 
-	bsp_Lptim_DMA_convertLevelToBSRR(bitLVL, bitLVL_NUM, IO_Toggle, LPTIM_DMA_PWM_Pin);
+	bsp_convertLevelToBSRR(bitLVL, bitLVL_NUM, IO_Toggle, LPTIM_DMA_PWM_Pin);
 	bsp_Lptim_DMA_DMA_Set(
 			&hdma_bdma_generator0, (uint32_t)IO_Toggle, (uint32_t)&LPTIM_DMA_PWM_GPIO_Port->BSRR, sizeof(IO_Toggle) / sizeof(IO_Toggle[0]),
 			bsp_Lptim_DMA_PWM_XferCpltCallback,

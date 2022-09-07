@@ -13,6 +13,8 @@
 #ifndef BSP_INC_BSP_LPTIM_TIME_OUT_H_
 #define BSP_INC_BSP_LPTIM_TIME_OUT_H_
 
+#include "bsp_functions.h"
+
 HAL_StatusTypeDef bsp_LPTIMx_TimeOut_En(bool enable);
 uint32_t bsp_LPTIMx_TimeOut_Set(
 		LPTIM_HandleTypeDef *hlptim,

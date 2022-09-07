@@ -9,11 +9,12 @@
 #define BSP_INC_BSP_TIMX_PWM_H_
 
 #include "bsp_data structure.h"
+#include "bsp_functions.h"
 
 HAL_StatusTypeDef bsp_TIMx_PWM_En(TIM_HandleTypeDef* htim, uint32_t Channel, bool enable);
 pwmSet_InfoTypeDef bsp_TIMx_PWM_Set(
-		TIM_HandleTypeDef*
-		htim, uint32_t Channel,
-		uint32_t timBusCLK,
+		TIM_HandleTypeDef* htim,
+		uint32_t Channel,
+		uint32_t pwmFrequency,
 		float pwmDutyCycle);
 #endif /* BSP_INC_BSP_TIMX_PWM_H_ */

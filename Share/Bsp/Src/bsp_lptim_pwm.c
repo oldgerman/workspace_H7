@@ -8,36 +8,6 @@
 #ifdef EN_BSP_LPTIM_PWM
 #include "bsp.h"
 
-//返回2的N次幂
-static uint32_t twoNthPower(uint8_t Nth){
-	return 1 << Nth;
-}
-
-//返回某个数（2 N次幂）的N
-static uint8_t twoNthPowerOfNth(uint32_t num){
-	uint8_t Nth = 0;
-	for(; Nth < 32; Nth++){
-		if((num >> Nth) == 0){
-			break;
-		}
-	}
-	return Nth;
-}
-
-/**
-  * @brief  将一个数字(浮点型)从一个范围重新映射到另一个区域
-  * @param  x: 要映射的数字
-  * @param  in_min: 值的当前范围的下界
-  * @param  in_max: 值的当前范围的上界
-  * @param  out_min: 值的目标范围的下界
-  * @param  out_max: 值目标范围的上界
-  * @retval 映射的值(double)
-  */
-static double fmap(double x, double in_min, double in_max, double out_min, double out_max)
-{
-    return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
-}
-
 /**
  * @brief  开启或关闭tim pwm的通道
  * @param  htim:				htim句柄指针

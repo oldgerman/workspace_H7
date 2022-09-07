@@ -16,22 +16,6 @@ static LPTIM_HandleTypeDef *hlptimx = NULL;
 /* 保存 TIM定时中断到后执行的回调函数指针 */
 static void (*s_LPTIM_TimeOut_CallBack)(void);
 
-//返回2的N次幂
-static uint32_t twoNthPower(uint8_t Nth){
-	return 1 << Nth;
-}
-
-//返回某个数（2 N次幂）的N
-static uint8_t twoNthPowerOfNth(uint32_t num){
-	uint8_t Nth = 0;
-	for(; Nth < 32; Nth++){
-		if((num >> Nth) == 0){
-			break;
-		}
-	}
-	return Nth;
-}
-
 /**
  * @brief  开启或关闭hlptimx的TimeOut_IT
  * @param  enable				true:打开; false:关闭
