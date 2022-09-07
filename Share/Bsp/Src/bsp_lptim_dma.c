@@ -123,6 +123,9 @@ void bsp_Lptim_DMA_PWM_XferCpltCallback(DMA_HandleTypeDef * hdma){
        2、变量所在的SRAM区已经通过MPU配置为WT模式，更新变量IO_Toggle会立即写入。
        3、不配置MPU的话，也可以通过Cahce的函数SCB_CleanDCache_by_Addr做Clean操作。
     */
+	if(hdma == &hdma_bdma_generator0){
+
+	}
 }
 
 void bsp_Lptim_DMA_PWM_XferHalfCpltCallback(DMA_HandleTypeDef * hdma){
@@ -134,6 +137,9 @@ void bsp_Lptim_DMA_PWM_XferHalfCpltCallback(DMA_HandleTypeDef * hdma){
        2、变量所在的SRAM区已经通过MPU配置为WT模式，更新变量IO_Toggle会立即写入。
        3、不配置MPU的话，也可以通过Cahce的函数SCB_CleanDCache_by_Addr做Clean操作。
     */
+	if(hdma == &hdma_bdma_generator0){
+
+	}
 }
 #endif
 
