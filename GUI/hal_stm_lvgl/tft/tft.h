@@ -13,8 +13,8 @@ extern "C" {
  *      INCLUDES
  *********************/
 #include <stdint.h>
-#include "../Share/Libraries/lvgl/src/misc/lv_color.h"
-#include "../Share/Libraries/lvgl/src/misc/lv_area.h"
+#include "../GUI/lvgl/src/misc/lv_color.h"
+#include "../GUI/lvgl/src/misc/lv_area.h"
 
 /*********************
  *      DEFINES

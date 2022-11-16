@@ -7,7 +7,7 @@
  *      INCLUDES
  *********************/
 #include "lv_conf.h"
-#include "../Share/Libraries/lvgl/lvgl.h"
+#include "../GUI/lvgl/lvgl.h"
 #include <string.h>
 #include <stdlib.h>
 

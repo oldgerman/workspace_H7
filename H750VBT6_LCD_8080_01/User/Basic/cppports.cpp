@@ -5,6 +5,13 @@
  *      Author: OldGerman
  */
 
+//#include ”/home/wit/code/xx.h”  //Linux下的绝对路径
+//#include “F:/litao/code/xx.h"   //Windows下的绝对路径
+//#include ”../lcd/lcd.h”         //相对路径，..表示当前目录的上一层目录
+//#include ”./lcd.h”             //相对路径，.表示当前目录
+//#include ”lcd.h”               //相对路径，当前文件所在的目录
+
+
 #include "cppports.h"
 #include "bsp.h"
 
@@ -16,10 +23,10 @@ extern "C" {
 #include "img1.h"
 #include "dma2d.h"
 
-#include "../Share/Libraries/lvgl/lvgl.h"
+#include "../GUI/lvgl/lvgl.h"
+#include "../GUI/lvgl/demos/lv_demos.h"
 #include "hal_stm_lvgl/tft/tft.h"
 #include "hal_stm_lvgl/touchpad/touchpad.h"
-#include "../Share/Libraries/lvgl/demos/lv_demos.h"
 }
 
 //	static void MIX_Update();
