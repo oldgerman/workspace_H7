@@ -2,20 +2,19 @@
  * @file indev.c
  *
  */
-#if 0
 /*********************
  *      INCLUDES
  *********************/
+#include "touchpad.h"
+#include "bsp.h"
 #include "hal_stm_lvgl/tft/tft.h"
 #include "lvgl/src/hal/lv_hal.h"
-
-#include "stm32h7b3i_discovery.h"
-#include "stm32h7b3i_discovery_ts.h"
-#include "stm32h7xx.h"
+#include "ft6x36_reg.h"
+#include "bsp_touch_port.h"
 /*********************
  *      DEFINES
  *********************/
-#define TS_INSTANCE		(0)
+
 /**********************
  *      TYPEDEFS
  **********************/
@@ -28,7 +27,7 @@ static void touchpad_read(lv_indev_drv_t *drv, lv_indev_data_t *data);
 /**********************
  *  STATIC VARIABLES
  **********************/
-static TS_State_t  TS_State;
+//static ft6x36_td_status_t  td_status;	// 检测到有效的触摸点个数
 
 /**********************
  *      MACROS
@@ -43,13 +42,13 @@ static TS_State_t  TS_State;
  */
 void touchpad_init(void)
 {
-	TS_Init_t hTS;
-	hTS.Width = TFT_HOR_RES;
-	hTS.Height = TFT_VER_RES;
-	hTS.Orientation = TS_SWAP_XY;
-	hTS.Accuracy = 0;
-
-    BSP_TS_Init(TS_INSTANCE, &hTS);
+//	TS_Init_t hTS;
+//	hTS.Width = TFT_HOR_RES;
+//	hTS.Height = TFT_VER_RES;
+//	hTS.Orientation = TS_SWAP_XY;
+//	hTS.Accuracy = 0;
+//
+//    BSP_TS_Init(TS_INSTANCE, &hTS);
 
     static lv_indev_drv_t indev_drv;                /*Descriptor of an input device driver*/
     lv_indev_drv_init(&indev_drv);                  /*Basic initialization*/
@@ -57,6 +56,7 @@ void touchpad_init(void)
     indev_drv.read_cb = touchpad_read;
 
     lv_indev_drv_register(&indev_drv);
+
 }
 
 /**********************
@@ -75,13 +75,17 @@ static void touchpad_read(lv_indev_drv_t *indev, lv_indev_data_t *data)
     /* Read your touchpad */
     static int16_t last_x = 0;
     static int16_t last_y = 0;
-
-    BSP_TS_GetState(TS_INSTANCE, &TS_State);  /*Get touch state*/
-
-    if(TS_State.TouchDetected)
+    touch_update();
+    if(ft6x36_reg_td.data.td_status.number_of_touch_points)
     {
-            data->point.x = TS_State.TouchX;
-            data->point.y = TS_State.TouchY;
+    		/* FT6236 X坐标 0~255+62，317很接近320 */
+            data->point.x =
+            		(((uint16_t)ft6x36_reg_td.data.p1_xh.touch_x_position_h) << 8) |
+					ft6x36_reg_td.data.p1_xl.touch_x_position_l;
+            /* FT6236 Y坐标 0~255+207，462不满480, 菜单应该需要实现一个电容触摸校准，然后这里用map()映射一下校准*/
+            data->point.y =
+            		(((uint16_t)ft6x36_reg_td.data.p1_yh.touch_y_position_h) << 8) |
+					ft6x36_reg_td.data.p1_yl.touch_y_position_l;
             last_x = data->point.x;
             last_y = data->point.y;
             data->state = LV_INDEV_STATE_PRESSED;
@@ -93,4 +97,3 @@ static void touchpad_read(lv_indev_drv_t *indev, lv_indev_data_t *data)
             data->state = LV_INDEV_STATE_RELEASED;
     }
 }
-#endif

@@ -27,6 +27,7 @@ extern "C" {
 #include "../GUI/lvgl/demos/lv_demos.h"
 #include "hal_stm_lvgl/tft/tft.h"
 #include "hal_stm_lvgl/touchpad/touchpad.h"
+
 }
 
 //	static void MIX_Update();
@@ -187,18 +188,22 @@ void loop(){
 
     lv_init();
     tft_init();
-//    touchpad_init();
+    touchpad_init();
 
-//    lv_demo_benchmark();
+    //    lv_demo_benchmark();
     lv_demo_music();
-//    lv_demo_stress();
-//    lv_demo_widgets();
+    //    lv_demo_stress();
+    //    lv_demo_widgets();
 
     while (1)
     {
-//     checkflush();
-//   	 HAL_Delay(5);
-   	 lv_task_handler();
+    	//     checkflush();
+    	//   	 HAL_Delay(5);
+    	lv_task_handler();
+//    	static uint32_t oldtime = HAL_GetTick();
+//    	if(waitTime(&oldtime, 200)) {
+//    		touch_update();
+//    	}
     }
 #endif
 }

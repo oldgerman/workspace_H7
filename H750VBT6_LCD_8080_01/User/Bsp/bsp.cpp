@@ -15,6 +15,7 @@ void bsp_Init(){
 
 //	CSP_QSPI_EnableMemoryMappedMode();
 	LCD_InitHard();
+	touch_init();
 //	TOUCH_InitHard();
 //	bsp_DelayMS(200);
 //	LCD_SetBackLight(255);

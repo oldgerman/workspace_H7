@@ -13,8 +13,6 @@
 
 #include "tft.h"
 #include "stm32h7xx.h"
-
-
 #include "bsp.h"
 #include "dma2d.h"
 

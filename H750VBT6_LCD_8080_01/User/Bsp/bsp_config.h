@@ -15,4 +15,6 @@
 #define EN_BSP_TIMX_PWM
 #define EN_BSP_TIMER
 #define EN_BSP_QSPI_W25QXX
+
+#define EN_BSP_FT6x36
 #endif /* _BSP_CONFOG_H */

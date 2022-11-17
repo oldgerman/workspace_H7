@@ -2,16 +2,15 @@
  * @file indev.h
  * 
  */
-#if 0
 #ifndef INDEV_H
 #define INDEV_H
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 /*********************
  *      INCLUDES
  *********************/
 #include <stdbool.h>
-#include <stdint.h>
-
 /*********************
  *      DEFINES
  *********************/
@@ -28,6 +27,7 @@ void touchpad_init(void);
 /**********************
  *      MACROS
  **********************/
-
+#ifdef __cplusplus
+}
 #endif
 #endif

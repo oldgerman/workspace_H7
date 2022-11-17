@@ -40,6 +40,7 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_LCD_8080_01/GUI/Images}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_LCD_8080_01/GUI}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_LCD_8080_01/GUI/lvgl}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_LCD_8080_01/GUI/Driver/FT6236/inc}&quot;"/>
 								</option>
 								<inputType id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler.input.941236922" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler.input"/>
 							</tool>
@@ -60,14 +61,13 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_LCD_8080_01/Share/Bsp/Inc}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_LCD_8080_01/User/Basic}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_LCD_8080_01/User/Bsp}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_LCD_8080_01/User/Bsp/Inc}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_LCD_8080_01/Share/Libraries/ButtonEvent}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_LCD_8080_01/User/Libraries/Lcd/Inc}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_LCD_8080_01/GUI/Driver/Lcd/Inc}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_LCD_8080_01/GUI/hal_stm_lvgl/tft}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_LCD_8080_01/GUI/Images}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_LCD_8080_01/GUI}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_LCD_8080_01/GUI/lvgl}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_LCD_8080_01/GUI/Driver/FT6236/inc}&quot;"/>
 								</option>
 								<inputType id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.input.c.1159842195" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.input.c"/>
 							</tool>
@@ -88,14 +88,13 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_LCD_8080_01/Share/Bsp/Inc}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_LCD_8080_01/User/Basic}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_LCD_8080_01/User/Bsp}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_LCD_8080_01/User/Bsp/Inc}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_LCD_8080_01/Share/Libraries/ButtonEvent}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_LCD_8080_01/User/Libraries/Lcd/Inc}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_LCD_8080_01/GUI/Driver/Lcd/Inc}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_LCD_8080_01/GUI/hal_stm_lvgl/tft}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_LCD_8080_01/GUI/Images}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_LCD_8080_01/GUI}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_LCD_8080_01/GUI/lvgl}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_LCD_8080_01/GUI/Driver/FT6236/inc}&quot;"/>
 								</option>
 								<inputType id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.cpp.compiler.input.cpp.412494339" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.cpp.compiler.input.cpp"/>
 							</tool>
@@ -163,6 +162,7 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_LCD_8080_01/GUI/Images}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_LCD_8080_01/GUI}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_LCD_8080_01/GUI/lvgl}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_LCD_8080_01/GUI/Driver/FT6236/inc}&quot;"/>
 								</option>
 								<inputType id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler.input.2122766719" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler.input"/>
 							</tool>
@@ -182,14 +182,13 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_LCD_8080_01/Share/Bsp/Inc}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_LCD_8080_01/User/Basic}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_LCD_8080_01/User/Bsp}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_LCD_8080_01/User/Bsp/Inc}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_LCD_8080_01/Share/Libraries/ButtonEvent}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_LCD_8080_01/User/Libraries/Lcd/Inc}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_LCD_8080_01/GUI/Driver/Lcd/Inc}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_LCD_8080_01/GUI/hal_stm_lvgl/tft}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_LCD_8080_01/GUI/Images}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_LCD_8080_01/GUI}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_LCD_8080_01/GUI/lvgl}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_LCD_8080_01/GUI/Driver/FT6236/inc}&quot;"/>
 								</option>
 								<inputType id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.input.c.1803422908" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.input.c"/>
 							</tool>
@@ -209,14 +208,13 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_LCD_8080_01/Share/Bsp/Inc}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_LCD_8080_01/User/Basic}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_LCD_8080_01/User/Bsp}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_LCD_8080_01/User/Bsp/Inc}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_LCD_8080_01/Share/Libraries/ButtonEvent}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_LCD_8080_01/User/Libraries/Lcd/Inc}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_LCD_8080_01/GUI/Driver/Lcd/Inc}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_LCD_8080_01/GUI/hal_stm_lvgl/tft}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_LCD_8080_01/GUI/Images}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_LCD_8080_01/GUI}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_LCD_8080_01/GUI/lvgl}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_LCD_8080_01/GUI/Driver/FT6236/inc}&quot;"/>
 								</option>
 								<inputType id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.cpp.compiler.input.cpp.1515180750" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.cpp.compiler.input.cpp"/>
 							</tool>

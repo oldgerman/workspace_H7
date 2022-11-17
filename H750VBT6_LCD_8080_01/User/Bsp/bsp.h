@@ -40,7 +40,8 @@ extern "C" {
 //#include "bsp_tft_lcd.h"
 #include "bsp_tft_port.h"
 #include "LCD_ILI9488.h"
-
+#include "bsp_touch_port.h"
+#include "ft6x36_reg.h"
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/

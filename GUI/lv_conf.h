@@ -691,7 +691,7 @@ e.g. "stm32f769xx.h" or "stm32f429xx.h"*/
 # define LV_DEMO_MUSIC_LANDSCAPE    0
 # define LV_DEMO_MUSIC_ROUND        0
 # define LV_DEMO_MUSIC_LARGE        0
-# define LV_DEMO_MUSIC_AUTO_PLAY    1
+# define LV_DEMO_MUSIC_AUTO_PLAY    0
 #endif
 
 /*--END OF LV_CONF_H--*/
