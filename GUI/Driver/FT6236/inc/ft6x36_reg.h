@@ -242,7 +242,7 @@ int32_t ft6x36_event_flag_get(ftdev_ctx_t *ctx, ft6x36_event_flag_t *val, uint8_
  *
  */
 
-#define FT6X36_REG_TH_GROUP				0x80U		/* R/W */	/* Threshold for touch detection, (ft5) The actual value will be 4 times of the register’s value. */ /* Default:280/4 */
+#define FT6X36_REG_TH_GROUP				0x80U		/* R/W */	/* Threshold for touch detection, (ft5) The actual value will be 4 times of the register’s value. */ /* Default:280/4? */
 /**
  * @ft5xxx
  * @{

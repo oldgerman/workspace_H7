@@ -62,7 +62,9 @@ void touchpad_init(void)
 /**********************
  *   STATIC FUNCTIONS
  **********************/
-
+uint16_t debug_tpy = 0;
+uint16_t debug_tpx = 0;
+uint16_t debug_tpy_map = 0;
 /**
  * Read an input device
  * @param indev_id id of the input device to read
@@ -83,9 +85,19 @@ static void touchpad_read(lv_indev_drv_t *indev, lv_indev_data_t *data)
             		(((uint16_t)ft6x36_reg_td.data.p1_xh.touch_x_position_h) << 8) |
 					ft6x36_reg_td.data.p1_xl.touch_x_position_l;
             /* FT6236 Y坐标 0~255+207，462不满480, 菜单应该需要实现一个电容触摸校准，然后这里用map()映射一下校准*/
-            data->point.y =
+            debug_tpx = data->point.x;
+
+            debug_tpy =
             		(((uint16_t)ft6x36_reg_td.data.p1_yh.touch_y_position_h) << 8) |
 					ft6x36_reg_td.data.p1_yl.touch_y_position_l;
+
+            data->point.y = fmap(
+            	(((uint16_t)ft6x36_reg_td.data.p1_yh.touch_y_position_h) << 8) |
+            							ft6x36_reg_td.data.p1_yl.touch_y_position_l,
+										0, 462, 0, 480);
+            debug_tpy_map = data->point.y;
+
+
             last_x = data->point.x;
             last_y = data->point.y;
             data->state = LV_INDEV_STATE_PRESSED;

@@ -2,7 +2,7 @@
  * bsp_touch_port.h
  *
  *  Created on: 2022年11月17日
- *      Author: PSA
+ *      Author: OldGerman
  */
 
 #ifndef DRIVER_FT6236_INC_BSP_TOUCH_PORT_H_
