@@ -14,7 +14,8 @@
 #define BSP_INC_BSP_LPTIM_TIME_OUT_H_
 
 #include "bsp_functions.h"
-
+#include "stm32h7xx_hal_conf.h"
+#ifdef HAL_LPTIM_MODULE_ENABLED
 HAL_StatusTypeDef bsp_LPTIMx_TimeOut_En(bool enable);
 uint32_t bsp_LPTIMx_TimeOut_Set(
 		LPTIM_HandleTypeDef *hlptim,
@@ -22,4 +23,5 @@ uint32_t bsp_LPTIMx_TimeOut_Set(
 		uint32_t time,
 		void (*pCallBack)(void));
 void bsp_lptim_timeOut_LPTIM_CompareMatchCallback(LPTIM_HandleTypeDef *hlptim);
+#endif
 #endif /* BSP_INC_BSP_LPTIM_TIME_OUT_H_ */

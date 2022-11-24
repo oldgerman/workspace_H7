@@ -70,7 +70,8 @@
 #define BSP_INC_BSP_LPTIM_DMA_H_
 
 #include "bsp_functions.h"	//提供 bsp_convertLevelToBSRR()
-
+#include "stm32h7xx_hal_conf.h"
+#ifdef HAL_LPTIM_MODULE_ENABLED
 HAL_StatusTypeDef bsp_Lptim_DMA_DMA_Set(
 		DMA_HandleTypeDef *hdma, uint32_t SrcAddress, uint32_t DstAddress, uint32_t DataLength,
 		void (*XferCpltCallback)(DMA_HandleTypeDef * hdma),
@@ -80,5 +81,5 @@ pwmSet_InfoTypeDef bsp_Lptim_DMA_PWM_Set(
 		LPTIM_HandleTypeDef *hlptim, uint32_t LptimClockFreq, uint32_t pwmFrequency, float pwmDutyCycle);
 
 HAL_StatusTypeDef bsp_Lptim_DMA_PWM_En(LPTIM_HandleTypeDef *hlptim, bool enable);
-
+#endif
 #endif /* BSP_INC_BSP_LPTIM_DMA_H_ */

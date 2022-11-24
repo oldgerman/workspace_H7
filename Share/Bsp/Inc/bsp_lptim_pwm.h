@@ -13,12 +13,13 @@
 
 #include "bsp_data structure.h"
 #include "bsp_functions.h"
-
+#include "stm32h7xx_hal_conf.h"
+#ifdef HAL_LPTIM_MODULE_ENABLED
 HAL_StatusTypeDef bsp_LPTIMx_PWM_En(LPTIM_HandleTypeDef *hlptim, bool enable);
 pwmSet_InfoTypeDef bsp_LPTIMx_PWM_Set(
 		LPTIM_HandleTypeDef *hlptim,
 		uint32_t LptimClockFreq,
 		uint32_t pwmFrequency,
 		float pwmDutyCycle);
-
+#endif
 #endif /* BSP_INC_BSP_LPTIM_PWM_H_ */

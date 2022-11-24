@@ -11,19 +11,20 @@
  */
 
 #ifdef HAL_TIM_MODULE_ENABLED
+
 void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef *htim){
 #ifdef EN_BSP_TIMER
 	bsp_Timer_TIM_OC_DelayElapsedCallback(htim);
 #endif
 }
 
-void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
+__weak void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 #ifdef EN_BSP_TIM6
 	bsp_tim6_TIM_PeriodElapsedCallback(htim);
 #endif
 }
-#endif
 
+#endif
 
 #ifdef HAL_LPTIM_MODULE_ENABLED
 /* 比较匹配中断回调函数 */
