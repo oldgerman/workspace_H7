@@ -40,6 +40,93 @@ typedef enum control_path_events_s {
 	SOFTAP_STOPPED
 } control_path_events_e;
 
+#if 1
+/* Possible operating modes are "STATION" or "SOFTAP" or "SOFTAP+STATION" */
+/* "SOFTAP+STATION" and "STATION+SOFTAP" are same */
+#ifndef INPUT__OPERATING_MODE
+#define INPUT__OPERATING_MODE             "SOFTAP+STATION"
+#endif
+
+/* Please refer commands.h for more details about below fields */
+#ifndef INPUT_STATION__SSID
+#define INPUT_STATION__SSID               "PDCN"
+#endif
+
+#ifndef INPUT_STATION_PASSWORD
+#define INPUT_STATION_PASSWORD            "1234567890"
+#endif
+
+#ifndef INPUT_STATION_BSSID
+#define INPUT_STATION_BSSID               ""
+#endif
+
+#ifndef INPUT_STATION_IS_WPA3_SUPPORTED
+#define INPUT_STATION_IS_WPA3_SUPPORTED   "no"
+#endif
+
+#ifndef INPUT_STATION_LISTEN_INTERVAL
+#define INPUT_STATION_LISTEN_INTERVAL     "3"
+#endif
+
+/* softap means, ESP will act as Access point */
+#ifndef INPUT_SOFTAP__SSID
+#define INPUT_SOFTAP__SSID                "MySoftAPName"
+#endif
+
+#ifndef INPUT_SOFTAP_PASSWORD
+#define INPUT_SOFTAP_PASSWORD             "MySoftAPPasswd"
+#endif
+
+/* Channel to be used on soft ap */
+#ifndef INPUT_SOFTAP_CHANNEL
+#define INPUT_SOFTAP_CHANNEL              "1"
+#endif
+
+#ifndef INPUT_SOFTAP_ENCRYPTION
+#define INPUT_SOFTAP_ENCRYPTION           "WPA2_PSK"
+#endif
+
+/* Software limit of Max clients attached to softAP. Max value possible is 10 */
+#ifndef INPUT_SOFTAP_MAX_CONN
+#define INPUT_SOFTAP_MAX_CONN             "4"
+#endif
+
+/* 0 -> visible */
+#ifndef INPUT_SOFTAP_SSID_HIDDEN
+#define INPUT_SOFTAP_SSID_HIDDEN          "no"
+#endif
+
+/* possible values, "HT20" "HT40" */
+#ifndef INPUT_SOFTAP_BANDWIDTH
+#define INPUT_SOFTAP_BANDWIDTH            "40"
+#endif
+
+
+/* periodically scan neighbouring APs */
+#ifndef INPUT_GET_AP_SCAN_LIST
+#define INPUT_GET_AP_SCAN_LIST            "yes"
+#endif
+
+/* 站模式主机的源 IP (IPv4) 地址 | stm32 station self ip */
+#ifndef INPUT_STATION_SRC_IP
+#define INPUT_STATION_SRC_IP              "192.168.101.32"	//默认值 "192.168.1.233", 用作Station 模式 STM32 IPv4 地址，修改为连接路由器的wifi局域网内的一个固定ip地址
+#endif
+
+/* stm32 station self ip */
+#ifndef INPUT_SOFTAP_SRC_IP
+#define INPUT_SOFTAP_SRC_IP              "192.168.2.1"		//softAP 模式，ESP32-C3 AP模式创建的局域网的网关地址
+#endif
+
+/* 主机连接到的 AP 的目标 IP (IPv4) 地址 | station - ARP destination ip */
+#ifndef INPUT_STATION_ARP_DEST_IP
+#define INPUT_STATION_ARP_DEST_IP         "192.168.101.1" //默认值 "192.168.1.11", ，Station 模式视为目标 IPv4 地址。这可以配置为您机器的 IPv4 地址
+#endif
+
+/* softap - ARP destination ip */
+#ifndef INPUT_SOFTAP_ARP_DEST_IP			//softAP 模式，目前仅支持静态 IPv4 地址
+#define INPUT_SOFTAP_ARP_DEST_IP          "192.168.2.22"	// ESP32 AP模式下，电脑连ESP32的WIFI时，电脑要配置的静态IP地址，要与ESP32的WIFI在同一个子网内
+#endif
+#else	/* Default Value */
 /* Possible operating modes are "STATION" or "SOFTAP" or "SOFTAP+STATION" */
 /* "SOFTAP+STATION" and "STATION+SOFTAP" are same */
 #ifndef INPUT__OPERATING_MODE
@@ -125,7 +212,7 @@ typedef enum control_path_events_s {
 #ifndef INPUT_SOFTAP_ARP_DEST_IP
 #define INPUT_SOFTAP_ARP_DEST_IP          "192.168.2.22"
 #endif
-
+#endif
 
 #define WIFI_MAX_STR_LEN                  19
 

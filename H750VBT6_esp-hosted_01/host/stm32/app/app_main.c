@@ -358,7 +358,7 @@ static void arping_task(void const *arg)
 		if(ap_handle)
 			send_arp_req(ap_handle, get_self_mac_softap(), &softap_ip, dst_mac_bytes, &softap_dest_ip);
 
-		printf("Hello World\n\r");
+//		printf("Hello World\n\r");//debug测试用
 
 		osDelay(1000);
 	}
