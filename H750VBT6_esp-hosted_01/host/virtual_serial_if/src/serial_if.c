@@ -40,6 +40,16 @@ struct serial_drv_handle_t* serial_handle = NULL;
  *           0x02 : for data
  * length is respective value field's data length in 16 bits
  * value is actual data to be transferred
+ *
+ * 写入串口驱动文件的数据，即 `SERIAL_IF_FILE` （在 adapter.h 中）
+ * 在 TLV 即类型长度值格式中，在主机和 ESP32 之间传输数据
+ *  | type | length | value |
+ * Types 为
+ * 		    0x01：用于端点名称
+ * 			0x02：用于数据
+ * length 为 相应值字段的 16 位数据长度
+ * value  为 要传输的实际数据
+ * 备注：tlv报文的格式： [帧头] [Tag] [Length] [Value] [CRC校验和]
  */
 
 uint16_t compose_tlv(uint8_t* buf, uint8_t* data, uint16_t data_length)
