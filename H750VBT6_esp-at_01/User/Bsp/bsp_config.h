@@ -17,4 +17,9 @@
 //#define EN_BSP_LPTIM_PWM
 //#define EN_BSP_LPTIM_TIME_OUT
 //#define EN_BSP_LPTIM_DMA
+
+//#define UART1_BAUD		115200
+//#define UART1_TX_BUF_SIZE	8*1024
+//#define UART1_RX_BUF_SIZE	2*1024
+
 #endif /* _BSP_CONFOG_H */

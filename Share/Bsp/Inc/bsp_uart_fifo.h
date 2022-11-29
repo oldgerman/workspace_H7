@@ -43,7 +43,7 @@
 
 #ifndef _BSP_USART_FIFO_H_
 #define _BSP_USART_FIFO_H_
-
+#include "bsp_config.h"
 
 #define	UART1_FIFO_EN	1
 #define	UART2_FIFO_EN	0
@@ -77,9 +77,15 @@ typedef enum
 
 /* 定义串口波特率和FIFO缓冲区大小，分为发送缓冲区和接收缓冲区, 支持全双工 */
 #if UART1_FIFO_EN == 1
+	#ifndef UART1_BAUD
 	#define UART1_BAUD			115200
+    #endif
+	#ifndef UART1_TX_BUF_SIZE
 	#define UART1_TX_BUF_SIZE	1*1024
+	#endif
+	#ifndef UART1_RX_BUF_SIZE
 	#define UART1_RX_BUF_SIZE	1*1024
+	#endif
 #endif
 
 #if UART2_FIFO_EN == 1

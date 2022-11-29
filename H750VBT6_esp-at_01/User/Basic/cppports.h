@@ -15,8 +15,9 @@ extern "C" {
 /* 私有包含 Private includes -------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "main.h"
-#include "bsp.h"
-#include "ButtonEvent.h"
+//#include "bsp.h"
+//#include "ButtonEvent.h"
+//#include "FreeRTOS.h"
 /* USER CODE END Includes */
 
 /* 导出类型 Exported types ---------------------------------------------------*/
@@ -44,6 +45,8 @@ void btA_CLICKED_func();
 void btB_CLICKED_func();
 void btA_LONG_PRESSED_func();
 void btB_LONG_PRESSED_func();
+
+
 /* USER CODE END EFP */
 
 /* 私有定义 Private defines --------------------------------------------------*/

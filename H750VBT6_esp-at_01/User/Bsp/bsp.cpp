@@ -9,8 +9,8 @@
 
 void bsp_Init(){
 //	bsp_InitUart();
-//	bsp_tim6_Init();
-	bsp_Button_Init();
+////	bsp_tim6_Init();
+//	bsp_Button_Init();
 }
 
 bool firstPwrOffToRUN = true;
@@ -28,12 +28,12 @@ void preSetupInit(void){
  * @param 等待时间
  * @return bool
  */
-bool waitTime(uint32_t *timeOld, uint32_t wait) {
-	uint32_t time = HAL_GetTick();
-	if ((time - *timeOld) > wait) {	//250决定按键长按的延迟步幅
-		*timeOld = time;
-		return true;
-	}
-	return false;
-}
+//bool waitTime(uint32_t *timeOld, uint32_t wait) {
+//	uint32_t time = HAL_GetTick();
+//	if ((time - *timeOld) > wait) {	//250决定按键长按的延迟步幅
+//		*timeOld = time;
+//		return true;
+//	}
+//	return false;
+//}
 
