@@ -1,12 +1,16 @@
 ## HAL库、H750VBT6、USART、DMA、收不定长数据、空闲线路中断、环形缓冲区、发送数据
 
+## 简介
+
 工程名称：H750VBT6_usart_rx_idle_line_irq_ringbuff_tx_03
 
 - 完全使用HAL库API，无需修改stm32h7xx_it.c中的IRQHandler函数
 
-- 开启MPU，开启Cache，但 MPU 将 SRAM1、SRAM2、SRAM3 共计288KB（128KB、128KB、64KB）划分为一个内存区（地址0x30000000开始），不开启Cache：
+- 开启MPU，开启Cache，但 MPU 将 SRAM1、SRAM2、SRAM3 共计288KB（128KB、128KB、64KB）划分为一个内存区（地址0x30000000开始），不开启Cache，示例程序三个UART用到的缓冲区指定编译到这个不开Cache的内存区，以保持程序正常运行
 
 ![](Images/划分为MPU的一个内存区，不开启Cache.png)
+
+## 指定编译缓冲区到 288KB SRAM1~3
 
  GNU Link Script 文件 H750VBT6_usart_rx_idle_line_irq_ringbuff_tx_03_FLASH.ld内加了这样一段section:
 
@@ -46,13 +50,13 @@ uint8_t usart_rx_rb_data[128] __attribute__((section(".RAM_D2_Array")));
 uint8_t usart_tx_rb_data[128] __attribute__((section(".RAM_D2_Array")));
 ```
 
-然后编辑即可将这三个缓冲区的运行域编译到 288KB的未开 Cache的内存内，程序可以正常收发数据：
+编译即可将这三个缓冲区的运行域编译到 288KB的未开 Cache的内存内，程序可以正常收发数据：
 
 ![](Images/指定编译3个缓冲区的位置.png)
 
 ![](Images/指定编译3个缓冲区的位置2.png)
 
-
+## 指定编译缓冲区到512KB AXI SRAM的一块
 
 如果想放到开Cache的内存，比如512KB的整块AXI SRAM内，比较简单的方法是在GNU Link Script内将这个内存划分为两个区，前一个区较小，但大于 三个缓冲区 大小的总和，例如划分1KB：
 
@@ -97,4 +101,6 @@ uint8_t usart_rx_rb_data[128] __attribute__((section(".RAM_D1_NO_CACHE_Array")))
 uint8_t usart_tx_rb_data[128] __attribute__((section(".RAM_D1_NO_CACHE_Array")));
 ```
 
-如果编译到开Cache的内存区域，程序不能正常打印或接收数据
+## 编译到开Cache的内存区域的问题
+
+程序不能正常打印或接收数据
