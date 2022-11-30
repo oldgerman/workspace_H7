@@ -19,6 +19,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -90,7 +91,7 @@ int main(void)
   /* USER CODE END Init */
 
   /* Configure the system clock */
-//  SystemClock_Config();	//使能后无法发回接收到的数据，奇了怪了
+//  SystemClock_Config();
 
 /* Configure the peripherals common clocks */
   PeriphCommonClock_Config();
@@ -100,6 +101,7 @@ int main(void)
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
+  MX_GPIO_Init();
   /* USER CODE BEGIN 2 */
   setup();
   loop();

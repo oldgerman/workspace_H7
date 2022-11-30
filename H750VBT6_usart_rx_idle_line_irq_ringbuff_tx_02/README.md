@@ -1,8 +1,10 @@
-## H750VBT6、USART、DMA、收不定长数据、空闲线路中断、环形缓冲区、发送数据
+## HAL库、H750VBT6、USART、DMA、收不定长数据、空闲线路中断、环形缓冲区、发送数据
 
 ## 概述
 
-工程名称：H750VBT6_usart_rx_idle_line_irq_ringbuff_tx
+工程名称：H750VBT6_usart_rx_idle_line_irq_ringbuff_tx_02
+
+特点：完全使用HAL库API，无需修改stm32h7xx_it.c中的IRQHandler函数
 
 将 [MaJerle/stm32-usart-uart-dma-rx-tx](https://github.com/MaJerle/stm32-usart-uart-dma-rx-tx) 仓库路径的 [usart_rx_idle_line_irq_ringbuff_tx_H7](http://stm32-usart-uart-dma-rx-tx/projects/usart_rx_idle_line_irq_ringbuff_tx_H7/ )示例 改到 H750VBT6 上运行
 
@@ -124,13 +126,18 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
 
 ![](Images/发送1000多个穿插换行符的混合字符，远大于缓冲区大小.png)
 
-## G++与系统编码的奇怪BUG
+### 示例应用
 
-之前搭建ESP-IDF环境把win10设置的 Unicode_UTF-8 勾上了
+loop() 函数的 while()中，有一个发送特定字节序列，就会发回另一个特定字节序列的示例应用：
 
-![Unicode_UTF-8编码编译有奇怪的问题](Images/Unicode_UTF-8编码编译有奇怪的问题.png)
+```
+/* 处理 RX 环形缓冲区 */
+/* 数据包格式：START_BYTE, CMD, LEN[, DATA[0], DATA[len - 1]], STOP BYTE */
+/* 仅当 LEN > 0 时才包含数据字节 */
+/* 例如，发送这些字节的序列：0x55、0x01、0x01、0xFF、0xAA */
+/* 逐字节读取 */
+```
 
-## CubeMX自动生成的   SystemClock_Config() 导致  64byte RX DMA缓冲区只能收到最后一个字符
+测试OK
 
-64byte RX DMA缓冲区只能收到最后一个字符，且DMA确实是比USART的时钟要先初始化的（所以排除这个问题：[STM32 UART DMA 接收数据 只能接收到串口数据的最后一个字节](https://blog.csdn.net/qs521/article/details/108468002)），然后注释掉SystemClock_Config()，再编译，就没这个问题了
-
+![](Images/测试示例应用.png)

@@ -1,8 +1,10 @@
-## H750VBT6、USART、DMA、收不定长数据、空闲线路中断、环形缓冲区、发送数据
+## LL库、H750VBT6、USART、DMA、收不定长数据、空闲线路中断、环形缓冲区、发送数据
 
 ## 概述
 
-工程名称：H750VBT6_usart_rx_idle_line_irq_ringbuff_tx
+工程名称：H750VBT6_usart_rx_idle_line_irq_ringbuff_tx_01
+
+BUG： 使用CuebMX自动生成的SystemClock_Config()函数，就只能接收到最后一个字符，只能发回接收数据的最后一个字符
 
 将 [MaJerle/stm32-usart-uart-dma-rx-tx](https://github.com/MaJerle/stm32-usart-uart-dma-rx-tx) 仓库路径的 [usart_rx_idle_line_irq_ringbuff_tx_H7](http://stm32-usart-uart-dma-rx-tx/projects/usart_rx_idle_line_irq_ringbuff_tx_H7/ )示例 改到 H750VBT6 上运行
 
@@ -124,13 +126,10 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
 
 ![](Images/发送1000多个穿插换行符的混合字符，远大于缓冲区大小.png)
 
-## G++与系统编码的奇怪BUG
+## BUG
 
-之前搭建ESP-IDF环境把win10设置的 Unicode_UTF-8 勾上了
+### CubeMX自动生成的   SystemClock_Config() 导致  64byte RX DMA缓冲区只能收到最后一个字符
 
-![Unicode_UTF-8编码编译有奇怪的问题](Images/Unicode_UTF-8编码编译有奇怪的问题.png)
+64byte RX DMA缓冲区只能收到最后一个字符，且DMA确实是比USART的时钟要先初始化的（所以排除这个问题：[STM32 UART DMA 接收数据 只能接收到串口数据的最后一个字节](https://blog.csdn.net/qs521/article/details/108468002)），然后注释掉SystemClock_Config()，再编译，就没这个问题了，但这个问题没解决，LL库我几乎没接触过不知道怎么改，先摆在这里
 
-## CubeMX自动生成的   SystemClock_Config() 导致  64byte RX DMA缓冲区只能收到最后一个字符
-
-64byte RX DMA缓冲区只能收到最后一个字符，且DMA确实是比USART的时钟要先初始化的（所以排除这个问题：[STM32 UART DMA 接收数据 只能接收到串口数据的最后一个字节](https://blog.csdn.net/qs521/article/details/108468002)），然后注释掉SystemClock_Config()，再编译，就没这个问题了
-
+## 
