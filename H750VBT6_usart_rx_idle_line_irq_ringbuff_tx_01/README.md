@@ -4,7 +4,7 @@
 
 工程名称：H750VBT6_usart_rx_idle_line_irq_ringbuff_tx_01
 
-BUG： 使用CuebMX自动生成的SystemClock_Config()函数，就只能接收到最后一个字符，只能发回接收数据的最后一个字符
+BUG： 使用CubeMX自动生成的SystemClock_Config()函数，就只能接收到最后一个字符，只能发回接收数据的最后一个字符
 
 将 [MaJerle/stm32-usart-uart-dma-rx-tx](https://github.com/MaJerle/stm32-usart-uart-dma-rx-tx) 仓库路径的 [usart_rx_idle_line_irq_ringbuff_tx_H7](http://stm32-usart-uart-dma-rx-tx/projects/usart_rx_idle_line_irq_ringbuff_tx_H7/ )示例 改到 H750VBT6 上运行
 

@@ -4,7 +4,7 @@
  *  Created on: May 16, 2022
  *  @Modified: OldGerman modified MaJerle's github repository example:
  *  	https://github.com/MaJerle/stm32-usart-uart-dma-rx-tx/blob/main/projects/usart_rx_idle_line_irq_ringbuff_tx_H7/Src/main.c
- *	@BUG:   SystemClock_Config();	//使用CuebMX自动生成的时钟初始化函数，就只能接收到最后一个字符，只能发回接收数据的最后一个字符
+ *	@BUG:   SystemClock_Config();	//使用CubeMX自动生成的时钟初始化函数，就只能接收到最后一个字符，只能发回接收数据的最后一个字符
  */
 
 #include "cppports.h"
