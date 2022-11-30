@@ -101,20 +101,8 @@ int main(void)
 
   /* Initialize all configured peripherals */
   /* USER CODE BEGIN 2 */
-
-  /*
-   * Warning! the CubeMX call the initializations of the elments in the wrong order
-   * first:  MX_USART1_UART_Init(); next: MX_DMA_Init(); then DMA trans RX buffer can't work
-   * https://github.com/MaJerle/stm32-usart-uart-dma-rx-tx/issues/21
-   */
-//  MX_DMA_Init();
-//  MX_USART1_UART_Init();		// USART Init After DMA Init
-//  MX_SPI2_Init();				// SPI Init After DMA Init
-
   setup();
   loop();
-
-
   /* USER CODE END 2 */
 
   /* Infinite loop */
