@@ -98,7 +98,7 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
 
 > 配合**超时中断**可实现灵活接收数据，网上流传的方法一般是把DMA设置为常规模式，**其缺点是一旦一次性要接收的数据超过DMA缓冲区大小，就无法正确处理**。我们可以将DMA**设置为循环模式，再结合超时中断**，可以解决接收数据超过DMA缓冲区大小的问题
 
-但这个代码要修改stm32h7xx_it.c 的串口中断服务函数`USART1_IRQHandler()` 为自己实现的函数，我觉得有失偏驳
+但这个代码要修改stm32h7xx_it.c 的串口中断服务函数`USART1_IRQHandler()` 为自己实现的函数，我觉得有失偏颇
 
 然后我找到 MaJerle  用LL库实现的，打包一条龙，本工程先保持LL库跑起来
 
