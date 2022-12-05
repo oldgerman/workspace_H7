@@ -108,12 +108,12 @@ void MX_FREERTOS_Init(void) {
 
   /* Create the thread(s) */
   /* definition and creation of uart_task */
-  osThreadStaticDef(uart_task, start_uart_task, osPriorityNormal, 0, 1024, uart_taskBuffer, &uart_taskControlBlock);
+  osThreadStaticDef(uart_task, start_uart_task, osPriorityHigh, 0, 1024, uart_taskBuffer, &uart_taskControlBlock);
   uart_taskHandle = osThreadCreate(osThread(uart_task), NULL);
 
   /* definition and creation of led_task */
-//  osThreadStaticDef(led_task, start_led_task, osPriorityHigh, 0, 256, led_taskBuffer, &led_taskControlBlock);
-//  led_taskHandle = osThreadCreate(osThread(led_task), NULL);
+  osThreadStaticDef(led_task, start_led_task, osPriorityLow, 0, 256, led_taskBuffer, &led_taskControlBlock);
+  led_taskHandle = osThreadCreate(osThread(led_task), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */

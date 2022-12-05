@@ -1,8 +1,10 @@
 /*
  * usart_rx_idle_line_irq_rtos_F4.c
  *
- *  Created on: Dec 5, 2022
- *      Author: PSA
+ *  	https://github.com/MaJerle/stm32-usart-uart-dma-rx-tx/blob/main/projects/usart_rx_idle_line_irq_rtos_F4/Src/main.c
+ *      Author: MaJerle
+ *
+ *      备注：使用CMSIS-RTOS，不是FreeRTOS
  */
 
 
