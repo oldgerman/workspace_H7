@@ -142,8 +142,8 @@ void esp_log_write(esp_log_level_t level, const char* tag, const char* format, .
 //
 #include "FreeRTOS.h"
 #include "task.h"
-#include "semphr.h"
-#include "queue.h"
+#include "semphr.h"			//提供信号量
+#include "queue.h"		    //提供消息队列
 #include "stream_buffer.h"	//提供流缓冲区API
 #include "portmacro.h"		//提供portYIELD_FROM_ISR();
 //
