@@ -577,29 +577,42 @@ static void IRAM_ATTR spi_trans_control_task(void* arg)
 // this is just used to use uart port to send command.
 void uart_task(void* pvParameters)
 {
+	
+#if 0
+//https://github.com/espressif/esp-idf/blob/master/components/driver/include/driver/uart.h
+/**
+ * @brief UART event types used in the ring buffer
+ */
+typedef enum {
+    UART_DATA,              /*!< UART data event*/
+    UART_BREAK,             /*!< UART break event*/
+    UART_BUFFER_FULL,       /*!< UART RX buffer full event*/
+    UART_FIFO_OVF,          /*!< UART FIFO overflow event*/
+    UART_FRAME_ERR,         /*!< UART RX frame error event*/
+    UART_PARITY_ERR,        /*!< UART RX parity event*/
+    UART_DATA_BREAK,        /*!< UART TX data and break event*/
+    UART_PATTERN_DET,       /*!< UART pattern detected */
+#if SOC_UART_SUPPORT_WAKEUP_INT
+    UART_WAKEUP,            /*!< UART wakeup event */
+#endif
+    UART_EVENT_MAX,         /*!< UART event max index*/
+} uart_event_type_t;
+
+/**
+ * @brief Event structure used in UART event queue
+ */
+typedef struct {
+    uart_event_type_t type; /*!< UART event type */
+    size_t size;            /*!< UART data size for UART_DATA event*/
+    bool timeout_flag;      /*!< UART data read timeout flag for UART_DATA event (no new data received during configured RX TOUT)*/
+                            /*!< If the event is caused by FIFO-full interrupt, then there will be no event with the timeout flag before the next byte coming.*/
+} uart_event_t;
+
+#endif
 //    uart_event_t event;
     uint8_t* dtmp = (uint8_t*) malloc(1024);	//创建1024bytes
 
     for (;;) {
-#if 1
-    	if (comGetChar(COM1, &read))
-    	{
-    		/**
-    		 * 拷贝UART缓冲区数据到1024bytes的dtmp，使用流缓冲API发给SPI task
-    		 */
-    		memset(dtmp, 0x0, 1024);
-    		// read the data which spi master want to send
-    		uart_read_bytes(0, dtmp, event.size, portMAX_DELAY);
-    		// send data to spi task
-    		write_data_to_spi_task_tx_ring_buf(dtmp, event.size);	//使用了 xStreamBufferSend() 进行任务间通信
-    		notify_slave_to_recv();
-    		ucCount = 0;
-    	}
-    	else
-    	{
-    		ucCount++;
-    	}
-#else
         //Waiting for UART event.(使用队列事件阻塞uart任务)
         if (xQueueReceive(esp_at_uart_queue, (void*) &event,
                           (TickType_t) portMAX_DELAY)) {
@@ -627,7 +640,6 @@ void uart_task(void* pvParameters)
                     break;
             }
         }
-#endif
     }
 
     free(dtmp);

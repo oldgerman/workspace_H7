@@ -58,7 +58,7 @@ uint8_t usart_tx_rb_data[128] __attribute__((section(".RAM_D2_Array")));
 
 ## 指定编译缓冲区到512KB AXI SRAM的一块
 
-如果想放到开Cache的内存，比如512KB的整块AXI SRAM内，比较简单的方法是在GNU Link Script内将这个内存划分为两个区，前一个区较小，但大于 三个缓冲区 大小的总和，例如划分1KB：
+如果想放到开Cache的内存，比如512KB的整块AXI SRAM内，比较简单的方法是在GNU Link Script内将这个内存划分为两个区，前一个区较小，但大于 三个缓冲区 大小的总和，例如划分为2KB与510KB：
 
 ```c
 MEMORY

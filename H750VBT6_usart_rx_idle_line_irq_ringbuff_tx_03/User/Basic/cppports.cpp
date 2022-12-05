@@ -13,6 +13,10 @@
 
 #define UART_TO_BE_DETERMINED	0		// 我测试可以去掉的一些代码段, 0:去掉 1:保留
 
+/* 是否在usart_start_tx_dma_transfer()函数内禁用中断 */
+#define USART_TX_TRANS_DISABLE_IT   0  		// 仅当多个操作系统线程可以访问usart_start_tx_dma_transfer()函数，且未配置独占访问保护（互斥锁），
+											// 或者，如果应用程序从多个中断调用此函数时，才建议在检查下一次传输之前禁用中断。
+
 /*	Stm32CubeIDE 重定向printf
  */
 
@@ -60,38 +64,32 @@ uint8_t usart_start_tx_dma_transfer(void);
  * For this specific example, all variables are by default
  * configured in D1 RAM. This is configured in linker script
  */
-uint8_t
-usart_rx_dma_buffer[64] __attribute__((section(".RAM_D2_Array")));
+uint8_t usart_rx_dma_buffer[64] __attribute__((section(".RAM_D2_Array")));
 
 /**
  * \brief           Ring buffer instance for TX data
  */
-lwrb_t
-usart_rx_rb;
+lwrb_t usart_rx_rb;
 
 /**
  * \brief           Ring buffer data array for RX DMA
  */
-uint8_t
-usart_rx_rb_data[128] __attribute__((section(".RAM_D2_Array")));
+uint8_t usart_rx_rb_data[128] __attribute__((section(".RAM_D2_Array")));
 
 /**
  * \brief           Ring buffer instance for TX data
  */
-lwrb_t
-usart_tx_rb;
+lwrb_t usart_tx_rb;
 
 /**
  * \brief           Ring buffer data array for TX DMA
  */
-uint8_t
-usart_tx_rb_data[128] __attribute__((section(".RAM_D2_Array")));
+uint8_t usart_tx_rb_data[128] __attribute__((section(".RAM_D2_Array")));
 
 /**
  * \brief           Length of currently active TX DMA transfer
  */
-volatile size_t
-usart_tx_dma_current_len;
+volatile size_t usart_tx_dma_current_len;
 
 /**
  * \brief           Check for new data received with DMA
@@ -200,13 +198,14 @@ uint8_t usart_start_tx_dma_transfer(void) {
      * only if multiple operating system threads can access to this function w/o
      * exclusive access protection (mutex) configured,
      * or if application calls this function from multiple interrupts.
+     * 仅当多个操作系统线程可以访问此函数，且未配置独占访问保护（互斥锁），
+     * 或者，如果应用程序从多个中断调用此函数时，才建议在检查下一次传输之前禁用中断。
      *
      * This example assumes worst use case scenario,
      * hence interrupts are disabled prior every check
      */
+#if USART_TX_TRANS_DISABLE_IT
     primask = __get_PRIMASK();
-#if UART_TO_BE_DETERMINED
-    // 不知这个有啥用，去掉了不影响反正
     __disable_irq();
 #endif
     if (usart_tx_dma_current_len == 0
@@ -228,7 +227,9 @@ uint8_t usart_start_tx_dma_transfer(void) {
 
         started = 1;
     }
+#if USART_TX_TRANS_DISABLE_IT
     __set_PRIMASK(primask);
+#endif
     return started;
 }
 
@@ -342,20 +343,16 @@ void loop(){
 	        uint8_t b;
 
 	        /* Process RX ringbuffer */
-
 	        /* Packet format: START_BYTE, CMD, LEN[, DATA[0], DATA[len - 1]], STOP BYTE */
 	        /* DATA bytes are included only if LEN > 0 */
 	        /* An example, send sequence of these bytes: 0x55, 0x01, 0x01, 0xFF, 0xAA */
-
 	        /* Read byte by byte */
 
 
 	        /* 处理 RX 环形缓冲区 */
-
 	        /* 数据包格式：START_BYTE, CMD, LEN[, DATA[0], DATA[len - 1]], STOP BYTE */
 	        /* 仅当 LEN > 0 时才包含数据字节 */
 	        /* 例如，发送这些字节的序列：0x55、0x01、0x01、0xFF、0xAA */
-
 	        /* 逐字节读取 */
 
 	        if (lwrb_read(&usart_rx_rb, &b, 1) == 1) {

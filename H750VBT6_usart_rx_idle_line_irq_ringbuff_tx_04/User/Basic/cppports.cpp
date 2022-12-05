@@ -10,6 +10,13 @@
  */
 
 #include "cppports.h"
+#include "FreeRTOS.h"
+#include "cmsis_os.h"
+#include "queue.h"
+
+/* Message queue ID */
+static QueueHandle_t usart_rx_dma_queue_id = NULL;
+
 
 #define UART_TO_BE_DETERMINED	0		// 我测试可以去掉的一些代码段, 0:去掉 1:保留
 
@@ -64,38 +71,32 @@ uint8_t usart_start_tx_dma_transfer(void);
  * For this specific example, all variables are by default
  * configured in D1 RAM. This is configured in linker script
  */
-uint8_t
-usart_rx_dma_buffer[64];
+uint8_t usart_rx_dma_buffer[64] __attribute__((section(".RAM_D2_Array")));
 
 /**
  * \brief           Ring buffer instance for TX data
  */
-lwrb_t
-usart_rx_rb;
+lwrb_t usart_rx_rb;
 
 /**
  * \brief           Ring buffer data array for RX DMA
  */
-uint8_t
-usart_rx_rb_data[128];
+uint8_t usart_rx_rb_data[128] __attribute__((section(".RAM_D2_Array")));
 
 /**
  * \brief           Ring buffer instance for TX data
  */
-lwrb_t
-usart_tx_rb;
+lwrb_t usart_tx_rb;
 
 /**
  * \brief           Ring buffer data array for TX DMA
  */
-uint8_t
-usart_tx_rb_data[128];
+uint8_t usart_tx_rb_data[128] __attribute__((section(".RAM_D2_Array")));
 
 /**
  * \brief           Length of currently active TX DMA transfer
  */
-volatile size_t
-usart_tx_dma_current_len;
+volatile size_t usart_tx_dma_current_len;
 
 /**
  * \brief           Check for new data received with DMA
@@ -306,6 +307,8 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
 {
 	UNUSED(Size);
 	if(huart->Instance == USART1) {
+		void* d = (void *)1;
+		BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 		/**
 		 * HAL_UART_RECEPTION_TOIDLE 说明是DMA接收完成，或者半传输完成
 		 * MaJerle 的实现需要用到DMA半传输中断和传输完成中断
@@ -315,24 +318,28 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
 		 */
 		if (huart->ReceptionType == HAL_UART_RECEPTION_TOIDLE)
 		{
-			usart_rx_check();                       /* Check for data to process */
+			xQueueSendToBackFromISR(usart_rx_dma_queue_id, &d, &xHigherPriorityTaskWoken); /* Write data to queue. Do not use wait function! */
 		}
 
 		/* HAL_UART_RECEPTION_STANDARD 说明是空闲中断触发的接收事件 */
 		if (huart->ReceptionType == HAL_UART_RECEPTION_STANDARD)
 		{
-			usart_rx_check();                       /* Check for data to process */
+			xQueueSendToBackFromISR(usart_rx_dma_queue_id, &d, &xHigherPriorityTaskWoken); /* Write data to queue. Do not use wait function! */
 		}
+		portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 	}
 }
 /* Interrupt handlers end */
 
-void setup(){
-    usart_init();
-}
+void uart_thread(){
+		void* d;
 
-void loop(){
-	    uint8_t state, cmd, len;
+		usart_init();
+
+		/* 创建10个 void* 型消息队列，在STM32上，指针为32bit */
+		usart_rx_dma_queue_id = xQueueCreate(10, sizeof(void *));
+
+
 	    /* Initialize ringbuff for TX & RX */
 	    lwrb_init(&usart_tx_rb, usart_tx_rb_data, sizeof(usart_tx_rb_data));
 	    lwrb_init(&usart_rx_rb, usart_rx_rb_data, sizeof(usart_rx_rb_data));
@@ -342,82 +349,100 @@ void loop(){
 
 	    /* After this point, do not use usart_send_string function anymore */
 	    /* Send packet data over UART from PC (or other STM32 device) */
-
+	    BaseType_t xResult;
+    	uint8_t b;
 	    /* Infinite loop */
+    	uint8_t state, cmd, len;
 	    state = 0;
 	    while (1) {
-	        uint8_t b;
+	    	/* Block thread and wait for event to process USART data */
+	    	xResult = xQueueReceive(usart_rx_dma_queue_id, &d, portMAX_DELAY);
 
-	        /* Process RX ringbuffer */
+	    	/* Simply call processing function */
+	    	if (xResult == pdPASS) {
+	    		usart_rx_check();
 
-	        /* Packet format: START_BYTE, CMD, LEN[, DATA[0], DATA[len - 1]], STOP BYTE */
-	        /* DATA bytes are included only if LEN > 0 */
-	        /* An example, send sequence of these bytes: 0x55, 0x01, 0x01, 0xFF, 0xAA */
+	    		(void)d;
+	    		usart_send_string("uart thread running\r\n");
+//	    		usart_start_tx_dma_transfer();
 
-	        /* Read byte by byte */
+	    		/* Process RX ringbuffer */
+	    		/* Packet format: START_BYTE, CMD, LEN[, DATA[0], DATA[len - 1]], STOP BYTE */
+	    		/* DATA bytes are included only if LEN > 0 */
+	    		/* An example, send sequence of these bytes: 0x55, 0x01, 0x01, 0xFF, 0xAA */
+	    		/* Read byte by byte */
 
 
-	        /* 处理 RX 环形缓冲区 */
+	    		/* 处理 RX 环形缓冲区 */
+	    		/* 数据包格式：START_BYTE, CMD, LEN[, DATA[0], DATA[len - 1]], STOP BYTE */
+	    		/* 仅当 LEN > 0 时才包含数据字节 */
+	    		/* 例如，发送这些字节的序列：0x55、0x01、0x01、0xFF、0xAA */
+	    		/* 逐字节读取 */
+#if 0
+	    		if (lwrb_read(&usart_rx_rb, &b, 1) == 1) {
+	    			lwrb_write(&usart_tx_rb, &b, 1);   /* Write data to transmit buffer */
+	    			usart_start_tx_dma_transfer();
+	    			switch (state) {
+	    			case 0: {           /* Wait for start byte */
+	    				if (b == 0x55) {
+	    					++state;
+	    				}
+	    				break;
+	    			}
+	    			case 1: {           /* Check packet command */
+	    				cmd = b;
+	    				++state;
+	    				break;
+	    			}
+	    			case 2: {           /* Packet data length */
+	    				len = b;
+	    				++state;
+	    				if (len == 0) {
+	    					++state;    /* Ignore data part if len = 0 */
+	    				}
+	    				break;
+	    			}
+	    			case 3: {           /* Data for command */
+	    				--len;          /* Decrease for received character */
+	    				if (len == 0) {
+	    					++state;
+	    				}
+	    				break;
+	    			}
+	    			case 4: {           /* End of packet */
+	    				if (b == 0xAA) {
+	    					/* Packet is valid */
 
-	        /* 数据包格式：START_BYTE, CMD, LEN[, DATA[0], DATA[len - 1]], STOP BYTE */
-	        /* 仅当 LEN > 0 时才包含数据字节 */
-	        /* 例如，发送这些字节的序列：0x55、0x01、0x01、0xFF、0xAA */
+	    					/* Send out response with CMD = 0xFF */
+	    					b = 0x55;   /* Start byte */
+	    					lwrb_write(&usart_tx_rb, &b, 1);
+	    					cmd = 0xFF; /* Command = 0xFF = OK response */
+	    					lwrb_write(&usart_tx_rb, &cmd, 1);
+	    					b = 0x00;   /* Len = 0 */
+	    					lwrb_write(&usart_tx_rb, &b, 1);
+	    					b = 0xAA;   /* Stop byte */
+	    					lwrb_write(&usart_tx_rb, &b, 1);
 
-	        /* 逐字节读取 */
+	    					/* Flush everything */
+	    					usart_start_tx_dma_transfer();
+	    				}
+						state = 0;
+						break;
+	    				}
+	    			}
+	    		}
+#endif
+//	    		osDelay(1);
+	    		/* Do other tasks ... */
+	    	}
 
-	        if (lwrb_read(&usart_rx_rb, &b, 1) == 1) {
-	            lwrb_write(&usart_tx_rb, &b, 1);   /* Write data to transmit buffer */
-	            usart_start_tx_dma_transfer();
-	            switch (state) {
-	                case 0: {           /* Wait for start byte */
-	                    if (b == 0x55) {
-	                        ++state;
-	                    }
-	                    break;
-	                }
-	                case 1: {           /* Check packet command */
-	                    cmd = b;
-	                    ++state;
-	                    break;
-	                }
-	                case 2: {           /* Packet data length */
-	                    len = b;
-	                    ++state;
-	                    if (len == 0) {
-	                        ++state;    /* Ignore data part if len = 0 */
-	                    }
-	                    break;
-	                }
-	                case 3: {           /* Data for command */
-	                    --len;          /* Decrease for received character */
-	                    if (len == 0) {
-	                        ++state;
-	                    }
-	                    break;
-	                }
-	                case 4: {           /* End of packet */
-	                    if (b == 0xAA) {
-	                        /* Packet is valid */
-
-	                        /* Send out response with CMD = 0xFF */
-	                        b = 0x55;   /* Start byte */
-	                        lwrb_write(&usart_tx_rb, &b, 1);
-	                        cmd = 0xFF; /* Command = 0xFF = OK response */
-	                        lwrb_write(&usart_tx_rb, &cmd, 1);
-	                        b = 0x00;   /* Len = 0 */
-	                        lwrb_write(&usart_tx_rb, &b, 1);
-	                        b = 0xAA;   /* Stop byte */
-	                        lwrb_write(&usart_tx_rb, &b, 1);
-
-	                        /* Flush everything */
-	                        usart_start_tx_dma_transfer();
-	                    }
-	                    state = 0;
-	                    break;
-	                }
-	            }
-	        }
-
-	        /* Do other tasks ... */
 	    }
+}
+
+
+void led_thread(){
+	for(;;){
+		HAL_GPIO_TogglePin(LRGB_R_GPIO_Port, LRGB_R_Pin);
+		osDelay(100);
+	}
 }
