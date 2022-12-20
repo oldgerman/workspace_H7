@@ -41,6 +41,7 @@ typedef enum hardware_type_e {
 static stm_ret_t spi_transaction_v1(uint8_t * txbuff);
 static stm_ret_t spi_transaction_v2(uint8_t * txbuff);
 
+/* 函数指针数组 */
 /* spi transaction functions for different hardware types */
 static stm_ret_t (*spi_trans_func[])(uint8_t * txbuff) = {
 	/* spi_transaction_v1
@@ -375,9 +376,9 @@ static void check_and_execute_spi_transaction(void)
 			 * a. A valid tx buffer to be transmitted towards slave
 			 * b. Slave wants to send something (Rx for host)
 			 */
-			xSemaphoreTake(mutex_spi_trans, portMAX_DELAY);
-			spi_trans_func[hardware_type](txbuff);
-			xSemaphoreGive(mutex_spi_trans);
+			xSemaphoreTake(mutex_spi_trans, portMAX_DELAY);	//获取信号量
+			spi_trans_func[hardware_type](txbuff);			//阻塞式传输
+			xSemaphoreGive(mutex_spi_trans);				//释放信号量
 		}
 	}
 }
@@ -440,6 +441,7 @@ static void stop_spi_transactions_for_msec(int x)
 }
 
 /**
+  * 使用硬件NSS
   * @brief  Full duplex transaction SPI transaction for ESP32 hardware
   * @param  txbuff: TX SPI buffer
   * @retval STM_OK / STM_FAIL
@@ -567,6 +569,7 @@ done:
 }
 
 /**
+  * 使用软件控制片选
   * @brief  Full duplex transaction SPI transaction for ESP32S2 hardware
   * @param  txbuff: TX SPI buffer
   * @retval STM_OK / STM_FAIL

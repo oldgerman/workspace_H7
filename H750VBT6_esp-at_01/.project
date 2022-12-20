@@ -30,4 +30,11 @@
 		<nature>org.eclipse.cdt.managedbuilder.core.managedBuildNature</nature>
 		<nature>org.eclipse.cdt.managedbuilder.core.ScannerConfigNature</nature>
 	</natures>
+	<linkedResources>
+		<link>
+			<name>Share</name>
+			<type>2</type>
+			<location>D:/ODG-PROJECT/STM32H7/workspace_H7/Share</location>
+		</link>
+	</linkedResources>
 </projectDescription>

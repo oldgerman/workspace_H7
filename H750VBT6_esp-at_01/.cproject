@@ -41,22 +41,6 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_esp-at_01/User/Bsp/Inc}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_esp-at_01/Share/Libraries/ButtonEvent}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_esp-at_01/Share/Libraries/Binary}&quot;"/>
-									<listOptionValue builtIn="false" value="../common/include"/>
-									<listOptionValue builtIn="false" value="../common/protobuf-c"/>
-									<listOptionValue builtIn="false" value="../host/components/include"/>
-									<listOptionValue builtIn="false" value="../host/stm32/app"/>
-									<listOptionValue builtIn="false" value="../host/stm32/app/data"/>
-									<listOptionValue builtIn="false" value="../host/stm32/app/control"/>
-									<listOptionValue builtIn="false" value="../host/stm32/driver/spi"/>
-									<listOptionValue builtIn="false" value="../host/stm32/driver/serial"/>
-									<listOptionValue builtIn="false" value="../host/stm32/driver/netif"/>
-									<listOptionValue builtIn="false" value="../host/stm32/driver/network"/>
-									<listOptionValue builtIn="false" value="../host/stm32/port/include"/>
-									<listOptionValue builtIn="false" value="../host/stm32/common"/>
-									<listOptionValue builtIn="false" value="../host/virtual_serial_if/include"/>
-									<listOptionValue builtIn="false" value="../host/control_lib/src/include"/>
-									<listOptionValue builtIn="false" value="../host/control_lib/include"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_esp-at_01/User/lwrb}&quot;"/>
 								</option>
 								<inputType id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler.input.941236922" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler.input"/>
 							</tool>
@@ -79,21 +63,6 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_esp-at_01/User/Bsp/Inc}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_esp-at_01/Share/Libraries/ButtonEvent}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_esp-at_01/Share/Libraries/Binary}&quot;"/>
-									<listOptionValue builtIn="false" value="../common/include"/>
-									<listOptionValue builtIn="false" value="../common/protobuf-c"/>
-									<listOptionValue builtIn="false" value="../host/components/include"/>
-									<listOptionValue builtIn="false" value="../host/stm32/app"/>
-									<listOptionValue builtIn="false" value="../host/stm32/app/data"/>
-									<listOptionValue builtIn="false" value="../host/stm32/app/control"/>
-									<listOptionValue builtIn="false" value="../host/stm32/driver/spi"/>
-									<listOptionValue builtIn="false" value="../host/stm32/driver/serial"/>
-									<listOptionValue builtIn="false" value="../host/stm32/driver/netif"/>
-									<listOptionValue builtIn="false" value="../host/stm32/driver/network"/>
-									<listOptionValue builtIn="false" value="../host/stm32/port/include"/>
-									<listOptionValue builtIn="false" value="../host/stm32/common"/>
-									<listOptionValue builtIn="false" value="../host/virtual_serial_if/include"/>
-									<listOptionValue builtIn="false" value="../host/control_lib/src/include"/>
-									<listOptionValue builtIn="false" value="../host/control_lib/include"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_esp-at_01/User/lwrb}&quot;"/>
 									<listOptionValue builtIn="false" value="../Drivers/STM32H7xx_HAL_Driver/Inc/Legacy"/>
 									<listOptionValue builtIn="false" value="../Middlewares/Third_Party/FreeRTOS/Source/include"/>
@@ -121,21 +90,6 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_esp-at_01/User/Bsp/Inc}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_esp-at_01/Share/Libraries/ButtonEvent}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_esp-at_01/Share/Libraries/Binary}&quot;"/>
-									<listOptionValue builtIn="false" value="../common/include"/>
-									<listOptionValue builtIn="false" value="../common/protobuf-c"/>
-									<listOptionValue builtIn="false" value="../host/components/include"/>
-									<listOptionValue builtIn="false" value="../host/stm32/app"/>
-									<listOptionValue builtIn="false" value="../host/stm32/app/data"/>
-									<listOptionValue builtIn="false" value="../host/stm32/app/control"/>
-									<listOptionValue builtIn="false" value="../host/stm32/driver/spi"/>
-									<listOptionValue builtIn="false" value="../host/stm32/driver/serial"/>
-									<listOptionValue builtIn="false" value="../host/stm32/driver/netif"/>
-									<listOptionValue builtIn="false" value="../host/stm32/driver/network"/>
-									<listOptionValue builtIn="false" value="../host/stm32/port/include"/>
-									<listOptionValue builtIn="false" value="../host/stm32/common"/>
-									<listOptionValue builtIn="false" value="../host/virtual_serial_if/include"/>
-									<listOptionValue builtIn="false" value="../host/control_lib/src/include"/>
-									<listOptionValue builtIn="false" value="../host/control_lib/include"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_esp-at_01/User/lwrb}&quot;"/>
 									<listOptionValue builtIn="false" value="../Drivers/STM32H7xx_HAL_Driver/Inc/Legacy"/>
 									<listOptionValue builtIn="false" value="../Middlewares/Third_Party/FreeRTOS/Source/include"/>
@@ -163,11 +117,12 @@
 						</toolChain>
 					</folderInfo>
 					<sourceEntries>
-						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="Core"/>
-						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Drivers"/>
-						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Middlewares"/>
-						<entry excluding="Basic/app_main.c" flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="User"/>
 						<entry excluding="LICENSES/|linux/" flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="host"/>
+						<entry excluding="Hal/|Libraries/|Bsp/" flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="Share"/>
+						<entry excluding="Basic/app_main.c" flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="User"/>
+						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="Core"/>
+						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Middlewares"/>
+						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Drivers"/>
 					</sourceEntries>
 				</configuration>
 			</storageModule>
@@ -219,6 +174,7 @@
 									<listOptionValue builtIn="false" value="../host/control_lib/src/include"/>
 									<listOptionValue builtIn="false" value="../host/control_lib/include"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_esp-at_01/User/lwrb}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_esp-at_01/Share/Bsp/Inc}&quot;"/>
 								</option>
 								<inputType id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler.input.2122766719" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler.input"/>
 							</tool>
@@ -256,6 +212,7 @@
 									<listOptionValue builtIn="false" value="../Middlewares/Third_Party/FreeRTOS/Source/include"/>
 									<listOptionValue builtIn="false" value="../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS"/>
 									<listOptionValue builtIn="false" value="../Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_esp-at_01/Share/Bsp/Inc}&quot;"/>
 								</option>
 								<inputType id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.input.c.1803422908" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.input.c"/>
 							</tool>
@@ -293,6 +250,7 @@
 									<listOptionValue builtIn="false" value="../Middlewares/Third_Party/FreeRTOS/Source/include"/>
 									<listOptionValue builtIn="false" value="../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS"/>
 									<listOptionValue builtIn="false" value="../Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_esp-at_01/Share/Bsp/Inc}&quot;"/>
 								</option>
 								<inputType id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.cpp.compiler.input.cpp.1515180750" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.cpp.compiler.input.cpp"/>
 							</tool>
@@ -330,21 +288,6 @@
 	</storageModule>
 	<storageModule moduleId="org.eclipse.cdt.core.LanguageSettingsProviders"/>
 	<storageModule moduleId="org.eclipse.cdt.make.core.buildtargets"/>
-	<storageModule moduleId="scannerConfiguration">
-		<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
-		<scannerConfigBuildInfo instanceId="com.st.stm32cube.ide.mcu.gnu.managedbuild.config.exe.debug.1607319694;com.st.stm32cube.ide.mcu.gnu.managedbuild.config.exe.debug.1607319694.;com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.1985712018;com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.input.c.1159842195">
-			<autodiscovery enabled="false" problemReportingEnabled="true" selectedProfileId=""/>
-		</scannerConfigBuildInfo>
-		<scannerConfigBuildInfo instanceId="com.st.stm32cube.ide.mcu.gnu.managedbuild.config.exe.debug.1607319694;com.st.stm32cube.ide.mcu.gnu.managedbuild.config.exe.debug.1607319694.;com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.cpp.compiler.1455704445;com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.cpp.compiler.input.cpp.412494339">
-			<autodiscovery enabled="false" problemReportingEnabled="true" selectedProfileId=""/>
-		</scannerConfigBuildInfo>
-		<scannerConfigBuildInfo instanceId="com.st.stm32cube.ide.mcu.gnu.managedbuild.config.exe.release.451393090;com.st.stm32cube.ide.mcu.gnu.managedbuild.config.exe.release.451393090.;com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.cpp.compiler.587185336;com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.cpp.compiler.input.cpp.1515180750">
-			<autodiscovery enabled="false" problemReportingEnabled="true" selectedProfileId=""/>
-		</scannerConfigBuildInfo>
-		<scannerConfigBuildInfo instanceId="com.st.stm32cube.ide.mcu.gnu.managedbuild.config.exe.release.451393090;com.st.stm32cube.ide.mcu.gnu.managedbuild.config.exe.release.451393090.;com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.170463432;com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.input.c.1803422908">
-			<autodiscovery enabled="false" problemReportingEnabled="true" selectedProfileId=""/>
-		</scannerConfigBuildInfo>
-	</storageModule>
 	<storageModule moduleId="refreshScope" versionNumber="2">
 		<configuration configurationName="Debug">
 			<resource resourceType="PROJECT" workspacePath="/H750VBT6_esp-at_01"/>
@@ -352,5 +295,20 @@
 		<configuration configurationName="Release">
 			<resource resourceType="PROJECT" workspacePath="/H750VBT6_esp-at_01"/>
 		</configuration>
+	</storageModule>
+	<storageModule moduleId="scannerConfiguration">
+		<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
+		<scannerConfigBuildInfo instanceId="com.st.stm32cube.ide.mcu.gnu.managedbuild.config.exe.release.451393090;com.st.stm32cube.ide.mcu.gnu.managedbuild.config.exe.release.451393090.;com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.170463432;com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.input.c.1803422908">
+			<autodiscovery enabled="false" problemReportingEnabled="true" selectedProfileId=""/>
+		</scannerConfigBuildInfo>
+		<scannerConfigBuildInfo instanceId="com.st.stm32cube.ide.mcu.gnu.managedbuild.config.exe.release.451393090;com.st.stm32cube.ide.mcu.gnu.managedbuild.config.exe.release.451393090.;com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.cpp.compiler.587185336;com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.cpp.compiler.input.cpp.1515180750">
+			<autodiscovery enabled="false" problemReportingEnabled="true" selectedProfileId=""/>
+		</scannerConfigBuildInfo>
+		<scannerConfigBuildInfo instanceId="com.st.stm32cube.ide.mcu.gnu.managedbuild.config.exe.debug.1607319694;com.st.stm32cube.ide.mcu.gnu.managedbuild.config.exe.debug.1607319694.;com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.cpp.compiler.1455704445;com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.cpp.compiler.input.cpp.412494339">
+			<autodiscovery enabled="false" problemReportingEnabled="true" selectedProfileId=""/>
+		</scannerConfigBuildInfo>
+		<scannerConfigBuildInfo instanceId="com.st.stm32cube.ide.mcu.gnu.managedbuild.config.exe.debug.1607319694;com.st.stm32cube.ide.mcu.gnu.managedbuild.config.exe.debug.1607319694.;com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.1985712018;com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.input.c.1159842195">
+			<autodiscovery enabled="false" problemReportingEnabled="true" selectedProfileId=""/>
+		</scannerConfigBuildInfo>
 	</storageModule>
 </cproject>

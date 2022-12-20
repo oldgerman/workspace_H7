@@ -176,17 +176,26 @@ Pins in use. The SPI Master can use the GPIO mux, so feel free to change these i
 #define MASTER_HOST           SPI2_HOST
 #endif
 
-#define DMA_CHAN              SPI_DMA_CH_AUTO
-#define ESP_SPI_DMA_MAX_LEN   4092
-#define CMD_HD_WRBUF_REG      0x01
-#define CMD_HD_RDBUF_REG      0x02
-#define CMD_HD_WRDMA_REG      0x03
-#define CMD_HD_RDDMA_REG      0x04
-#define CMD_HD_WR_END_REG     0x07
-#define CMD_HD_INT0_REG       0x08
-#define WRBUF_START_ADDR      0x0
-#define RDBUF_START_ADDR      0x4
-#define STREAM_BUFFER_SIZE    1024 * 8		// 8192 bytes
+
+/*
+ * SPI AT Master端通信报文格式
+ * | ------------- | -------------- | --------------- | ----------------------------- |
+ * | CMD（1 字节） | ADDR（1 字节） | DUMMY（1 字节） | DATA（读/写，高达 4092 字节） |
+ * | ------------- | -------------- | --------------- | ----------------------------- |
+ * 以下宏常量用于 SPI AT Master端的6种通信报文
+ */
+#define ESP_SPI_DMA_MAX_LEN   4092					// DATA段：高达4092字节
+#define CMD_HD_WRBUF_REG      0x01					// CMD段：5) Master 向 slave 发送请求传输指定大小数据
+#define CMD_HD_RDBUF_REG      0x02					// CMD段：6) Master 检测到握手线上有 slave 发出的信号后，需要发送一条消息查询 slave 进入接收数据的工作模式，还是进入到发送数据的工作模式
+#define CMD_HD_WRDMA_REG      0x03					// CMD段：1) Master 向 slave 发送数据
+#define CMD_HD_RDDMA_REG      0x04					// CMD段：3) Master 接收 slave 发送的数据
+#define CMD_HD_WR_END_REG     0x07					// CMD段：2) Master 向 slave 发送数据结束后，需要发送一条通知消息来结束本次传输
+#define CMD_HD_INT0_REG       0x08					// CMD段：4) Master 接收 slave 发送的数据后，需要发送一条通知消息来结束本次传输
+#define WRBUF_START_ADDR      0x0					// ARR段：1~5) 通信报文
+#define RDBUF_START_ADDR      0x4					// ARR段：6) 通信报文
+
+#define STREAM_BUFFER_SIZE    1024 * 8				// 流缓冲区：8192 bytes
+#define DMA_CHAN              SPI_DMA_CH_AUTO		// init_master_hd() 中的 spi_bus_initialize() 自动选择DMA通道
 
 /**
  * slave 的可读/可写状态，0x1 代表可读， 0x2 代表可写
@@ -290,7 +299,7 @@ static void spi_mutex_unlock(void)
 static void IRAM_ATTR gpio_handshake_isr_handler(void* arg)
 {
     //释放信号量 Give the semaphore.
-    BaseType_t mustYield = false;
+    BaseType_t mustYield = pdFALSE;
     spi_master_msg_t spi_msg = {
         .slave_notify_flag = true,	// 指定结构体成员初始化
     };
@@ -311,14 +320,27 @@ static void IRAM_ATTR gpio_handshake_isr_handler(void* arg)
     							// 当此值为 pdTRUE 的时候在退出中断服务函数之前一定要进行一次任务切换    <----原来如此
     );
 
-#if 1
-	portYIELD_FROM_ISR(mustYield);
-#else
-    if (mustYield) {
-        portYIELD_FROM_ISR();
-    }
-#endif
+    /* 如果 mustYield = pdTRUE，那么退出中断后切到当前最高优先级任务执行 */
+    portYIELD_FROM_ISR( mustYield );
 }
+
+#if 0
+	/* 这个格式和RTClib I2C使用数组传，数组元素包含从设备地址和寄存器地址+数据差不多 */
+	//spi_transaction_t用于配置SPI的数据格式
+	//注意：这个结构体只定义了一种SPI传输格式，如果需要多种SPI传输则需要定义多个结构体并进行实例化
+	struct spi_transaction_t={
+	    .cmd,		//指令数据，其长度在spi_device_interface_config_t中的command_bits设置
+	    .addr,		//地址数据，其长度在spi_device_interface_config_t中的address_bits设置
+		.length,	//数据总长度，单位：比特
+	    .rxlength,	//接收到的数据总长度，应小于length，如果设置为0则默认设置为length
+		.flags,		//SPI传输属性设置
+		.user,		//用户定义变量，可以用来存储传输ID等注释信息
+	    .tx_buffer,	//发送数据缓存区指针
+	    .tx_data,	//发送数据
+	    .rx_buffer,	//接收数据缓存区指针，如果启用DMA则需要至少4个字节
+	    .rx_data	//如果设置了SPI_TRANS_USE_RXDATA，数据会被这个变量直接接收
+	};
+#endif
 
 /**
  * AT SPI Master 发送 发送数据
@@ -327,6 +349,12 @@ static void at_spi_master_send_data(uint8_t* data, uint32_t len)
 {
 	// 指定结构体成员初始化，但HAL库没有这个 spi_transaction_t 结构体，可以改为HAL_SPI_Transmit()等效处理
 
+	/*
+	 * 下列 从上到下:
+	 * Quad SPI: CLK, /CS, IO0, IO1, IO2, IO3
+	 * Dual SPI: CLK, /CS, IO0, IO1, /WP, /Hold
+	 * Standard SPI: CLK, /CS, DI, DO, /WP, /Hold
+	 */
     spi_transaction_t trans = {
 #if defined(CONFIG_SPI_QUAD_MODE)
         .flags = SPI_TRANS_MODE_QIO,
@@ -335,7 +363,7 @@ static void at_spi_master_send_data(uint8_t* data, uint32_t len)
         .flags = SPI_TRANS_MODE_DIO,
         .cmd = CMD_HD_WRDMA_REG | (0x1 << 4),
 #else
-        .cmd = CMD_HD_WRDMA_REG,    //写模式？ // master -> slave command, donnot change
+        .cmd = CMD_HD_WRDMA_REG,    			// master -> slave command, donnot change
 #endif
         .length = len * 8,
         .tx_buffer = (void*)data
@@ -348,6 +376,8 @@ static void at_spi_master_send_data(uint8_t* data, uint32_t len)
      * 此函数和 spi_device_polling_start() + spi_device_polling_end() 共同使用等价
      *
      * 应该是和 HAL_SPI_Transmit(hspi, pData, Size, Timeout) 等价
+     * polling就是不使用非阻塞API，一直轮询状态，例如MaJerle：usart_rx_polling_F4
+     * https://github.com/MaJerle/stm32-usart-uart-dma-rx-tx/blob/main/projects/usart_rx_polling_F4/Src/main.c
      */
     spi_device_polling_transmit(handle, &trans);
 
@@ -648,104 +678,6 @@ typedef struct {
 }
 
 
-#if 0
-// armfly串口FIFO的comGetChar函数正确使用姿势
-// https://www.armbbs.cn/forum.php?mod=viewthread&tid=94579&extra=page%3D1
-
-enum ucStatus {
-	ucStatus_waitCmd = 0,
-	ucStatus_setFirstHalf,
-	ucStatus_setSecondHalf,
-	ucStatus_readBitsChar
-};
-void loop(){
-    uint8_t read;
-    uint8_t ucStatus = ucStatus_waitCmd;  /* 状态机标志 */
-    uint16_t ucCount = 0, i;
-    uint8_t buf[128];
-    bool setFirstHalf = 0;
-	while(1) {
-		static uint32_t timeOld = HAL_GetTick();
-		if(waitTime(&timeOld, 10)){
-			bsp_Button_Update();
-			if (comGetChar(COM1, &read))
-			{
-				switch (ucStatus)
-				{
-				/* 状态0保证接收到A或B */
-				case ucStatus_waitCmd:
-					if(read == 'A')
-					{
-						printf("设置波形数据前%d位，请输入形如 0100111011110000 的数据\r\n", bitLVL_NUM * 8);
-						ucStatus = ucStatus_setFirstHalf;
-					}
-					else if(read == 'B')
-					{
-						printf("设置波形数据后%d位，请输入形如 0100111011110000 的数据\r\n", bitLVL_NUM * 8);
-						ucStatus = ucStatus_setSecondHalf;
-					}
-					break;
-
-				case ucStatus_setFirstHalf:
-					setFirstHalf = true;
-					ucStatus = ucStatus_readBitsChar;
-					break;
-
-				case ucStatus_setSecondHalf:
-					ucStatus = ucStatus_readBitsChar;
-					setFirstHalf = false;
-					break;
-
-				case ucStatus_readBitsChar:
-					buf[ucCount] = read;
-
-					/* 接收够16个数据 */
-					bool bitCharError = false;
-					if(ucCount == bitLVL_NUM * 8)
-					{
-						/* 打印接收到的数据值 */
-						printf("接收到的数据：");
-						for(i = 0; i < ucCount; i++)
-						{
-							*(buf + i) -= '0';	//	字符转整形
-							if(buf[i] > 1 || buf[i] < 0)	//检测数据合法性
-								bitCharError = true;
-							printf("%d ", buf[i]);
-						}
-						if(bitCharError){
-							printf("输入数据无效，请重新输入\r\n");
-							ucStatus = ucStatus_waitCmd;
-						}
-						else{
-							uint8_t bits[bitLVL_NUM] = {0};
-							for(i = 0; i < bitLVL_NUM * 8; i++){
-								uint32_t j = i / 8;
-								(*(bits + j)) |= buf[bitLVL_NUM * 8 - 1 - i] << (i - 8 * j);
-							}
-							for(i = 0; i < bitLVL_NUM; i++) {
-								if(setFirstHalf){
-									bitLVL_M0[i] = bits[bitLVL_NUM - 1 - i];
-								}else{
-									bitLVL_M1[i] = bits[bitLVL_NUM - 1 - i];
-								}
-							}
-							printf("输入数据有效，已更改PWM波形数据\r\n");
-							ucStatus = ucStatus_waitCmd;
-						}
-						ucStatus = 0;
-						ucCount = 0;
-					}
-					else
-					{
-						ucCount++;
-					}
-					break;
-				}
-			}
-		}
-	}
-}
-#endif
 inline void spi_bus_defalut_config(spi_bus_config_t* bus_cfg)
 {
     bus_cfg->mosi_io_num = GPIO_MOSI;
@@ -815,7 +747,11 @@ static void init_master_hd(spi_device_handle_t* spi)
     //init bus
     spi_bus_config_t bus_cfg = {};
     spi_bus_defalut_config(&bus_cfg);
-    ESP_ERROR_CHECK(spi_bus_initialize(MASTER_HOST, &bus_cfg, DMA_CHAN));
+    ESP_ERROR_CHECK(
+    		spi_bus_initialize(
+    				MASTER_HOST,
+					&bus_cfg,
+					DMA_CHAN));			//自动选择DMA通道
 
     //add device
     spi_device_interface_config_t dev_cfg = {};

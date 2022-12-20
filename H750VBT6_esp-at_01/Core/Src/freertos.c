@@ -53,6 +53,9 @@ osStaticThreadDef_t uart_taskControlBlock;
 osThreadId led_taskHandle;
 uint32_t led_taskBuffer[ 256 ];
 osStaticThreadDef_t led_taskControlBlock;
+osThreadId spi_trans_control_taskHandle;
+uint32_t spi_trans_control_taskBuffer[ 1024 ];
+osStaticThreadDef_t spi_trans_control_taskControlBlock;
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -61,6 +64,7 @@ osStaticThreadDef_t led_taskControlBlock;
 
 void start_uart_task(void const * argument);
 void start_led_task(void const * argument);
+void start_spi_trans_control_task(void const * argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -87,7 +91,7 @@ void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer, StackTy
   */
 void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
-
+setup();
   /* USER CODE END Init */
 
   /* USER CODE BEGIN RTOS_MUTEX */
@@ -108,12 +112,16 @@ void MX_FREERTOS_Init(void) {
 
   /* Create the thread(s) */
   /* definition and creation of uart_task */
-  osThreadStaticDef(uart_task, start_uart_task, osPriorityHigh, 0, 1024, uart_taskBuffer, &uart_taskControlBlock);
+  osThreadStaticDef(uart_task, start_uart_task, osPriorityNormal, 0, 1024, uart_taskBuffer, &uart_taskControlBlock);
   uart_taskHandle = osThreadCreate(osThread(uart_task), NULL);
 
   /* definition and creation of led_task */
   osThreadStaticDef(led_task, start_led_task, osPriorityLow, 0, 256, led_taskBuffer, &led_taskControlBlock);
   led_taskHandle = osThreadCreate(osThread(led_task), NULL);
+
+  /* definition and creation of spi_trans_control_task */
+  osThreadStaticDef(spi_trans_control_task, start_spi_trans_control_task, osPriorityHigh, 0, 1024, spi_trans_control_taskBuffer, &spi_trans_control_taskControlBlock);
+  spi_trans_control_taskHandle = osThreadCreate(osThread(spi_trans_control_task), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -157,6 +165,25 @@ void start_led_task(void const * argument)
     osDelay(1);
   }
   /* USER CODE END start_led_task */
+}
+
+/* USER CODE BEGIN Header_start_spi_trans_control_task */
+/**
+* @brief Function implementing the spi_trans_control_task thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_start_spi_trans_control_task */
+void start_spi_trans_control_task(void const * argument)
+{
+  /* USER CODE BEGIN start_spi_trans_control_task */
+	spi_thread();
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END start_spi_trans_control_task */
 }
 
 /* Private application code --------------------------------------------------*/

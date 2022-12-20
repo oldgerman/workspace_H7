@@ -24,8 +24,9 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "usart.h"
 #include "dma.h"
+#include "usart.h"
+#include "spi.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -107,8 +108,7 @@ int main(void)
    */
   MX_DMA_Init();
   MX_USART1_UART_Init();		// USART Init After DMA Init
-//  MX_SPI2_Init();				// SPI Init After DMA Init
-
+  MX_SPI2_Init();				// SPI Init After DMA Init
   /* USER CODE END 2 */
 
   /* Call init function for freertos objects (in freertos.c) */
