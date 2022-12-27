@@ -166,7 +166,10 @@ typedef struct os_thread_def  {
 在链接脚本中加入：新的section段、新定义的2个全局变量（方便后续在汇编当中把函数从 ROM 拷贝到 RAM）
 
 ```c
-  .ITCM :
+  /* Place code in ITCMRAM */
+  /* Ref: https://blog.csdn.net/whj123999/article/details/119977388?spm=1001.2014.3001.5501 */
+  /* Ref: UM2609 2.5.7.2 */
+  .RAM_CODE :
   {
     . = ALIGN(4);
     __itcm_start = .;
@@ -174,14 +177,14 @@ typedef struct os_thread_def  {
     . = ALIGN(4);
     __itcm_end = .;
    } > ITCMRAM AT>FLASH
-   __itcm_rom_start = LOADADDR(.ITCM);
-   __itcm_size = SIZEOF(.ITCM);
+   __itcm_rom_start = LOADADDR(.RAM_CODE);
+   __itcm_size = SIZEOF(.RAM_CODE);
 ```
 
 在 `frtos_spi_conf.h`中定义 IRAM_ATTR 宏：
 
 ```c
-#define IRAM_ATTR	__attribute__((section(".ITCM")))	// 时间关键程序从FLASH拷贝到ITCMRAM中执行
+#define IRAM_ATTR	__attribute__((section(".RAM_CODE")))	// 时间关键程序从FLASH拷贝到ITCMRAM中执行
 ```
 
 在启动文件 `startup_stm32h750vbtx.s` 中的如下位置加入汇编代码：
