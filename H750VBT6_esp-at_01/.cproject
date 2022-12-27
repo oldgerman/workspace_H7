@@ -35,12 +35,9 @@
 									<listOptionValue builtIn="false" value="DEBUG"/>
 								</option>
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler.option.includepaths.1082027980" name="Include paths (-I)" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler.option.includepaths" useByScannerDiscovery="false" valueType="includePath">
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_esp-at_01/Share/Bsp/Inc}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_esp-at_01/User/Basic}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_esp-at_01/User/Bsp}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_esp-at_01/User/Bsp/Inc}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_esp-at_01/Share/Libraries/ButtonEvent}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_esp-at_01/Share/Libraries/Binary}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_esp-at_01/frtos_spi}&quot;"/>
 								</option>
 								<inputType id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler.input.941236922" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler.input"/>
 							</tool>
@@ -57,17 +54,14 @@
 									<listOptionValue builtIn="false" value="../Drivers/STM32H7xx_HAL_Driver/Inc"/>
 									<listOptionValue builtIn="false" value="../Drivers/CMSIS/Device/ST/STM32H7xx/Include"/>
 									<listOptionValue builtIn="false" value="../Drivers/CMSIS/Include"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_esp-at_01/Share/Bsp/Inc}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_esp-at_01/User/Basic}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_esp-at_01/User/Bsp}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_esp-at_01/User/Bsp/Inc}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_esp-at_01/Share/Libraries/ButtonEvent}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_esp-at_01/Share/Libraries/Binary}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_esp-at_01/User/lwrb}&quot;"/>
 									<listOptionValue builtIn="false" value="../Drivers/STM32H7xx_HAL_Driver/Inc/Legacy"/>
 									<listOptionValue builtIn="false" value="../Middlewares/Third_Party/FreeRTOS/Source/include"/>
 									<listOptionValue builtIn="false" value="../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS"/>
 									<listOptionValue builtIn="false" value="../Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_esp-at_01/frtos_spi}&quot;"/>
 								</option>
 								<inputType id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.input.c.1159842195" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.input.c"/>
 							</tool>
@@ -84,17 +78,14 @@
 									<listOptionValue builtIn="false" value="../Drivers/STM32H7xx_HAL_Driver/Inc"/>
 									<listOptionValue builtIn="false" value="../Drivers/CMSIS/Device/ST/STM32H7xx/Include"/>
 									<listOptionValue builtIn="false" value="../Drivers/CMSIS/Include"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_esp-at_01/Share/Bsp/Inc}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_esp-at_01/User/Basic}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_esp-at_01/User/Bsp}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_esp-at_01/User/Bsp/Inc}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_esp-at_01/Share/Libraries/ButtonEvent}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_esp-at_01/Share/Libraries/Binary}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_esp-at_01/User/lwrb}&quot;"/>
 									<listOptionValue builtIn="false" value="../Drivers/STM32H7xx_HAL_Driver/Inc/Legacy"/>
 									<listOptionValue builtIn="false" value="../Middlewares/Third_Party/FreeRTOS/Source/include"/>
 									<listOptionValue builtIn="false" value="../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS"/>
 									<listOptionValue builtIn="false" value="../Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_esp-at_01/frtos_spi}&quot;"/>
 								</option>
 								<inputType id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.cpp.compiler.input.cpp.412494339" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.cpp.compiler.input.cpp"/>
 							</tool>
@@ -117,12 +108,12 @@
 						</toolChain>
 					</folderInfo>
 					<sourceEntries>
-						<entry excluding="LICENSES/|linux/" flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="host"/>
-						<entry excluding="Hal/|Libraries/|Bsp/" flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="Share"/>
-						<entry excluding="Basic/app_main.c" flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="User"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="Core"/>
-						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Middlewares"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Drivers"/>
+						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Middlewares"/>
+						<entry excluding="Basic/app_main.c" flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="User"/>
+						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="frtos_spi"/>
+						<entry excluding="LICENSES/|linux/" flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="host"/>
 					</sourceEntries>
 				</configuration>
 			</storageModule>
@@ -155,27 +146,7 @@
 							<builder buildPath="${workspace_loc:/H750VBT6_esp-at_01}/Release" id="com.st.stm32cube.ide.mcu.gnu.managedbuild.builder.897819147" keepEnvironmentInBuildfile="false" managedBuildOn="true" name="Gnu Make Builder" parallelBuildOn="true" parallelizationNumber="optimal" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.builder"/>
 							<tool id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler.63712000" name="MCU GCC Assembler" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler">
 								<option id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler.option.debuglevel.2026204652" name="Debug level" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler.option.debuglevel" value="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler.option.debuglevel.value.g0" valueType="enumerated"/>
-								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler.option.includepaths.877792444" name="Include paths (-I)" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler.option.includepaths" valueType="includePath">
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_esp-at_01/Share/Libraries/ButtonEvent}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_esp-at_01/Share/Libraries/Binary}&quot;"/>
-									<listOptionValue builtIn="false" value="../common/include"/>
-									<listOptionValue builtIn="false" value="../host/components/include"/>
-									<listOptionValue builtIn="false" value="../common/protobuf-c"/>
-									<listOptionValue builtIn="false" value="../host/stm32/app"/>
-									<listOptionValue builtIn="false" value="../host/stm32/app/data"/>
-									<listOptionValue builtIn="false" value="../host/stm32/app/control"/>
-									<listOptionValue builtIn="false" value="../host/stm32/driver/spi"/>
-									<listOptionValue builtIn="false" value="../host/stm32/driver/serial"/>
-									<listOptionValue builtIn="false" value="../host/stm32/driver/netif"/>
-									<listOptionValue builtIn="false" value="../host/stm32/driver/network"/>
-									<listOptionValue builtIn="false" value="../host/stm32/port/include"/>
-									<listOptionValue builtIn="false" value="../host/stm32/common"/>
-									<listOptionValue builtIn="false" value="../host/virtual_serial_if/include"/>
-									<listOptionValue builtIn="false" value="../host/control_lib/src/include"/>
-									<listOptionValue builtIn="false" value="../host/control_lib/include"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_esp-at_01/User/lwrb}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_esp-at_01/Share/Bsp/Inc}&quot;"/>
-								</option>
+								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="true" id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler.option.includepaths.877792444" name="Include paths (-I)" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler.option.includepaths" valueType="includePath"/>
 								<inputType id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler.input.2122766719" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler.input"/>
 							</tool>
 							<tool id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.170463432" name="MCU GCC Compiler" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler">
@@ -185,35 +156,7 @@
 									<listOptionValue builtIn="false" value="STM32H750xx"/>
 									<listOptionValue builtIn="false" value="USE_HAL_DRIVER"/>
 								</option>
-								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.includepaths.1782454348" name="Include paths (-I)" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.includepaths" useByScannerDiscovery="false" valueType="includePath">
-									<listOptionValue builtIn="false" value="../Core/Inc"/>
-									<listOptionValue builtIn="false" value="../Drivers/STM32H7xx_HAL_Driver/Inc"/>
-									<listOptionValue builtIn="false" value="../Drivers/CMSIS/Device/ST/STM32H7xx/Include"/>
-									<listOptionValue builtIn="false" value="../Drivers/CMSIS/Include"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_esp-at_01/Share/Libraries/ButtonEvent}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_esp-at_01/Share/Libraries/Binary}&quot;"/>
-									<listOptionValue builtIn="false" value="../common/include"/>
-									<listOptionValue builtIn="false" value="../host/components/include"/>
-									<listOptionValue builtIn="false" value="../common/protobuf-c"/>
-									<listOptionValue builtIn="false" value="../host/stm32/app"/>
-									<listOptionValue builtIn="false" value="../host/stm32/app/data"/>
-									<listOptionValue builtIn="false" value="../host/stm32/app/control"/>
-									<listOptionValue builtIn="false" value="../host/stm32/driver/spi"/>
-									<listOptionValue builtIn="false" value="../host/stm32/driver/serial"/>
-									<listOptionValue builtIn="false" value="../host/stm32/driver/netif"/>
-									<listOptionValue builtIn="false" value="../host/stm32/driver/network"/>
-									<listOptionValue builtIn="false" value="../host/stm32/port/include"/>
-									<listOptionValue builtIn="false" value="../host/stm32/common"/>
-									<listOptionValue builtIn="false" value="../host/virtual_serial_if/include"/>
-									<listOptionValue builtIn="false" value="../host/control_lib/src/include"/>
-									<listOptionValue builtIn="false" value="../host/control_lib/include"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_esp-at_01/User/lwrb}&quot;"/>
-									<listOptionValue builtIn="false" value="../Drivers/STM32H7xx_HAL_Driver/Inc/Legacy"/>
-									<listOptionValue builtIn="false" value="../Middlewares/Third_Party/FreeRTOS/Source/include"/>
-									<listOptionValue builtIn="false" value="../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS"/>
-									<listOptionValue builtIn="false" value="../Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_esp-at_01/Share/Bsp/Inc}&quot;"/>
-								</option>
+								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="true" id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.includepaths.1782454348" name="Include paths (-I)" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.includepaths" useByScannerDiscovery="false" valueType="includePath"/>
 								<inputType id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.input.c.1803422908" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.input.c"/>
 							</tool>
 							<tool id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.cpp.compiler.587185336" name="MCU G++ Compiler" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.cpp.compiler">
@@ -223,35 +166,7 @@
 									<listOptionValue builtIn="false" value="STM32H750xx"/>
 									<listOptionValue builtIn="false" value="USE_HAL_DRIVER"/>
 								</option>
-								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.cpp.compiler.option.includepaths.1008106660" name="Include paths (-I)" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.cpp.compiler.option.includepaths" useByScannerDiscovery="false" valueType="includePath">
-									<listOptionValue builtIn="false" value="../Core/Inc"/>
-									<listOptionValue builtIn="false" value="../Drivers/STM32H7xx_HAL_Driver/Inc"/>
-									<listOptionValue builtIn="false" value="../Drivers/CMSIS/Device/ST/STM32H7xx/Include"/>
-									<listOptionValue builtIn="false" value="../Drivers/CMSIS/Include"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_esp-at_01/Share/Libraries/ButtonEvent}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_esp-at_01/Share/Libraries/Binary}&quot;"/>
-									<listOptionValue builtIn="false" value="../common/include"/>
-									<listOptionValue builtIn="false" value="../host/components/include"/>
-									<listOptionValue builtIn="false" value="../common/protobuf-c"/>
-									<listOptionValue builtIn="false" value="../host/stm32/app"/>
-									<listOptionValue builtIn="false" value="../host/stm32/app/data"/>
-									<listOptionValue builtIn="false" value="../host/stm32/app/control"/>
-									<listOptionValue builtIn="false" value="../host/stm32/driver/spi"/>
-									<listOptionValue builtIn="false" value="../host/stm32/driver/serial"/>
-									<listOptionValue builtIn="false" value="../host/stm32/driver/netif"/>
-									<listOptionValue builtIn="false" value="../host/stm32/driver/network"/>
-									<listOptionValue builtIn="false" value="../host/stm32/port/include"/>
-									<listOptionValue builtIn="false" value="../host/stm32/common"/>
-									<listOptionValue builtIn="false" value="../host/virtual_serial_if/include"/>
-									<listOptionValue builtIn="false" value="../host/control_lib/src/include"/>
-									<listOptionValue builtIn="false" value="../host/control_lib/include"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_esp-at_01/User/lwrb}&quot;"/>
-									<listOptionValue builtIn="false" value="../Drivers/STM32H7xx_HAL_Driver/Inc/Legacy"/>
-									<listOptionValue builtIn="false" value="../Middlewares/Third_Party/FreeRTOS/Source/include"/>
-									<listOptionValue builtIn="false" value="../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS"/>
-									<listOptionValue builtIn="false" value="../Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H750VBT6_esp-at_01/Share/Bsp/Inc}&quot;"/>
-								</option>
+								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="true" id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.cpp.compiler.option.includepaths.1008106660" name="Include paths (-I)" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.cpp.compiler.option.includepaths" useByScannerDiscovery="false" valueType="includePath"/>
 								<inputType id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.cpp.compiler.input.cpp.1515180750" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.cpp.compiler.input.cpp"/>
 							</tool>
 							<tool id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.linker.275931077" name="MCU GCC Linker" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.linker"/>

@@ -32,9 +32,9 @@
 	</natures>
 	<linkedResources>
 		<link>
-			<name>Share</name>
+			<name>frtos_spi</name>
 			<type>2</type>
-			<location>D:/ODG-PROJECT/STM32H7/workspace_H7/Share</location>
+			<location>D:/ODG-PROJECT/STM32H7/workspace_H7/Share/Libraries/frtos_spi</location>
 		</link>
 	</linkedResources>
 </projectDescription>

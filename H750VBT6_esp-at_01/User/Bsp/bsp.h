@@ -11,8 +11,8 @@
  * This exposes functions that are expected to be implemented to add support for different hardware
  */
 
-#ifndef BSP_BSP_H_
-#define BSP_BSP_H_
+#ifndef BSP_H_
+#define BSP_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -88,4 +88,4 @@ void bsp_Init();
 bool waitTime(uint32_t *timeOld, uint32_t wait);
 }
 #endif
-#endif /* BSP_BSP_H_ */
+#endif /* BSP_H_ */

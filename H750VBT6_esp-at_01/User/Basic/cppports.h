@@ -9,6 +9,8 @@
 #define INC_CPPPORTS_H_
 
 #ifdef __cplusplus
+#include "frtos_spi.h"
+#include "frtos_spi_esp_at.h"
 extern "C" {
 #endif
 
@@ -52,6 +54,8 @@ void btB_LONG_PRESSED_func();
 void re_DMA1_Stream0_IRQHandler(void);
 void re_DMA1_Stream1_IRQHandler(void);
 void re_USART1_IRQHandler(void);
+
+void usart_printf(const char *format, ...);
 /* USER CODE END EFP */
 
 /* 私有定义 Private defines --------------------------------------------------*/
@@ -60,6 +64,7 @@ void re_USART1_IRQHandler(void);
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus
+extern FRTOS_SPIBase SPI2_Base;
 }
 #endif
 

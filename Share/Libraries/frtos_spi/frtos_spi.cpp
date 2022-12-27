@@ -96,7 +96,6 @@ uint8_t FRTOS_SPICmd::busBusy(void){
 	return _pSPIBase->baseBusy();
 }
 
-
 /**
   *	@brief: 	配置SPI总线。 只包括 SCK、 MOSI、 MISO口线的配置。不包括片选CS，也不包括外设芯片特有的INT、BUSY等
   *	@param: 	无
@@ -126,8 +125,7 @@ void FRTOS_SPIBase::baseSetParam(uint32_t BaudRatePrescaler, uint32_t CLKPhase, 
 	s_CLKPhase = CLKPhase;
 	s_CLKPolarity = CLKPolarity;
 	
-
-	/*##-1- Configure the SPI peripheral #######################################*/
+	/* Configure the SPI peripheral */
 	/* Set the SPI parameters */
 	_hspi.Init.BaudRatePrescaler = s_BaudRatePrescaler;
 	_hspi.Init.CLKPhase          = s_CLKPhase;
@@ -161,11 +159,16 @@ void FRTOS_SPIBase::baseTransfer(transfer_mode_t spiTransMode)
 		}
 
 		while (wTransferState == TRANSFER_STATE_WAIT) {
-			//osDelay(1);
+			//osDelay(10);
 			// 若非RTOS，等待期间只能处理中断
 		}
 
-		/* Invalidate cache prior to access by CPU */
+		/**
+		 * Invalidate cache prior to access by CPU
+		 * DMA接收完一帧数据之后，需要进行数据解析之前，进行Cache无效化处理
+		 * ◆ 第 1 个参数 addr ： 操作的地址一定要是 32 字节对齐的，即这个地址对 32 求余数等于 0。
+		 * ◆ 第 2 个参数 dsize ：一定要是 32 字节的整数倍。
+		 */
 		SCB_InvalidateDCache_by_Addr ((uint32_t *)_pRxData, _size);
 		break;
 	case TRANSFER_MODE_INT:
@@ -178,7 +181,7 @@ void FRTOS_SPIBase::baseTransfer(transfer_mode_t spiTransMode)
 		}
 
 		while (wTransferState == TRANSFER_STATE_WAIT){
-			//osDelay(1);
+			//osDelay(10);
 			// 若非RTOS，等待期间只能处理中断
 		}
 		break;
@@ -210,11 +213,16 @@ void FRTOS_SPIBase::baseTransferExt(transfer_mode_t spiTransMode, uint8_t* pTxDa
 		}
 
 		while (wTransferState == TRANSFER_STATE_WAIT) {
-			//osDelay(1);
+			//osDelay(10);
 			// 若非RTOS，等待期间只能处理中断
 		}
 
-		/* Invalidate cache prior to access by CPU */
+		/**
+		 * Invalidate cache prior to access by CPU
+		 * DMA接收完一帧数据之后，需要进行数据解析之前，进行Cache无效化处理
+		 * ◆ 第 1 个参数 addr ： 操作的地址一定要是 32 字节对齐的，即这个地址对 32 求余数等于 0。
+		 * ◆ 第 2 个参数 dsize ：一定要是 32 字节的整数倍。
+		 */
 		SCB_InvalidateDCache_by_Addr ((uint32_t *)pRxData, size);
 		break;
 	case TRANSFER_MODE_INT:
@@ -227,107 +235,12 @@ void FRTOS_SPIBase::baseTransferExt(transfer_mode_t spiTransMode, uint8_t* pTxDa
 		}
 
 		while (wTransferState == TRANSFER_STATE_WAIT){
-			//osDelay(1);
+			//osDelay(10);
 			// 若非RTOS，等待期间只能处理中断
 		}
 		break;
 	case TRANSFER_MODE_POLL:
 		if(HAL_SPI_TransmitReceive(&_hspi, (uint8_t*)pTxData, (uint8_t*)pRxData, size, HAL_MAX_DELAY) != HAL_OK){
-			Error_Handler();
-		}
-		break;
-	default:
-		break;
-	}
-}
-
-/**
-  *	@brief: 	只发送数据，使用对象外部的参数
-  *	@param:  	spiTransMode 数据传输模式
-  *	@retval: 	无
-  */
-void FRTOS_SPIBase::baseTransmitExt(transfer_mode_t spiTransMode, uint8_t* pTxData, uint16_t size)
-{
-	switch(spiTransMode){
-	case TRANSFER_MODE_DMA:
-		wTransferState = TRANSFER_STATE_WAIT;
-
-		while (_hspi.State != HAL_SPI_STATE_READY);
-
-		if(HAL_SPI_Transmit_DMA(&_hspi, (uint8_t*)pTxData, size) != HAL_OK) {
-			Error_Handler();
-		}
-
-		while (wTransferState == TRANSFER_STATE_WAIT) {
-			//osDelay(1);
-			// 若非RTOS，等待期间只能处理中断
-		}
-
-		break;
-	case TRANSFER_MODE_INT:
-		wTransferState = TRANSFER_STATE_WAIT;
-
-		while (_hspi.State != HAL_SPI_STATE_READY);
-
-		if(HAL_SPI_Transmit_IT(&_hspi, (uint8_t*)pTxData, size) != HAL_OK){
-			Error_Handler();
-		}
-
-		while (wTransferState == TRANSFER_STATE_WAIT){
-			//osDelay(1);
-			// 若非RTOS，等待期间只能处理中断
-		}
-		break;
-	case TRANSFER_MODE_POLL:
-		if(HAL_SPI_Transmit(&_hspi, (uint8_t*)pTxData, size, HAL_MAX_DELAY) != HAL_OK){
-			Error_Handler();
-		}
-		break;
-	default:
-		break;
-	}
-}
-
-/**
-  *	@brief: 	只发送数据，使用对象外部的参数
-  *	@param:  	spiTransMode 数据传输模式
-  *	@retval: 	无
-  */
-void FRTOS_SPIBase::baseReceiveExt(transfer_mode_t spiTransMode, uint8_t* pRxData, uint16_t size)
-{
-	switch(spiTransMode){
-	case TRANSFER_MODE_DMA:
-		wTransferState = TRANSFER_STATE_WAIT;
-
-		while (_hspi.State != HAL_SPI_STATE_READY);
-
-		if(HAL_SPI_Receive_DMA(&_hspi, (uint8_t*)pRxData, size) != HAL_OK) {
-			Error_Handler();
-		}
-
-		while (wTransferState == TRANSFER_STATE_WAIT) {
-			//osDelay(1);
-			// 若非RTOS，等待期间只能处理中断
-		}
-		/* Invalidate cache prior to access by CPU */
-		SCB_InvalidateDCache_by_Addr ((uint32_t *)pRxData, size);
-		break;
-	case TRANSFER_MODE_INT:
-		wTransferState = TRANSFER_STATE_WAIT;
-
-		while (_hspi.State != HAL_SPI_STATE_READY);
-
-		if(HAL_SPI_Receive_IT(&_hspi, (uint8_t*)pRxData, size) != HAL_OK){
-			Error_Handler();
-		}
-
-		while (wTransferState == TRANSFER_STATE_WAIT){
-			//osDelay(1);
-			// 若非RTOS，等待期间只能处理中断
-		}
-		break;
-	case TRANSFER_MODE_POLL:
-		if(HAL_SPI_Receive(&_hspi, (uint8_t*)pRxData, size, HAL_MAX_DELAY) != HAL_OK){
 			Error_Handler();
 		}
 		break;

@@ -80,6 +80,20 @@ SECTIONS
     _etext = .;        /* define a global symbols at end of code */
   } >FLASH
 
+  /* Place code in ITCMRAM */
+  /* Ref: https://blog.csdn.net/whj123999/article/details/119977388?spm=1001.2014.3001.5501 */
+  /* Ref: UM2609 2.5.7.2 */
+  .RAM_CODE :
+  {
+    . = ALIGN(4);
+    __itcm_start = .;
+    *(.ITCM)
+    . = ALIGN(4);
+    __itcm_end = .;
+   } > ITCMRAM AT>FLASH
+   __itcm_rom_start = LOADADDR(.RAM_CODE);
+   __itcm_size = SIZEOF(.RAM_CODE);
+  
   /* Constant data goes into FLASH */
   .rodata :
   {
@@ -155,10 +169,10 @@ SECTIONS
   .RAM_D2_Array (NOLOAD):
   {
     . = ALIGN(4);
-    *(.RAM_D3_Array)
+    *(.RAM_D2_Array)
     . = ALIGN(4);
   } >RAM_D2
-  
+
   /* User_heap_stack section, used to check that there is enough RAM left */
   ._user_heap_stack :
   {

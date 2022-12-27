@@ -60,6 +60,29 @@ defined in linker script */
 Reset_Handler:
   ldr   sp, =_estack      /* set stack pointer */
 
+/** @def assembly code group
+  * @brief  whj123999博主的文章"使用RTT Studio指定特殊函数加载到RAM的方法" 需要增加的 GCC 启动汇编代码
+  * @link   https://blog.csdn.net/whj123999/article/details/119977388?spm=1001.2014.3001.5501
+  * @{
+  *
+  */
+  ldr r0 ,=__itcm_rom_start  	/* 加载 放在了 ROM 当中，需要加载到 ITCM 中数据的起始地址到 R0 */
+  ldr r1 ,=__itcm_start 		/* 加载 ITCM 第一个函数的起始放置位置到 R1 */
+  ldr r2 ,=__itcm_size 			/* 加载 ITCM 的大小到 R2 */
+  add r2 , r1, r2  				/* R1 加 R2 的值 放到 R2 */
+
+1:
+  cmp r2, r1  					/* 比较 R1 与 R2 */
+  beq 2f 						/* 如果上面的比较之后是相等的 则跳转到标签 2  */
+  ldr r3 ,[r0],#4 				/*  将 R0 寄存器里面存放的地址处的代码，写入到 R3 寄存器里面。然后 R0 + 4 */
+  str r3 ,[r1],#4 				/* 将R3中的数据写入以R1为地址的存储器中，然后 R1 + 4*/
+  b 1b 							/* 调回到标签 1，循环拷贝 */
+2:
+/**
+  * @}
+  *
+  */
+
 /* Call the clock system initialization function.*/
   bl  SystemInit
 

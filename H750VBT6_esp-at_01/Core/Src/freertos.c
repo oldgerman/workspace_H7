@@ -120,8 +120,8 @@ setup();
   led_taskHandle = osThreadCreate(osThread(led_task), NULL);
 
   /* definition and creation of spi_trans_control_task */
-  osThreadStaticDef(spi_trans_control_task, start_spi_trans_control_task, osPriorityHigh, 0, 1024, spi_trans_control_taskBuffer, &spi_trans_control_taskControlBlock);
-  spi_trans_control_taskHandle = osThreadCreate(osThread(spi_trans_control_task), NULL);
+//  osThreadStaticDef(spi_trans_control_task, start_spi_trans_control_task, osPriorityHigh, 0, 1024, spi_trans_control_taskBuffer, &spi_trans_control_taskControlBlock);
+//  spi_trans_control_taskHandle = osThreadCreate(osThread(spi_trans_control_task), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */

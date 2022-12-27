@@ -71,3 +71,114 @@ at_spi_master_send_data()发送结束传输指令
 初步测时是成功的，发送单独的+++帧退出透传还有BUG，待实现的解决思路：在usart任务中实现指令解析，丢弃+++后的\r\n
 
 ![测试：ESP-AT建立TCP客户端UART透传（BUG-2022-12-21）](Images/测试：ESP-AT建立TCP客户端UART透传（BUG-2022-12-21）.png)
+
+## 2022/12/27
+
+将乐鑫ESP AT SPI Master端的所有代码封装进 FRTOS_SPIDev_ESP_AT 类
+
+DMA收发AT指令数据 测试OK
+
+### 避免报错 “SPI AT Master: SPI send seq error ” 的方法
+
+这个原因是ESP32-C3的ESP-AT程序的SPI包的帧计数器 与 H750运行的ESP-AT Master端的SPI包的帧计数器不一致，原因是调试时没有让ESP32-C3硬件复位重置帧计数器，现在已加入H750的GPIO控制ESP32-C3的复位引脚，在运行程序前先等待5秒ESP32-C3复位后初始化，然后再发送AT指令，其实这边是可以强制改变Master端的包的，但乐鑫原版代码是抛出这个错误：
+
+```
+[01:50:38.002] AT+GMR
+[01:50:38.005] AT+GMR
+[01:50:38.009] ESP (4310) SPI AT Master: SPI send seq error, d, 1
+```
+
+### 避免警告 ISO C++ forbids converting a string constant to 'char*' 的方法
+
+在frtos_spi_esp_at.cpp文件中调用了osThreadStaticDef这个宏函数
+
+```C++
+void FRTOS_SPIDev_ESP_AT::init(FRTOS_SPICmd *frtos_spi_cmd,
+......
+
+	osThreadStaticDef(
+				esp_at_spi_task,
+				thread,
+				Priority,
+				0,
+				TaskStackSize,
+				TaskBuffer,
+				&TaskControlBlock);
+......
+}
+```
+
+编译时就报这个警告
+
+```c
+../User/Bsp/frtos_spi_esp_at.cpp: In static member function 'static void ns_frtos_spi_esp_at::FRTOS_SPIDev_ESP_AT::init(ns_frtos_spi::FRTOS_SPICmd*, uint8_t*, uint8_t*, GPIO_TypeDef*, uint16_t, osPriority)':
+../User/Bsp/frtos_spi_esp_at.cpp:410:22: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+  410 |     &TaskControlBlock);
+      |                      ^
+../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS/cmsis_os.h:420:4: note: in definition of macro 'osThreadStaticDef'
+  420 | { #name, (thread), (priority), (instances), (stacksz), (buffer), (control) }
+      |    ^~~~
+```
+
+osThreadStaticDef这个宏涉及到的代码在`cmsis_os.h`：可以看到使用 # 宏将第一个参数 esp_at_spi_task 替换为任务名，并转换为字符串指针给osThreadDef_t的name成员，但这个name成员是一个 char*，出现了字符串常量转化为指针变量的情况，继而触发了g++编译器警告
+
+```c
+#define osThreadStaticDef(name, thread, priority, instances, stacksz, buffer, control)  \
+const osThreadDef_t os_thread_def_##name = \
+{ #name, (thread), (priority), (instances), (stacksz), (buffer), (control) }
+
+/// Thread Definition structure contains startup information of a thread.
+/// \note CAN BE CHANGED: \b os_thread_def is implementation specific in every CMSIS-RTOS.
+typedef struct os_thread_def  {
+  char            *name;        ///< Thread name
+  os_pthread             pthread;      ///< start address of thread function
+  osPriority             tpriority;    ///< initial thread priority
+  uint32_t               instances;    ///< maximum number of instances of that thread function
+  uint32_t               stacksize;    ///< stack size requirements in bytes; 0 is default stack size
+#if( configSUPPORT_STATIC_ALLOCATION == 1 )
+  uint32_t               *buffer;      ///< stack buffer for static allocation; NULL for dynamic allocation
+  osStaticThreadDef_t    *controlblock;     ///< control block to hold thread's data for static allocation; NULL for dynamic allocation
+#endif
+} osThreadDef_t;
+```
+
+但main.c中也是这么用的，但没警告，推测是C++编译器开了这个警告才显示，解决方法简单粗暴，给name成员加上const就行：
+
+```c
+typedef struct os_thread_def  {
+  const char            *name;        ///< Thread name
+......
+} osThreadDef_t;
+```
+
+### 测试
+
+当前程序 SPI data DMA收发AT指令正常
+
+![](Images/DMA收发AT指令测试_2022-12-27.png)
+
+### 待优化的地方
+
+transfer函数以下部分增加可选：在RTOS下的信号量或者消息阻塞，在 HAL_SPI_XXXCallback()中调用从中断中释放信号量的API，while + osDelay()的实现不够优雅
+
+```c
+while (wTransferState == TRANSFER_STATE_WAIT) {
+	osDelay(10);
+	// 若非RTOS，等待期间只能处理中断
+}
+```
+
+然后是 占用和释放 SPI 总线也增加一个 RTOS 下可选的操作
+
+```c
+void FRTOS_SPIBase::baseEnter(void)
+{
+	g_spi_busy = 1;
+}
+
+void FRTOS_SPIBase::baseExit(void)
+{
+	g_spi_busy = 0;
+}
+```
+
