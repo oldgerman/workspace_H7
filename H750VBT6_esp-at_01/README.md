@@ -76,8 +76,6 @@ at_spi_master_send_data()发送结束传输指令
 
 将乐鑫ESP AT SPI Master端的所有代码封装进 FRTOS_SPIDev_ESP_AT 类
 
-DMA收发AT指令数据 测试OK
-
 ### 避免报错 “SPI AT Master: SPI send seq error ” 的方法
 
 这个原因是ESP32-C3的ESP-AT程序的SPI包的帧计数器 与 H750运行的ESP-AT Master端的SPI包的帧计数器不一致，原因是调试时没有让ESP32-C3硬件复位重置帧计数器，现在已加入H750的GPIO控制ESP32-C3的复位引脚，在运行程序前先等待5秒ESP32-C3复位后初始化，然后再发送AT指令，其实这边是可以强制改变Master端的包的，但乐鑫原版代码是抛出这个错误：
@@ -142,7 +140,7 @@ typedef struct os_thread_def  {
 } osThreadDef_t;
 ```
 
-但main.c中也是这么用的，但没警告，推测是C++编译器开了这个警告才显示，解决方法简单粗暴，给name成员加上const就行：
+main.c中也是这么用的，但没警告，推测是C++编译器开了这个警告才显示，解决方法简单粗暴，给name成员加上const就行：
 
 ```c
 typedef struct os_thread_def  {
@@ -156,6 +154,90 @@ typedef struct os_thread_def  {
 当前程序 SPI data DMA收发AT指令正常
 
 ![](Images/DMA收发AT指令测试_2022-12-27.png)
+
+### IRAM_ATTR 宏实现
+
+[使用RTT Studio指定特殊函数加载到RAM的方法](https://blog.csdn.net/whj123999/article/details/119977388?spm=1001.2014.3001.5501)
+
+对workspace_H7 的 H750VBT6_esp-at_01 工程 `frtos_spi_conf.h`中的 IRAM_ATTR 宏进行实现，它是 esp-idf 中将函数编译到IRAM运行的宏，常在对时间敏感的函数前加上，例如实时性要求很I高的中断回调函数
+
+对于STM32CubeIDE环境下的H750程序，对实现 IRAM_ATTR 的最佳目标RAM，自然联想到使用H7的 ITCMRAM，实操如下：
+
+在链接脚本中加入：新的section段、新定义的2个全局变量（方便后续在汇编当中把函数从 ROM 拷贝到 RAM）
+
+```c
+  .ITCM :
+  {
+    . = ALIGN(4);
+    __itcm_start = .;
+    *(.ITCM)
+    . = ALIGN(4);
+    __itcm_end = .;
+   } > ITCMRAM AT>FLASH
+   __itcm_rom_start = LOADADDR(.ITCM);
+   __itcm_size = SIZEOF(.ITCM);
+```
+
+在 `frtos_spi_conf.h`中定义 IRAM_ATTR 宏：
+
+```c
+#define IRAM_ATTR	__attribute__((section(".ITCM")))	// 时间关键程序从FLASH拷贝到ITCMRAM中执行
+```
+
+在启动文件 `startup_stm32h750vbtx.s` 中的如下位置加入汇编代码：
+
+```assembly
+......
+Reset_Handler:
+  ldr   sp, =_estack      /* set stack pointer */
+  
+/* Call the clock system initialization function.*/
+  bl  SystemInit
+......
+```
+
+加入后：
+
+```assembly
+......
+Reset_Handler:
+  ldr   sp, =_estack      /* set stack pointer */
+
+/** @def assembly code group 
+  * @brief  whj123999博主的文章"使用RTT Studio指定特殊函数加载到RAM的方法" 需要增加的 GCC 启动汇编代码
+  * @link   https://blog.csdn.net/whj123999/article/details/119977388?spm=1001.2014.3001.5501
+  * @{
+  *
+  */
+  ldr r0 ,=__itcm_rom_start  	/* 加载 放在了 ROM 当中，需要加载到 ITCM 中数据的起始地址到 R0 */
+  ldr r1 ,=__itcm_start 		/* 加载 ITCM 第一个函数的起始放置位置到 R1 */
+  ldr r2 ,=__itcm_size 			/* 加载 ITCM 的大小到 R2 */
+  add r2 , r1, r2  				/* R1 加 R2 的值 放到 R2 */
+
+1:
+  cmp r2, r1  					/* 比较 R1 与 R2 */
+  beq 2f 						/* 如果上面的比较之后是相等的 则跳转到标签 2  */
+  ldr r3 ,[r0],#4 				/*  将 R0 寄存器里面存放的地址处的代码，写入到 R3 寄存器里面。然后 R0 + 4 */
+  str r3 ,[r1],#4 				/* 将R3中的数据写入以R1为地址的存储器中，然后 R1 + 4*/
+  b 1b 							/* 调回到标签 1，循环拷贝 */
+2:
+/**
+  * @}
+  *
+  */
+
+/* Call the clock system initialization function.*/
+  bl  SystemInit
+......
+```
+
+然后编译下载就行，程序正常运行
+
+在 Buid Analyzer 中，可以看到`frtos_spi_esp_at.cpp`中的`void IRAM_ATTR FRTOS_SPIDev_ESP_AT::thread(const void *arg)`与`void IRAM_ATTR FRTOS_SPIDev_ESP_AT::gpio_handshake_isr_handler()`两个带有` IRAM_ATTR`宏的函数在FLASH中的 `.ITCM`段 和 ITCMRAM中的`.TCM`段 各有一份：
+
+![ITCMRAM实现IRAM_ATTR宏(../../RAM/Images/ITCMRAM实现IRAM_ATTR宏(1).png)](Images/ITCMRAM实现IRAM_ATTR宏(1).png)
+
+![ITCMRAM实现IRAM_ATTR宏(../../RAM/Images/ITCMRAM实现IRAM_ATTR宏(2).png)](Images/ITCMRAM实现IRAM_ATTR宏(2).png)
 
 ### 待优化的地方
 
