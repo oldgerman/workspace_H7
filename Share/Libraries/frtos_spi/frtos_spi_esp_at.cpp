@@ -13,9 +13,19 @@ osThreadId          	FRTOS_SPIDev_ESP_AT::TaskHandle = NULL;
 uint32_t            	FRTOS_SPIDev_ESP_AT::TaskBuffer[FRTOS_SPIDev_ESP_AT::TaskStackSize];
 osStaticThreadDef_t 	FRTOS_SPIDev_ESP_AT::TaskControlBlock;
 osPriority 				FRTOS_SPIDev_ESP_AT::Priority;
-StreamBufferHandle_t 	FRTOS_SPIDev_ESP_AT::spi_master_tx_ring_buf = NULL;	// 流缓冲区：环形的，用于SPI Master TX
-xQueueHandle 			FRTOS_SPIDev_ESP_AT::msg_queue; 					// 消息队列句柄：用于表示通信开始 读/写
-xSemaphoreHandle 		FRTOS_SPIDev_ESP_AT::pxMutex;						// SPI信号量，实现互斥锁
+
+QueueHandle_t 	FRTOS_SPIDev_ESP_AT::msg_queue; 											// 队列句柄：用于表示通信开始 读/写
+uint8_t 		FRTOS_SPIDev_ESP_AT::msg_queue_storage[FRTOS_SPIDev_ESP_AT::msg_queue_length * FRTOS_SPIDev_ESP_AT::msg_queue_item_size];
+StaticQueue_t 	FRTOS_SPIDev_ESP_AT::msg_quene_struct;							/* The variable used to hold the queue's data structure. */
+
+SemaphoreHandle_t FRTOS_SPIDev_ESP_AT::pxMutex;			// SPI信号量：互斥信号量
+StaticSemaphore_t FRTOS_SPIDev_ESP_AT::pxMutexBuffer;
+
+StreamBufferHandle_t 		FRTOS_SPIDev_ESP_AT::spi_master_tx_stream_buffer;			// 流缓冲区：环形的
+StaticStreamBuffer_t 		FRTOS_SPIDev_ESP_AT::spi_master_tx_stream_buffer_struct;	/* The variable used to hold the stream buffer structure. */
+RAM_REGION_NO_CACHE uint8_t FRTOS_SPIDev_ESP_AT::spi_master_tx_stream_buffer_storage[STREAM_BUFFER_SIZE];
+
+
 
 uint8_t FRTOS_SPIDev_ESP_AT::initiative_send_flag = 0; 	// Master有数据要发给Slave的标记
 uint32_t FRTOS_SPIDev_ESP_AT::plan_send_len = 0; 		// Master计划发送数据长度
@@ -193,7 +203,7 @@ void IRAM_ATTR FRTOS_SPIDev_ESP_AT::thread(const void *arg)
 //	(void)arg;
 
 	int8_t ret;
-	spi_master_msg_t trans_msg = {0};
+	spi_master_msg_t trans_msg = {0}; // 存放从消息队列中读取的消息，当slave接收完成 或 slave通知master接收时，为真
 	uint32_t send_len = 0;
 
 	/* 复位芯片 */
@@ -248,7 +258,7 @@ void IRAM_ATTR FRTOS_SPIDev_ESP_AT::thread(const void *arg)
 			}
 
 			//initiative_send_flag = 0;
-			send_len = xStreamBufferReceive(spi_master_tx_ring_buf, (void*) pTxData, plan_send_len, 0);
+			send_len = xStreamBufferReceive(spi_master_tx_stream_buffer, (void*) pTxData, plan_send_len, 0);
 
 			if (send_len != plan_send_len) {
 				ESP_LOGE(TAG, "Read len expect %d, but actual read %d", plan_send_len, send_len);
@@ -262,7 +272,7 @@ void IRAM_ATTR FRTOS_SPIDev_ESP_AT::thread(const void *arg)
 			}
 
 			// maybe streambuffer filled some data when SPI transimit, just consider it after send done, because send flag has already in SLAVE queue
-			uint32_t tmp_send_len = xStreamBufferBytesAvailable(spi_master_tx_ring_buf);
+			uint32_t tmp_send_len = xStreamBufferBytesAvailable(spi_master_tx_stream_buffer);
 			if (tmp_send_len > 0) {
 				plan_send_len = tmp_send_len > ESP_SPI_DMA_MAX_LEN ? ESP_SPI_DMA_MAX_LEN : tmp_send_len;
 				spi_master_request_to_write(current_send_seq + 1, plan_send_len);
@@ -352,7 +362,7 @@ int32_t FRTOS_SPIDev_ESP_AT::write_data_to_spi_task_tx_ring_buf(const void* data
 	}
 
 	length = xStreamBufferSend(
-			spi_master_tx_ring_buf,		// stream buffer 句柄
+			spi_master_tx_stream_buffer,		// stream buffer 句柄
 			data,						//指向需要发送数据的指针
 			size,						//发送数据的长度
 			portMAX_DELAY
@@ -365,7 +375,7 @@ void FRTOS_SPIDev_ESP_AT::notify_slave_to_recv(void)
 {
 	if (initiative_send_flag == 0) {
 		spi_mutex_lock();
-		uint32_t tmp_send_len = xStreamBufferBytesAvailable(spi_master_tx_ring_buf);
+		uint32_t tmp_send_len = xStreamBufferBytesAvailable(spi_master_tx_stream_buffer);
 		if (tmp_send_len > 0) {
 			plan_send_len = tmp_send_len > ESP_SPI_DMA_MAX_LEN ? ESP_SPI_DMA_MAX_LEN : tmp_send_len;
 			spi_master_request_to_write(current_send_seq + 1, plan_send_len); // to tell slave that the master want to write data
@@ -387,13 +397,25 @@ void FRTOS_SPIDev_ESP_AT::init(FRTOS_SPICmd *frtos_spi_cmd,
 	Priority = os_priority;
 	pTxData = (uint8_t *)txDataBuffer;
 	pRxData = (uint8_t *)rxDataBuffer;
-	// Create the meaasge queue.
-	msg_queue = xQueueCreate(5, sizeof(spi_master_msg_t));
-	// Create the tx_buf. (发送环形缓冲区8192字节)
-	spi_master_tx_ring_buf = xStreamBufferCreate(STREAM_BUFFER_SIZE, 1);
-	// Create the semaphore.
-	pxMutex = xSemaphoreCreateMutex();
 
+	// Create the meaasge queue.(消息队列深度5)
+	msg_queue = xQueueCreateStatic(
+			msg_queue_length,
+			msg_queue_item_size,
+			msg_queue_storage,
+			&msg_quene_struct);
+
+	// Create the tx_buf. (发送环形缓冲区8192字节)
+	spi_master_tx_stream_buffer = xStreamBufferCreateStatic(
+			sizeof(spi_master_tx_stream_buffer_storage),
+			spi_master_tx_stream_buffer_trigger_level,
+			spi_master_tx_stream_buffer_storage,
+			&spi_master_tx_stream_buffer_struct);
+
+	// Create the semaphore.
+	pxMutex = xSemaphoreCreateMutexStatic(&pxMutexBuffer);
+
+	// Ctreate the thread
 	osThreadStaticDef(
 				esp_at_spi_task,
 				thread,

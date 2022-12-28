@@ -91,7 +91,8 @@ public:
 	FRTOS_SPIBase(SPI_HandleTypeDef &hspi, uint8_t*pTxData, uint8_t*pRxData, uint16_t sizeBuf)
 	:_hspi(hspi), _pTxData(pTxData), _pRxData(pRxData), _size(sizeBuf){
 #if RTOS_EN
-		_SPISemphr = nullptr;
+//	 SPISemaphore = xSemaphoreCreateMutex();
+//	  xSemaphoreGive(I2CSemaphore);
 #else
 		_SPISemphr = 0;
 #endif
@@ -104,35 +105,31 @@ public:
 	void baseTransferExt(transfer_mode_t spiTransMode, uint8_t* pTxData, uint8_t* pRxData, uint16_t size);
 	void baseEnter();
 	void baseExit();
+	void spi_mutex_lock(void);
+	void spi_mutex_unlock(void);
 	uint8_t baseBusy();
 	void baseInitSemphr();
 	static void CpltCallback(SPI_HandleTypeDef *);
-#if RTOS_EN
-	SemaphoreHandle_t * getSemphr() { return &_SPISemphr; }
-#endif
-private:
-	SPI_HandleTypeDef  & _hspi;
-public:
+
+	SPI_HandleTypeDef  &_hspi;
 	uint8_t *_pTxData;
 	uint8_t *_pRxData;
 	uint32_t g_spiLen;	//buf缓冲区迭代下标，DMA、BDMA都仅支持1~65535个，但为了检测超出65535，使用uin32_t类型
 	volatile uint32_t wTransferState;
 private:
-	/*
-	 * 在构造时将提前定义的全局buffer的地址和大小作为参数传入，而不使用malloc申请，
-	 * 因此可以将buffer使用__attribute__编译到任意RAM区
-	 */
-	const uint16_t _size;
+	const uint16_t _size;	// 构造时将提前定义的全局buffer的地址和大小作为参数传入
 	/* 备份SPI几个关键传输参数，波特率，相位，极性. 如果不同外设切换，需要重新Init SPI参数 */
 	uint32_t s_BaudRatePrescaler;
 	uint32_t s_CLKPhase;
 	uint32_t s_CLKPolarity;
 	uint8_t g_spi_busy;
 #if RTOS_EN
-	SemaphoreHandle_t 	_SPISemphr;		//SPIx信号量，即多个任务用比如FRToSSPI1，占用SPI1总线，那么_SPISemphr保证每次SPI1资源只被一个任务使用
-	StaticSemaphore_t 	_xSemphrBuffer;  //用来保存信号量结构体，为啥不用指针？
+	SemaphoreHandle_t SPISemaphore;			/* SPI占用信号量：互斥信号量 */
+	SemaphoreHandle_t tansferSemaphore;		/* tansfer信号量：二值信号量 */
+	StaticSemaphore_t SPISemaphoreBuffer;		// xSemaphoreCreateMutexStatic()
+	StaticSemaphore_t transferSemaphoreBuffer;	//	xSemaphoreCreateBinaryStatic()
 #else
-	bool 					_SPISemphr;		//不跑RTOS，_SPISemphr没有实际用处
+	bool 			  SPISemaphore;		//不跑RTOS，SPISemaphore没有实际用处
 #endif
 
 };

@@ -70,7 +70,7 @@ void FRTOS_SPICmd::busSetCS(uint8_t _Level)
 	if (_Level == 0)
 	{
 		busEnter();			// 占用SPI总线
-		busSetParam(); 	// 一个SPI总线挂载多个设备时，每次SPI总线被其中一个设备占用，就根据其SPI的参数要求更改SPI配置
+		busSetParam(); 		// 一个SPI总线挂载多个设备时，每次SPI总线被其中一个设备占用，就根据其SPI的参数要求更改SPI配置
 		SF_CS_LOW();		// CS拉低
 	}
 	else 					// _Level == 1
@@ -144,55 +144,10 @@ void FRTOS_SPIBase::baseSetParam(uint32_t BaudRatePrescaler, uint32_t CLKPhase, 
 void FRTOS_SPIBase::baseTransfer(transfer_mode_t spiTransMode)
 {
 //	HAL_StatusTypeDef ret = HAL_OK;
-	if (g_spiLen > _size)
-	{
+	if (g_spiLen > _size) {
 		return;
 	}
-	switch(spiTransMode){
-	case TRANSFER_MODE_DMA:
-		wTransferState = TRANSFER_STATE_WAIT;
-
-		while (_hspi.State != HAL_SPI_STATE_READY);
-
-		if(HAL_SPI_TransmitReceive_DMA(&_hspi, _pTxData, _pRxData, g_spiLen) != HAL_OK) {
-			Error_Handler();
-		}
-
-		while (wTransferState == TRANSFER_STATE_WAIT) {
-			//osDelay(10);
-			// 若非RTOS，等待期间只能处理中断
-		}
-
-		/**
-		 * Invalidate cache prior to access by CPU
-		 * DMA接收完一帧数据之后，需要进行数据解析之前，进行Cache无效化处理
-		 * ◆ 第 1 个参数 addr ： 操作的地址一定要是 32 字节对齐的，即这个地址对 32 求余数等于 0。
-		 * ◆ 第 2 个参数 dsize ：一定要是 32 字节的整数倍。
-		 */
-		SCB_InvalidateDCache_by_Addr ((uint32_t *)_pRxData, _size);
-		break;
-	case TRANSFER_MODE_INT:
-		wTransferState = TRANSFER_STATE_WAIT;
-
-		while (_hspi.State != HAL_SPI_STATE_READY);
-
-		if(HAL_SPI_TransmitReceive_IT(&_hspi, _pTxData, _pRxData, g_spiLen) != HAL_OK){
-			Error_Handler();
-		}
-
-		while (wTransferState == TRANSFER_STATE_WAIT){
-			//osDelay(10);
-			// 若非RTOS，等待期间只能处理中断
-		}
-		break;
-	case TRANSFER_MODE_POLL:
-		if( HAL_SPI_TransmitReceive(&_hspi, _pTxData, _pRxData, g_spiLen, HAL_MAX_DELAY) != HAL_OK){
-			Error_Handler();
-		}
-		break;
-	default:
-		break;
-	}
+	baseTransferExt(spiTransMode, _pTxData, _pRxData, g_spiLen);
 }
 
 /**

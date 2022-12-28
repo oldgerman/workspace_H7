@@ -148,9 +148,9 @@ public:
 			osPriority os_priority);
 
 	/** @defgroup 需要由用户在外部调用的API，用于与本类的线程交互信息
-	 * @{
-	 *
-	 */
+	  * @{
+	  *
+	  */
 	/* 复位esp从机 */
 	static void reset_esp_at_slave();
 	/*
@@ -167,12 +167,12 @@ public:
 	// notify slave to recv data
 	static void notify_slave_to_recv(void);
 	/**
-	 * @}
-	 *
-	 */
-	static const size_t     TaskStackSize = 1024 * 2;
-	static const size_t     TXRxDataBufferSize = ESP_SPI_DMA_MAX_LEN;
-	static osThreadId       TaskHandle;
+	  * @}
+	  *
+	  */
+
+	static const size_t     	TaskStackSize = 1024 * 2;
+	static osThreadId       	TaskHandle;
 
 private:
 	/* 线程 */
@@ -181,21 +181,39 @@ private:
 	static osStaticThreadDef_t TaskControlBlock;
 	static osPriority 			Priority;
 
-	static uint8_t initiative_send_flag; 				// 标记Master有数据要发给Slave
-	// it means master has data to send to slave
-	static uint32_t plan_send_len; // master plan to send data len
+	static uint8_t 				initiative_send_flag; 	// it means master has data to send to slave
+	static uint32_t 			plan_send_len; 			// master plan to send data len
+	static uint8_t 				current_send_seq;		/* TX数据包序列号 */
+	static uint8_t 				current_recv_seq;		/* RX数据包序列号 */
 
-	static uint8_t current_send_seq;
-	static uint8_t current_recv_seq;
+	static FRTOS_SPICmd 		*ptr_frtos_spi_cmd;
+	static uint8_t  			*pTxData;
+	static uint8_t  			*pRxData;
+	static uint8_t  			txDataBuffer[ESP_SPI_DMA_MAX_LEN];
+	static uint8_t  			rxDataBuffer[ESP_SPI_DMA_MAX_LEN];
+	static spi_recv_opt_t 		recv_opt;
+	static uint32_t 			tx_buffer_dummy;
+	static spi_send_opt_t 		send_opt;
+	static uint32_t 			rx_buffer_dummy;
 
-	static FRTOS_SPICmd 	*ptr_frtos_spi_cmd;
-	static uint8_t  		*pTxData;
-	static uint8_t  		*pRxData;
-	static uint8_t  		txDataBuffer[ESP_SPI_DMA_MAX_LEN];
-	static uint8_t  		rxDataBuffer[ESP_SPI_DMA_MAX_LEN];
-	static xQueueHandle msg_queue; 						// 消息队列句柄：用于表示通信开始 读/写
-	static xSemaphoreHandle pxMutex;					// SPI信号量，实现互斥锁
-	static StreamBufferHandle_t spi_master_tx_ring_buf;	// 流缓冲区：环形的，用于SPI Master TX
+	static GPIO_TypeDef 		*_RESET_GPIOx;
+	static uint16_t			 	_RESET_GPIO_Pin;
+
+	static constexpr const char* TAG = "SPI AT Master"; // 打印日志的固定字符串
+
+	static QueueHandle_t 		msg_queue; 											// 队列句柄：用于表示通信开始 读/写
+	static const uint8_t 		msg_queue_item_size = sizeof(spi_master_msg_t);		// 队列每个消息大小
+	static const uint8_t 		msg_queue_length = 5;								// 队列深度
+	static uint8_t 				msg_queue_storage[msg_queue_length * msg_queue_item_size];
+	static StaticQueue_t 		msg_quene_struct;	/* The variable used to hold the queue's data structure. */
+
+	static SemaphoreHandle_t 	pxMutex;			// SPI信号量：互斥信号量
+	static StaticSemaphore_t 	pxMutexBuffer;
+
+	static StreamBufferHandle_t 	spi_master_tx_stream_buffer;			// 流缓冲区：环形的
+	static const uint8_t 		 	spi_master_tx_stream_buffer_trigger_level = 1;
+	static StaticStreamBuffer_t 	spi_master_tx_stream_buffer_struct;		/* The variable used to hold the stream buffer structure. */
+	static uint8_t 					spi_master_tx_stream_buffer_storage[STREAM_BUFFER_SIZE];
 
 	/* 初始化Master端硬件 */
 	static void init_master_hd();
@@ -211,16 +229,6 @@ private:
 	static void query_slave_data_trans_info();
 	static void spi_master_request_to_write(uint8_t send_seq, uint16_t send_len);
 	static int8_t spi_write_data(uint8_t* buf, int32_t len);
-
-	static constexpr const char* TAG = "SPI AT Master";					// 打印日志的固定字符串
-
-	static spi_recv_opt_t recv_opt;
-	static uint32_t tx_buffer_dummy;		//用作假装发送，注意不能写成 uint8_t tx_buffer_dummy[4] = {0}; 那么DMA传输可能出现访问非32字节对齐的地址，导致进入MemManage_Handler()错误
-	static spi_send_opt_t send_opt;
-	static uint32_t rx_buffer_dummy;		//用作假装接收，注意不能写成 uint8_t rx_buffer_dummy[4] = {0}; 那么DMA传输可能出现访问非32字节对齐的地址，导致进入MemManage_Handler()错误
-
-	static GPIO_TypeDef *_RESET_GPIOx;
-	static uint16_t _RESET_GPIO_Pin;
 };
 
 
