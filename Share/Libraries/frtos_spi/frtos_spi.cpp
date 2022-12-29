@@ -22,7 +22,7 @@
   *	@param:		BaudRatePrescaler	分频	取值只能是：@defgroup SPI_BaudRate_Prescaler
   *	@param:		CLKPhase			相位	取值只能是：@defgroup SPI_Clock_Phase
   *	@param:		CLKPolarity			极性	取值只能是：@defgroup SPI_Clock_Polarity
-  *	@retval: 	无
+  *	@retval: 	None
   */
 FRTOS_SPICmd::FRTOS_SPICmd(FRTOS_SPIBase *pSPIBase,
 		GPIO_TypeDef *SF_CS_GPIOx,
@@ -47,7 +47,7 @@ FRTOS_SPICmd::FRTOS_SPICmd(FRTOS_SPIBase *pSPIBase,
   *	@param:		BaudRatePrescaler	分频	取值只能是：@defgroup SPI_BaudRate_Prescaler
   *	@param:		CLKPhase			相位	取值只能是：@defgroup SPI_Clock_Phase
   *	@param:		CLKPolarity			极性	取值只能是：@defgroup SPI_Clock_Polarity
-  *	@retval: 	无
+  *	@retval: 	None
   */
 FRTOS_SPICmd::FRTOS_SPICmd(FRTOS_SPIBase *pSPIBase,
 		uint32_t BaudRatePrescaler,
@@ -60,10 +60,11 @@ FRTOS_SPICmd::FRTOS_SPICmd(FRTOS_SPIBase *pSPIBase,
 {
 	_EN_SF_CS = false;
 }
+
 /**
   *	@brief: 	串行FALSH片选控制函数
-  *	@param: 	无
-  *	@retval: 	无
+  *	@param: 	None
+  *	@retval: 	None
   */
 void FRTOS_SPICmd::busSetCS(uint8_t _Level)
 {
@@ -81,10 +82,102 @@ void FRTOS_SPICmd::busSetCS(uint8_t _Level)
 }
 
 /**
-  *	函 数 名: bsp_InitSPIParam
-  *	@brief: 配置SPI总线参数，波特率、
-  *	@param: 无
-  *	@retval: 无
+  *	@brief: 	发送命令序列的cmd部分，使用成员_pSPIBase的缓冲区
+  *	@param: 	pTransaction_t	spi_transaction_t结构
+  *	@retval: 	None
+  */
+void FRTOS_SPICmd::busTransferCmd(spi_transaction_t * pTransaction_t){
+	/* 复位缓冲区游标 */
+	_pSPIBase->g_spiLen = 0;
+	/* 命令阶段*/
+	for(int8_t i = pTransaction_t->instr_bytes - 1; i >= 0; i--){
+		(_pSPIBase->_pTxData)[_pSPIBase->g_spiLen++] = (pTransaction_t->instr & (0xFF << i * 8)) >> i * 8;
+	}
+	/* 地址阶段 */
+	for(int8_t i = pTransaction_t->addr_bytes - 1; i >= 0; i--){
+		(_pSPIBase->_pTxData)[_pSPIBase->g_spiLen++] = (pTransaction_t->addr & (0xFF << i * 8)) >> i * 8;
+	}
+	/* 等待阶段 */
+	for(int8_t i = pTransaction_t->dummy_bytes - 1; i >= 0; i--){
+		(_pSPIBase->_pTxData)[_pSPIBase->g_spiLen++] = 0xFFU;
+	}
+	_pSPIBase->baseTransfer(pTransaction_t->cmd_transfer_mode);
+}
+
+/**
+  *	@brief: 	发送命令序列的data部分，使用外部缓冲区
+  *	@param: 	pTransaction_t	spi_transaction_t结构
+  *	@retval: 	None
+  */
+void  FRTOS_SPICmd::busTransferExtData(spi_transaction_t * pTransaction_t){
+	_pSPIBase->baseTransferExt(pTransaction_t->data_transfer_mode,
+			pTransaction_t->tx_buffer,
+			pTransaction_t->rx_buffer,
+			pTransaction_t->data_bytes);
+}
+
+/**
+  *	@brief: 	发送命令序列的cmd和data部分，cmd部分使用成员_pSPIBase的缓冲区，data部分使用外部缓冲区
+  *	@param: 	pTransaction_t	spi_transaction_t结构
+  *	@retval: 	None
+  */
+void FRTOS_SPICmd::busTransferExtCmdAndData(spi_transaction_t * pTransaction_t){
+	busSetCS(0); /* 片选拉低 */
+	if(pTransaction_t->cmd_transfer_mode != TRANSFER_MODE_NONE){
+		busTransferCmd(pTransaction_t);
+	}
+	if(pTransaction_t->data_bytes != 0 ){
+		busTransferExtData(pTransaction_t);
+	}
+	busSetCS(1); /* 片选拉高 */
+}
+
+/**
+  *	@brief: 	构造FRTOS_SPIBase对象
+  *	@param: 	hspi				SPI_HandleTypeDef变量的引用
+  *	@param: 	pTxData				发送缓冲区指针
+  *	@param: 	pRxData				接收缓冲区指针
+  *	@param: 	sizeBuf				收发缓冲区大小
+  *	@retval: 	None
+ */
+FRTOS_SPIBase::FRTOS_SPIBase(SPI_HandleTypeDef &hspi, uint8_t *pTxData, uint8_t *pRxData, uint16_t sizeBuf)
+:_hspi(hspi), _pTxData(pTxData), _pRxData(pRxData), _size(sizeBuf){
+#if RTOS_EN
+	spiMutex = xSemaphoreCreateMutexStatic(&spiMutexBuffer);
+	xSemaphoreGive(spiMutex);
+#else
+	spiMutex = 0;
+#endif
+	wTransferState = TRANSFER_STATE_WAIT;
+}
+
+/**
+  *	@brief: 	TxRx传输完成回调函数，需要被HAL_SPI_TxRxCpltCallback()调用
+  * @param  	hspi: SPI handle
+  *	@retval: 	None
+ */
+void FRTOS_SPIBase::TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
+	if(hspi == &_hspi) {
+	    wTransferState = TRANSFER_STATE_COMPLETE;
+	}
+}
+
+/**
+  *	@brief: 	传输错误回调函数，需要被HAL_SPI_ErrorCallback()调用
+  * @param  	hspi: SPI handle
+  *	@retval: 	None
+ */
+void FRTOS_SPIBase::ErrorCallback(SPI_HandleTypeDef *hspi) {
+	if(hspi == &_hspi) {
+	    wTransferState = TRANSFER_STATE_ERROR;
+	}
+}
+
+/**
+  *	@brief: 	bsp_InitSPIParam
+  *	@brief: 	配置SPI总线参数，波特率、
+  *	@param: 	None
+  *	@retval: 	None
   */
 void FRTOS_SPIBase::baseSetParam(uint32_t BaudRatePrescaler, uint32_t CLKPhase, uint32_t CLKPolarity)
 {
@@ -111,11 +204,10 @@ void FRTOS_SPIBase::baseSetParam(uint32_t BaudRatePrescaler, uint32_t CLKPhase, 
 /**
   *	@brief: 	启动数据传输，使用对象内部的参数
   *	@param:  	spiTransMode 数据传输模式
-  *	@retval: 	无
+  *	@retval: 	None
   */
 void FRTOS_SPIBase::baseTransfer(transfer_mode_t spiTransMode)
 {
-//	HAL_StatusTypeDef ret = HAL_OK;
 	if (g_spiLen > _size) {
 		return;
 	}
@@ -125,7 +217,7 @@ void FRTOS_SPIBase::baseTransfer(transfer_mode_t spiTransMode)
 /**
   *	@brief: 	启动数据传输，使用对象内部的参数
   *	@param:  	spiTransMode 数据传输模式
-  *	@retval: 	无
+  *	@retval: 	None
   */
 void FRTOS_SPIBase::baseTransferExt(transfer_mode_t spiTransMode, uint8_t* pTxData, uint8_t* pRxData, uint16_t size)
 {
@@ -146,7 +238,7 @@ void FRTOS_SPIBase::baseTransferExt(transfer_mode_t spiTransMode, uint8_t* pTxDa
 
 		/**
 		 * Invalidate cache prior to access by CPU
-		 * DMA接收完一帧数据之后，需要进行数据解析之前，进行Cache无效化处理
+		 * DMA接收完一帧数据之后，需要进行数据解析之前，进行CacheNone效化处理
 		 * ◆ 第 1 个参数 addr ： 操作的地址一定要是 32 字节对齐的，即这个地址对 32 求余数等于 0。
 		 * ◆ 第 2 个参数 dsize ：一定要是 32 字节的整数倍。
 		 */
@@ -178,8 +270,8 @@ void FRTOS_SPIBase::baseTransferExt(transfer_mode_t spiTransMode, uint8_t* pTxDa
 
 /**
   *	@brief: 	占用SPI总线
-  *	@param: 	无
-  *	@retval: 	无
+  *	@param: 	None
+  *	@retval: 	None
   */
 void FRTOS_SPIBase::baseEnter(void)
 {
@@ -192,8 +284,8 @@ void FRTOS_SPIBase::baseEnter(void)
 
 /**
   *	@brief: 	释放占用的SPI总线
-  *	@param: 	无
-  *	@retval: 	无
+  *	@param: 	None
+  *	@retval: 	None
   */
 void FRTOS_SPIBase::baseExit(void)
 {
@@ -206,7 +298,7 @@ void FRTOS_SPIBase::baseExit(void)
 
 /**
   *	@brief: 	判断SPI总线忙。方法是检测其他SPI芯片的片选信号是否为1
-  *	@param: 	无
+  *	@param: 	None
   *	@retval: 	0 表示不忙  1表示忙
   */
 bool FRTOS_SPIBase::baseBusy(void)

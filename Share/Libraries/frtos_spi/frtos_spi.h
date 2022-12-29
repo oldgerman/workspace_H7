@@ -88,16 +88,7 @@ typedef  struct {
 
 class FRTOS_SPIBase{
 public:
-	FRTOS_SPIBase(SPI_HandleTypeDef &hspi, uint8_t*pTxData, uint8_t*pRxData, uint16_t sizeBuf)
-	:_hspi(hspi), _pTxData(pTxData), _pRxData(pRxData), _size(sizeBuf){
-#if RTOS_EN
-		spiMutex = xSemaphoreCreateMutexStatic(&spiMutexBuffer);
-		xSemaphoreGive(spiMutex);
-#else
-		spiMutex = 0;
-#endif
-		wTransferState = TRANSFER_STATE_WAIT;
-	}
+	FRTOS_SPIBase(SPI_HandleTypeDef &hspi, uint8_t*pTxData, uint8_t*pRxData, uint16_t sizeBuf);
 	~FRTOS_SPIBase(){}
 	void baseSetParam(uint32_t _BaudRatePrescaler, uint32_t _CLKPhase, uint32_t _CLKPolarity);
 	void baseTransfer(transfer_mode_t spiTransMode);
@@ -105,28 +96,21 @@ public:
 	void baseEnter();
 	void baseExit();
 	bool baseBusy(void);
-	void spi_mutex_lock(void);
-	void spi_mutex_unlock(void);
-	void baseInitSemphr();
+	void TxRxCpltCallback(SPI_HandleTypeDef *hspi);
+	void ErrorCallback(SPI_HandleTypeDef *hspi);
 
 	SPI_HandleTypeDef  &_hspi;
 	uint8_t *_pTxData;
 	uint8_t *_pRxData;
 	uint32_t g_spiLen;	//buf缓冲区迭代下标，DMA、BDMA都仅支持1~65535个，但为了检测超出65535，使用uin32_t类型
 
-	void CpltCallback(SPI_HandleTypeDef *hspi) {
-		if(hspi == &_hspi) {
-		    wTransferState = TRANSFER_STATE_COMPLETE;
-		}
-	}
-
 private:
 	const uint16_t _size;	// 构造时将提前定义的全局buffer的地址和大小作为参数传入
 	/* 备份SPI几个关键传输参数，波特率，相位，极性. 如果不同外设切换，需要重新Init SPI参数 */
-	uint32_t s_BaudRatePrescaler;
-	uint32_t s_CLKPhase;
-	uint32_t s_CLKPolarity;
-	uint8_t g_spi_busy;
+	uint32_t 	s_BaudRatePrescaler;
+	uint32_t 	s_CLKPhase;
+	uint32_t 	s_CLKPolarity;
+	uint8_t 	g_spi_busy;
 	volatile uint32_t wTransferState;
 #if RTOS_EN
 	SemaphoreHandle_t 	spiMutex;		/* 互斥信号量：标记SPI总线占用 */ //互斥信号量仅支持用在 FreeRTOS 的任务中，中断函数中不可使用
@@ -153,39 +137,9 @@ public:
 			uint32_t CLKPolarity);
 	~FRTOS_SPICmd(){}
 
-	void busTransferCmd(spi_transaction_t * pTransaction_t){
-		/* 复位缓冲区游标 */
-		_pSPIBase->g_spiLen = 0;
-		/* 命令阶段*/
-		for(int8_t i = pTransaction_t->instr_bytes - 1; i >= 0; i--){
-			(_pSPIBase->_pTxData)[_pSPIBase->g_spiLen++] = (pTransaction_t->instr & (0xFF << i * 8)) >> i * 8;
-		}
-		/* 地址阶段 */
-		for(int8_t i = pTransaction_t->addr_bytes - 1; i >= 0; i--){
-			(_pSPIBase->_pTxData)[_pSPIBase->g_spiLen++] = (pTransaction_t->addr & (0xFF << i * 8)) >> i * 8;
-		}
-		/* 等待阶段 */
-		for(int8_t i = pTransaction_t->dummy_bytes - 1; i >= 0; i--){
-			(_pSPIBase->_pTxData)[_pSPIBase->g_spiLen++] = 0xFFU;
-		}
-		_pSPIBase->baseTransfer(pTransaction_t->cmd_transfer_mode);
-	}
-	void  busTransferExtData(spi_transaction_t * pTransaction_t){
-		_pSPIBase->baseTransferExt(pTransaction_t->data_transfer_mode,
-				pTransaction_t->tx_buffer,
-				pTransaction_t->rx_buffer,
-				pTransaction_t->data_bytes);
-	}
-	void busTransferExtCmdAndData(spi_transaction_t * pTransaction_t){
-		busSetCS(0); /* 片选拉低 */
-		if(pTransaction_t->cmd_transfer_mode != TRANSFER_MODE_NONE){
-			busTransferCmd(pTransaction_t);
-		}
-		if(pTransaction_t->data_bytes != 0 ){
-			busTransferExtData(pTransaction_t);
-		}
-		busSetCS(1); /* 片选拉高 */
-	}
+	void busTransferCmd(spi_transaction_t * pTransaction_t);
+	void  busTransferExtData(spi_transaction_t * pTransaction_t);
+	void busTransferExtCmdAndData(spi_transaction_t * pTransaction_t);
 	void busSetCS(uint8_t _Level);
 
 private:
