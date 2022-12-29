@@ -39,8 +39,8 @@ RAM_REGION_NO_CACHE uint8_t*		FRTOS_SPIDev_ESP_AT::pTxData;
 RAM_REGION_NO_CACHE uint8_t*		FRTOS_SPIDev_ESP_AT::pRxData;
 RAM_REGION_NO_CACHE uint8_t  		FRTOS_SPIDev_ESP_AT::txDataBuffer[ESP_SPI_DMA_MAX_LEN];
 RAM_REGION_NO_CACHE uint8_t  		FRTOS_SPIDev_ESP_AT::rxDataBuffer[ESP_SPI_DMA_MAX_LEN];
-RAM_REGION_NO_CACHE spi_send_opt_t 	FRTOS_SPIDev_ESP_AT::send_opt;
-RAM_REGION_NO_CACHE spi_recv_opt_t 	FRTOS_SPIDev_ESP_AT::recv_opt;
+RAM_REGION_NO_CACHE FRTOS_SPIDev_ESP_AT::spi_send_opt_t 	FRTOS_SPIDev_ESP_AT::send_opt;
+RAM_REGION_NO_CACHE FRTOS_SPIDev_ESP_AT::spi_recv_opt_t 	FRTOS_SPIDev_ESP_AT::recv_opt;
 RAM_REGION_NO_CACHE uint32_t 		FRTOS_SPIDev_ESP_AT::tx_buffer_dummy = 0;				//用作假装发送
 RAM_REGION_NO_CACHE uint32_t 		FRTOS_SPIDev_ESP_AT::rx_buffer_dummy = 0;				//用作假装接收
 
