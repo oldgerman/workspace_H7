@@ -174,8 +174,7 @@ void FRTOS_SPIBase::ErrorCallback(SPI_HandleTypeDef *hspi) {
 }
 
 /**
-  *	@brief: 	bsp_InitSPIParam
-  *	@brief: 	配置SPI总线参数，波特率、
+  *	@brief: 	配置SPI总线参数，波特率
   *	@param: 	None
   *	@retval: 	None
   */
