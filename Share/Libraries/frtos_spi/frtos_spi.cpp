@@ -62,7 +62,7 @@ FRTOS_SPICmd::FRTOS_SPICmd(FRTOS_SPIBase *pSPIBase,
 }
 
 /**
-  *	@brief: 	串行FALSH片选控制函数
+  *	@brief: 	片选控制函数
   *	@param: 	None
   *	@retval: 	None
   */
@@ -88,18 +88,18 @@ void FRTOS_SPICmd::busSetCS(uint8_t _Level)
   */
 void FRTOS_SPICmd::busTransferCmd(spi_transaction_t * pTransaction_t){
 	/* 复位缓冲区游标 */
-	_pSPIBase->g_spiLen = 0;
+	_pSPIBase->_bufferCursor = 0;
 	/* 命令阶段*/
 	for(int8_t i = pTransaction_t->instr_bytes - 1; i >= 0; i--){
-		(_pSPIBase->_pTxData)[_pSPIBase->g_spiLen++] = (pTransaction_t->instr & (0xFF << i * 8)) >> i * 8;
+		(_pSPIBase->_pTxData)[_pSPIBase->_bufferCursor++] = (pTransaction_t->instr & (0xFF << i * 8)) >> i * 8;
 	}
 	/* 地址阶段 */
 	for(int8_t i = pTransaction_t->addr_bytes - 1; i >= 0; i--){
-		(_pSPIBase->_pTxData)[_pSPIBase->g_spiLen++] = (pTransaction_t->addr & (0xFF << i * 8)) >> i * 8;
+		(_pSPIBase->_pTxData)[_pSPIBase->_bufferCursor++] = (pTransaction_t->addr & (0xFF << i * 8)) >> i * 8;
 	}
 	/* 等待阶段 */
 	for(int8_t i = pTransaction_t->dummy_bytes - 1; i >= 0; i--){
-		(_pSPIBase->_pTxData)[_pSPIBase->g_spiLen++] = 0xFFU;
+		(_pSPIBase->_pTxData)[_pSPIBase->_bufferCursor++] = 0xFFU;
 	}
 	_pSPIBase->baseTransfer(pTransaction_t->cmd_transfer_mode);
 }
@@ -201,20 +201,20 @@ void FRTOS_SPIBase::baseSetParam(uint32_t BaudRatePrescaler, uint32_t CLKPhase, 
 }
 
 /**
-  *	@brief: 	启动数据传输，使用对象内部的参数
+  *	@brief: 	启动数据收发，使用对象内部的参数
   *	@param:  	spiTransMode 数据传输模式
   *	@retval: 	None
   */
 void FRTOS_SPIBase::baseTransfer(transfer_mode_t spiTransMode)
 {
-	if (g_spiLen > _size) {
+	if (_bufferCursor > _size) {
 		return;
 	}
-	baseTransferExt(spiTransMode, _pTxData, _pRxData, g_spiLen);
+	baseTransferExt(spiTransMode, _pTxData, _pRxData, _bufferCursor);
 }
 
 /**
-  *	@brief: 	启动数据传输，使用对象内部的参数
+  *	@brief: 	启动数据收发，使用对象内部的参数
   *	@param:  	spiTransMode 数据传输模式
   *	@retval: 	None
   */
@@ -231,7 +231,9 @@ void FRTOS_SPIBase::baseTransferExt(transfer_mode_t spiTransMode, uint8_t* pTxDa
 		}
 
 		while (wTransferState == TRANSFER_STATE_WAIT) {
+#if RTOS_EN
 			osDelay(1);
+#endif
 			// 若非RTOS，等待期间只能处理中断
 		}
 
@@ -253,8 +255,10 @@ void FRTOS_SPIBase::baseTransferExt(transfer_mode_t spiTransMode, uint8_t* pTxDa
 		}
 
 		while (wTransferState == TRANSFER_STATE_WAIT){
+#if RTOS_EN
 			osDelay(1);
 			// 若非RTOS，等待期间只能处理中断
+#endif
 		}
 		break;
 	case TRANSFER_MODE_POLL:
@@ -264,6 +268,26 @@ void FRTOS_SPIBase::baseTransferExt(transfer_mode_t spiTransMode, uint8_t* pTxDa
 		break;
 	default:
 		break;
+	}
+}
+
+/**
+  *	@brief: 	阻塞式数据发送
+  *	@retval: 	None
+  */
+void FRTOS_SPIBase::baseTransmitPollExt(uint8_t* pTxData, uint16_t size){
+	if(HAL_SPI_Transmit(&_hspi, (uint8_t*)pTxData, size, HAL_MAX_DELAY) != HAL_OK){
+		Error_Handler();
+	}
+}
+
+/**
+  *	@brief: 	阻塞式接收发送
+  *	@retval: 	None
+  */
+void FRTOS_SPIBase::baseReceivePollExt(uint8_t* pRxData, uint16_t size){
+	if(HAL_SPI_Receive(&_hspi, (uint8_t*)pRxData, size, HAL_MAX_DELAY) != HAL_OK){
+		Error_Handler();
 	}
 }
 

@@ -23,7 +23,7 @@ StaticSemaphore_t FRTOS_SPIDev_ESP_AT::pxMutexBuffer;
 
 StreamBufferHandle_t 		FRTOS_SPIDev_ESP_AT::spi_master_tx_stream_buffer;			// 流缓冲区：环形的
 StaticStreamBuffer_t 		FRTOS_SPIDev_ESP_AT::spi_master_tx_stream_buffer_struct;	/* The variable used to hold the stream buffer structure. */
-RAM_REGION_NO_CACHE uint8_t FRTOS_SPIDev_ESP_AT::spi_master_tx_stream_buffer_storage[STREAM_BUFFER_SIZE];
+uint8_t FRTOS_SPIDev_ESP_AT::spi_master_tx_stream_buffer_storage[STREAM_BUFFER_SIZE];
 
 
 
@@ -134,7 +134,7 @@ void FRTOS_SPIDev_ESP_AT::at_spi_wrdma_done(void)
 // then spi master should query whether the slave will perform read or write operation.
 void FRTOS_SPIDev_ESP_AT::query_slave_data_trans_info()
 {
-	memset(&recv_opt, 0x0, 4);
+	memset(&recv_opt, 0x0, sizeof(spi_recv_opt_t));
 	spi_transaction_t trans = {
 			.instr = CMD_HD_RDBUF_REG,
 			.addr = RDBUF_START_ADDR,
@@ -154,6 +154,7 @@ void FRTOS_SPIDev_ESP_AT::query_slave_data_trans_info()
 // and then wait for handshark line trigger gpio interrupt to start the data transmission.
 void FRTOS_SPIDev_ESP_AT::spi_master_request_to_write(uint8_t send_seq, uint16_t send_len)
 {
+	memset(&send_opt, 0x0, sizeof(spi_send_opt_t));
 	send_opt.magic = 0xFE;
 	send_opt.send_seq = send_seq;
 	send_opt.send_len = send_len;
@@ -257,7 +258,7 @@ void IRAM_ATTR FRTOS_SPIDev_ESP_AT::thread(const void *arg)
 				}
 			}
 
-			//initiative_send_flag = 0;
+//			initiative_send_flag = 0;
 			send_len = xStreamBufferReceive(spi_master_tx_stream_buffer, (void*) pTxData, plan_send_len, 0);
 
 			if (send_len != plan_send_len) {
@@ -301,7 +302,7 @@ void IRAM_ATTR FRTOS_SPIDev_ESP_AT::thread(const void *arg)
 			at_spi_rddma_done();
 			pTxData[recv_opt.transmit_len] = '\0';
 			ESP_LOGE(TAG, "%s", pTxData);
-			fflush(stdout);    //Force to print even if have not '\n'
+//			fflush(stdout);    //Force to print even if have not '\n'
 		} else {
 			ESP_LOGE(TAG, "Unknow direct: %d", recv_opt.direct);
 			spi_mutex_unlock();
@@ -398,6 +399,7 @@ void FRTOS_SPIDev_ESP_AT::init(FRTOS_SPICmd *frtos_spi_cmd,
 	pTxData = (uint8_t *)txDataBuffer;
 	pRxData = (uint8_t *)rxDataBuffer;
 
+#if 0
 	// Create the meaasge queue.(消息队列深度5)
 	msg_queue = xQueueCreateStatic(
 			msg_queue_length,
@@ -414,7 +416,15 @@ void FRTOS_SPIDev_ESP_AT::init(FRTOS_SPICmd *frtos_spi_cmd,
 
 	// Create the semaphore.
 	pxMutex = xSemaphoreCreateMutexStatic(&pxMutexBuffer);
+#else
+	   // Create the meaasge queue.
+	    msg_queue = xQueueCreate(5, sizeof(spi_master_msg_t));
+	    // Create the tx_buf.
+	    spi_master_tx_stream_buffer = xStreamBufferCreate(STREAM_BUFFER_SIZE, 1);
+	    // Create the semaphore.
+	    pxMutex = xSemaphoreCreateMutex();
 
+#endif
 	// Ctreate the thread
 	osThreadStaticDef(
 				esp_at_spi_task,

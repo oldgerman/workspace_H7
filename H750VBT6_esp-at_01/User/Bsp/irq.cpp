@@ -42,5 +42,5 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
  */
 void HAL_SPI_ErrorCallback(SPI_HandleTypeDef *hspi)
 {
-	SPI2_Base.ErrorCallback(hspi);
+//	SPI2_Base.ErrorCallback(hspi);
 }

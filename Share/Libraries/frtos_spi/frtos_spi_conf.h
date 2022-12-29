@@ -15,12 +15,7 @@ extern "C" {
 
 #ifndef RTOS_EN
 #define RTOS_EN 1	//	0不使用RTOS，修改为1使用RTOS
-#endif
-
-#if RTOS_EN
 #include "cmsis_os.h"
-#else
-#define osDelay
 #endif
 
 /* 重定义SPI SCK时钟 */

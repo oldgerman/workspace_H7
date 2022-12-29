@@ -33,20 +33,20 @@ using namespace ns_frtos_spi;
 using namespace ns_frtos_spi_esp_at;
 
 /* FRTOS_SPIBase类对象：SPI2_Base */
-const uint16_t SPI2_sizeBuf = 4 * 512;						//缓冲区尺寸，必须4字节对齐，即 4 * n 的写法
+RAM_REGION_NO_CACHE uint8_t SPI2_RxBuf[FRTOS_SPIBase::sizeCmdOnly];
+RAM_REGION_NO_CACHE uint8_t SPI2_TxBuf[FRTOS_SPIBase::sizeCmdOnly];
 
-RAM_REGION_NO_CACHE uint8_t SPI2_RxBuf[SPI2_sizeBuf];
-RAM_REGION_NO_CACHE uint8_t SPI2_TxBuf[SPI2_sizeBuf];
+FRTOS_SPIBase SPI2_Base(hspi2, SPI2_TxBuf, SPI2_RxBuf, FRTOS_SPIBase::sizeCmdOnly);
 
-FRTOS_SPIBase SPI2_Base(hspi2, SPI2_TxBuf, SPI2_RxBuf, SPI2_sizeBuf);
+//const uint32_t SPI2_Cmd_PSC  = SPI_BAUDRATEPRESCALER_8;		//20MHz
+const uint32_t SPI2_Cmd_PSC  = SPI_BAUDRATEPRESCALER_16;	//10MHz
+//const uint32_t SPI2_Cmd_PSC  = SPI_BAUDRATEPRESCALER_64;	//2.5MHz
 
 FRTOS_SPICmd SPI2_Cmd(
 		&SPI2_Base,
 		USR_SPI_CS_GPIO_Port,
 		USR_SPI_CS_Pin,
-//		SPI_BAUDRATEPRESCALER_64,	//2.5MHz
-		SPI_BAUDRATEPRESCALER_16,	//10MHz
-//		SPI_BAUDRATEPRESCALER_8,	//40MHz
+		SPI2_Cmd_PSC,
 		SPI_PHASE_1EDGE,
 		SPI_POLARITY_LOW);
 
@@ -274,23 +274,23 @@ void uart_thread(){
 			uint16_t nBytes = lwrb_get_full(&usart_rx_rb);
 			if(nBytes){
 	    		memset(usart_thread_rx_to_tx, 0x0, UART_RING_BUF_SIZE);
-			}
-			/**
-			 * 从RX环形缓冲区读取nBytes(最大待读取读数据大小) ，存到临时缓冲区：usart_thread_rx_to_tx，
-			 * 再将 usart_thread_rx_to_tx 的数据写入TX环形缓冲区
-			 */
-			if (lwrb_read(&usart_rx_rb, &usart_thread_rx_to_tx, nBytes) == nBytes) {
-				/* Write data to transmit buffer */
-				lwrb_write(&usart_tx_rb, &usart_thread_rx_to_tx, nBytes);
 	    		/**
-	    		 * 拷贝UART缓冲区数据到1024bytes的usart_thread_rx_to_tx，使用流缓冲API发给SPI task
-	    		 */
-	    		// send data to spi task
-	    		FRTOS_SPIDev_ESP_AT::write_data_to_spi_task_tx_ring_buf(usart_thread_rx_to_tx, nBytes);	//使用了 xStreamBufferSend() 进行任务间通信
-	    		FRTOS_SPIDev_ESP_AT::notify_slave_to_recv();
+				 * 从RX环形缓冲区读取nBytes(最大待读取读数据大小) ，存到临时缓冲区：usart_thread_rx_to_tx，
+				 * 再将 usart_thread_rx_to_tx 的数据写入TX环形缓冲区
+				 */
+				if (lwrb_read(&usart_rx_rb, &usart_thread_rx_to_tx, nBytes) == nBytes) {
+					/* Write data to transmit buffer */
+					lwrb_write(&usart_tx_rb, &usart_thread_rx_to_tx, nBytes);
+					/**
+					 * 拷贝UART缓冲区数据到1024bytes的usart_thread_rx_to_tx，使用流缓冲API发给SPI task
+					 */
+					// send data to spi task
+					FRTOS_SPIDev_ESP_AT::write_data_to_spi_task_tx_ring_buf(usart_thread_rx_to_tx, nBytes);	//使用了 xStreamBufferSend() 进行任务间通信
+					FRTOS_SPIDev_ESP_AT::notify_slave_to_recv();
 
-				/* DMA 将接收到的数据发回 */
-				usart_start_tx_dma_transfer();
+					/* DMA 将接收到的数据发回 */
+					usart_start_tx_dma_transfer();
+				}
 			}
 		}
 	}

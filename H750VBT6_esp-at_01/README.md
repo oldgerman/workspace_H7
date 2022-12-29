@@ -267,3 +267,93 @@ void FRTOS_SPIBase::baseExit(void)
 }
 ```
 
+## 2022/12/29
+
+### 添加 H750VBT6_esp-at_02 示例工程，乐鑫示例代码没有加到class里
+
+### 修复BUG：发送数据卡死在 prvWriteBytestoBuffer 的 configASSERT
+
+死循环位置：原因是 xCount = 0
+
+![2022-12-29_bug修复：死循环位置](Images/2022-12-29_bug修复：死循环位置.png)
+
+configASSERT()宏函数定义：
+
+```c
+#define configASSERT( x ) if ((x) == 0) {taskDISABLE_INTERRUPTS(); for( ;; );}
+```
+
+prvWriteBytesToBuffer()被 prvWriteMessageToBuffer() 调用
+
+prvWriteMessageToBuffer() 被 xStreamBufferSend() 调用
+
+ xStreamBufferSend() 被 write_data_to_spi_task_tx_ring_buf() 调用
+
+write_data_to_spi_task_tx_ring_buf() 被 FreeRTOS任务函数 uart_thread() 调用
+
+修改前：uint16_t类型的变量 nBytes 可能变为 0，经以上函数调用顺序导致   prvWriteBytestoBuffer 的 configASSERT 的 xCount = 0，从而进入死循环
+
+```c
+void uart_thread(){
+......
+	while (1) {
+		xResult = xQueueReceive(usart_rx_dma_queue_id, &d, portMAX_DELAY);
+		if (xResult == pdPASS) {
+			usart_rx_check();
+			(void)d;
+			uint16_t nBytes = lwrb_get_full(&usart_rx_rb);
+			if(nBytes){
+	    		memset(usart_thread_rx_to_tx, 0x0, UART_RING_BUF_SIZE);
+			}
+            if (lwrb_read(&usart_rx_rb, &usart_thread_rx_to_tx, nBytes) == nBytes) {
+                lwrb_write(&usart_tx_rb, &usart_thread_rx_to_tx, nBytes);
+                write_data_to_spi_task_tx_ring_buf(usart_thread_rx_to_tx, nBytes);	//被调用点
+                notify_slave_to_recv();
+                usart_start_tx_dma_transfer();
+            }
+		}
+	}
+}
+```
+
+修改后：
+
+```c
+void uart_thread(){
+......
+	while (1) {
+		xResult = xQueueReceive(usart_rx_dma_queue_id, &d, portMAX_DELAY);
+		if (xResult == pdPASS) {
+			usart_rx_check();
+			(void)d;
+			uint16_t nBytes = lwrb_get_full(&usart_rx_rb);
+			if(nBytes){
+	    		memset(usart_thread_rx_to_tx, 0x0, UART_RING_BUF_SIZE);
+				if (lwrb_read(&usart_rx_rb, &usart_thread_rx_to_tx, nBytes) == nBytes) {
+					lwrb_write(&usart_tx_rb, &usart_thread_rx_to_tx, nBytes);
+					write_data_to_spi_task_tx_ring_buf(usart_thread_rx_to_tx, nBytes);	//被调用点
+					notify_slave_to_recv();
+					usart_start_tx_dma_transfer();
+				}
+			}
+		}
+	}
+}
+```
+
+与乐鑫示例代码一样，一定要避免缓冲区读取长度为0的情况发送到StreamBuffer：
+
+![2022-12-29_bug修复：乐鑫示例代码](Images/2022-12-29_bug修复：乐鑫示例代码.png)
+
+### 测试
+
+本节所有测试视频是在frtos_conf.h 的  RTOS_EN = 1，帧数据包的data部分使用 HAL_SPI_TransmitReceive_DMA 发送，使用了 SPIBase的spiMutex，且 baseTransferExt()函数内等待标记时调用了osDelay(1); 使用H750VBT6_esp-at_02 示例工程进行的
+
+路径：
+
+```
+- Images\ESP32-C3 设备作为 TCP 客户端，建立单连接，实现 UART Wi-Fi 透传.mp4
+- Images\ESP32-C3 设备作为 TCP 客户端，建立单连接，实现 UART Wi-Fi 透传_10ms循环发送测试.mp4
+- Images\ESP32-C3 设备作为 TCP 客户端，建立单连接，实现 UART Wi-Fi 透传_1ms循环发送测试.mp4
+```
+

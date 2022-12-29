@@ -48,7 +48,6 @@ extern "C" {
 #ifdef __cplusplus
 namespace ns_frtos_spi
 {
-
 /* transfer mode */
 typedef enum {
 	TRANSFER_MODE_NONE = 0,	/* 不传输 */
@@ -56,6 +55,7 @@ typedef enum {
 	TRANSFER_MODE_INT,    	/* 中断方式 */
 	TRANSFER_MODE_POLL,   	/* 查询方式 */
 }transfer_mode_t;
+
 /* transfer state */
 typedef enum {
 	TRANSFER_STATE_WAIT = 0,
@@ -85,24 +85,29 @@ typedef  struct {
 //  uint16_t data_transfer_osDelay_time;//根据非阻塞传输的字节数和波特率估计baseTransferExt()最少osDelay()阻塞时间，暂时不用
 }spi_transaction_t ;        			// 若使用DMA，收发缓冲区的地址必须要32字节对齐，且要关闭cache或读操作时清除SCB_InvalidateDCache_by_Addr
 
-
+/* SPI 传输基础类 */
 class FRTOS_SPIBase{
 public:
 	FRTOS_SPIBase(SPI_HandleTypeDef &hspi, uint8_t*pTxData, uint8_t*pRxData, uint16_t sizeBuf);
 	~FRTOS_SPIBase(){}
+
 	void baseSetParam(uint32_t _BaudRatePrescaler, uint32_t _CLKPhase, uint32_t _CLKPolarity);
 	void baseTransfer(transfer_mode_t spiTransMode);
 	void baseTransferExt(transfer_mode_t spiTransMode, uint8_t* pTxData, uint8_t* pRxData, uint16_t size);
+	void baseTransmitPollExt(uint8_t* pTxData, uint16_t size);
+	void baseReceivePollExt(uint8_t* pRxData, uint16_t size);
 	void baseEnter();
 	void baseExit();
 	bool baseBusy(void);
+
 	void TxRxCpltCallback(SPI_HandleTypeDef *hspi);
 	void ErrorCallback(SPI_HandleTypeDef *hspi);
 
 	SPI_HandleTypeDef  &_hspi;
 	uint8_t *_pTxData;
 	uint8_t *_pRxData;
-	uint32_t g_spiLen;	//buf缓冲区迭代下标，DMA、BDMA都仅支持1~65535个，但为了检测超出65535，使用uin32_t类型
+	uint32_t _bufferCursor;	// 缓冲区游标，DMA、BDMA都仅支持1~65535个，但为了检测超出65535，使用uin32_t类型
+	static const uint8_t sizeCmdOnly = 4 * 3;	//FRTOS_SPIBase对象的buffer仅用作处理FRTOS_SPICmd对象的命令序列时的大小
 
 private:
 	const uint16_t _size;	// 构造时将提前定义的全局buffer的地址和大小作为参数传入
@@ -138,7 +143,7 @@ public:
 	~FRTOS_SPICmd(){}
 
 	void busTransferCmd(spi_transaction_t * pTransaction_t);
-	void  busTransferExtData(spi_transaction_t * pTransaction_t);
+	void busTransferExtData(spi_transaction_t * pTransaction_t);
 	void busTransferExtCmdAndData(spi_transaction_t * pTransaction_t);
 	void busSetCS(uint8_t _Level);
 
@@ -162,8 +167,8 @@ private:
 	/* 硬件还是软件CS */
 	bool _EN_SF_CS;
 };
-} 	/* NS_FRTOS_SPI */
 
+} 	/* NS_FRTOS_SPI */
 using namespace ns_frtos_spi;
 
 }		/* extern "C" */
