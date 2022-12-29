@@ -30,9 +30,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
  */
 void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
 {
-	if(hspi->Instance == SPI2) {
-		SPI2_Base.wTransferState = TRANSFER_STATE_COMPLETE;
-	}
+	SPI2_Base.CpltCallback(hspi);
 }
 
 /**
@@ -44,7 +42,5 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
  */
 void HAL_SPI_ErrorCallback(SPI_HandleTypeDef *hspi)
 {
-	if(hspi->Instance == SPI2) {
-		SPI2_Base.wTransferState = TRANSFER_STATE_ERROR;
-	}
+	SPI2_Base.CpltCallback(hspi);
 }

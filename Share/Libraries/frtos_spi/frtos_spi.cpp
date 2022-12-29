@@ -69,43 +69,15 @@ void FRTOS_SPICmd::busSetCS(uint8_t _Level)
 {
 	if (_Level == 0)
 	{
-		busEnter();			// 占用SPI总线
-		busSetParam(); 		// 一个SPI总线挂载多个设备时，每次SPI总线被其中一个设备占用，就根据其SPI的参数要求更改SPI配置
+		_pSPIBase->baseEnter();			// 占用SPI总线
+		_pSPIBase->baseSetParam(_BaudRatePrescaler, _CLKPhase, _CLKPolarity); 		// 一个SPI总线挂载多个设备时，每次SPI总线被其中一个设备占用，就根据其SPI的参数要求更改SPI配置
 		SF_CS_LOW();		// CS拉低
 	}
 	else 					// _Level == 1
 	{
 		SF_CS_HIGH();		// CS拉高
-		busExit();			// 释放SPI总线
+		_pSPIBase->baseExit();			// 释放SPI总线
 	}
-}
-
-void FRTOS_SPICmd::busSetParam(){
-	_pSPIBase->baseSetParam(_BaudRatePrescaler, _CLKPhase, _CLKPolarity);
-}
-void FRTOS_SPICmd::busTransfer(void){
-	_pSPIBase->baseTransfer(_spiTransMode);
-}
-void FRTOS_SPICmd::busEnter(void){
-	_pSPIBase->baseEnter();
-}
-void FRTOS_SPICmd::busExit(void){
-	_pSPIBase->baseExit();
-}
-uint8_t FRTOS_SPICmd::busBusy(void){
-	return _pSPIBase->baseBusy();
-}
-
-/**
-  *	@brief: 	配置SPI总线。 只包括 SCK、 MOSI、 MISO口线的配置。不包括片选CS，也不包括外设芯片特有的INT、BUSY等
-  *	@param: 	无
-  *	@retval: 	无
-  */
-void FRTOS_SPIBase::baseInitBus(void)
-{	
-	g_spi_busy = 0;
-	wTransferState = TRANSFER_STATE_WAIT;
-	baseSetParam(SPI_BAUDRATEPRESCALER_8, SPI_PHASE_1EDGE, SPI_POLARITY_LOW);
 }
 
 /**
@@ -168,7 +140,7 @@ void FRTOS_SPIBase::baseTransferExt(transfer_mode_t spiTransMode, uint8_t* pTxDa
 		}
 
 		while (wTransferState == TRANSFER_STATE_WAIT) {
-			//osDelay(10);
+			osDelay(1);
 			// 若非RTOS，等待期间只能处理中断
 		}
 
@@ -190,7 +162,7 @@ void FRTOS_SPIBase::baseTransferExt(transfer_mode_t spiTransMode, uint8_t* pTxDa
 		}
 
 		while (wTransferState == TRANSFER_STATE_WAIT){
-			//osDelay(10);
+			osDelay(1);
 			// 若非RTOS，等待期间只能处理中断
 		}
 		break;
@@ -207,29 +179,46 @@ void FRTOS_SPIBase::baseTransferExt(transfer_mode_t spiTransMode, uint8_t* pTxDa
 /**
   *	@brief: 	占用SPI总线
   *	@param: 	无
-  *	@retval: 	0 表示不忙  1表示忙
+  *	@retval: 	无
   */
 void FRTOS_SPIBase::baseEnter(void)
 {
-	g_spi_busy = 1;
+#if RTOS_EN
+	while (xSemaphoreTake(spiMutex, portMAX_DELAY) != pdPASS);
+#else
+	spiMutex = 1;
+#endif
 }
 
 /**
   *	@brief: 	释放占用的SPI总线
   *	@param: 	无
-  *	@retval: 	0 表示不忙  1表示忙
+  *	@retval: 	无
   */
 void FRTOS_SPIBase::baseExit(void)
 {
-	g_spi_busy = 0;
+#if RTOS_EN
+	xSemaphoreGive(spiMutex);
+#else
+	spiMutex = 0;
+#endif
 }
 
 /**
-  *	@brief: 判断SPI总线忙。方法是检测其他SPI芯片的片选信号是否为1
-  *	@param: 无
-  *	@retval: 0 表示不忙  1表示忙
+  *	@brief: 	判断SPI总线忙。方法是检测其他SPI芯片的片选信号是否为1
+  *	@param: 	无
+  *	@retval: 	0 表示不忙  1表示忙
   */
-uint8_t FRTOS_SPIBase::baseBusy(void)
+bool FRTOS_SPIBase::baseBusy(void)
 {
-	return g_spi_busy;
+#if RTOS_EN
+	if (xSemaphoreTake(spiMutex, 0) != pdPASS){
+		return true;
+	}
+	else {
+		return false;
+	}
+#else
+	return spiMutex;
+#endif
 }

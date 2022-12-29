@@ -80,9 +80,9 @@ typedef  struct {
     transfer_mode_t cmd_transfer_mode;	// 命令序列 发送的模式
     transfer_mode_t data_transfer_mode;	// 数据阶段 收发的模式
 
-    uint32_t timeout;					// 超时时间
-    uint8_t*user;                     	// 用户定义的变量，可用于存储ID。
-//    uint16_t data_transfer_non_blocking_time;
+    uint32_t 	timeout;				// 超时时间
+    uint8_t		*user;                  // 用户定义的变量，可用于存储ID。
+//  uint16_t data_transfer_osDelay_time;//根据非阻塞传输的字节数和波特率估计baseTransferExt()最少osDelay()阻塞时间，暂时不用
 }spi_transaction_t ;        			// 若使用DMA，收发缓冲区的地址必须要32字节对齐，且要关闭cache或读操作时清除SCB_InvalidateDCache_by_Addr
 
 
@@ -91,31 +91,35 @@ public:
 	FRTOS_SPIBase(SPI_HandleTypeDef &hspi, uint8_t*pTxData, uint8_t*pRxData, uint16_t sizeBuf)
 	:_hspi(hspi), _pTxData(pTxData), _pRxData(pRxData), _size(sizeBuf){
 #if RTOS_EN
-//	 SPISemaphore = xSemaphoreCreateMutex();
-//	  xSemaphoreGive(I2CSemaphore);
+		spiMutex = xSemaphoreCreateMutexStatic(&spiMutexBuffer);
+		xSemaphoreGive(spiMutex);
 #else
-		_SPISemphr = 0;
+		spiMutex = 0;
 #endif
-		wTransferState = 0;
+		wTransferState = TRANSFER_STATE_WAIT;
 	}
 	~FRTOS_SPIBase(){}
-	void baseInitBus();
 	void baseSetParam(uint32_t _BaudRatePrescaler, uint32_t _CLKPhase, uint32_t _CLKPolarity);
 	void baseTransfer(transfer_mode_t spiTransMode);
 	void baseTransferExt(transfer_mode_t spiTransMode, uint8_t* pTxData, uint8_t* pRxData, uint16_t size);
 	void baseEnter();
 	void baseExit();
+	bool baseBusy(void);
 	void spi_mutex_lock(void);
 	void spi_mutex_unlock(void);
-	uint8_t baseBusy();
 	void baseInitSemphr();
-	static void CpltCallback(SPI_HandleTypeDef *);
 
 	SPI_HandleTypeDef  &_hspi;
 	uint8_t *_pTxData;
 	uint8_t *_pRxData;
 	uint32_t g_spiLen;	//buf缓冲区迭代下标，DMA、BDMA都仅支持1~65535个，但为了检测超出65535，使用uin32_t类型
-	volatile uint32_t wTransferState;
+
+	void CpltCallback(SPI_HandleTypeDef *hspi) {
+		if(hspi == &_hspi) {
+		    wTransferState = TRANSFER_STATE_COMPLETE;
+		}
+	}
+
 private:
 	const uint16_t _size;	// 构造时将提前定义的全局buffer的地址和大小作为参数传入
 	/* 备份SPI几个关键传输参数，波特率，相位，极性. 如果不同外设切换，需要重新Init SPI参数 */
@@ -123,15 +127,13 @@ private:
 	uint32_t s_CLKPhase;
 	uint32_t s_CLKPolarity;
 	uint8_t g_spi_busy;
+	volatile uint32_t wTransferState;
 #if RTOS_EN
-	SemaphoreHandle_t SPISemaphore;			/* SPI占用信号量：互斥信号量 */
-	SemaphoreHandle_t tansferSemaphore;		/* tansfer信号量：二值信号量 */
-	StaticSemaphore_t SPISemaphoreBuffer;		// xSemaphoreCreateMutexStatic()
-	StaticSemaphore_t transferSemaphoreBuffer;	//	xSemaphoreCreateBinaryStatic()
+	SemaphoreHandle_t 	spiMutex;		/* 互斥信号量：标记SPI总线占用 */ //互斥信号量仅支持用在 FreeRTOS 的任务中，中断函数中不可使用
+	StaticSemaphore_t 	spiMutexBuffer;
 #else
-	bool 			  SPISemaphore;		//不跑RTOS，SPISemaphore没有实际用处
+	bool				spiMutex;
 #endif
-
 };
 
 /* SPI 命令序列类 */
@@ -187,11 +189,6 @@ public:
 	void busSetCS(uint8_t _Level);
 
 private:
-	void busTransfer();
-	void busSetParam();
-	void busEnter();
-	void busExit();
-	uint8_t busBusy();
 	void SF_CS_LOW(){
 		if(_EN_SF_CS)
 			_SF_CS_GPIOx->BSRR = ((uint32_t)_SF_CS_GPIO_Pin << 16U);

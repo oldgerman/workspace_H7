@@ -54,7 +54,7 @@ extern "C" {
 void Error_Handler(void);
 
 /* USER CODE BEGIN EFP */
-
+void My_Error_Handler(const char * file, uint32_t line);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/

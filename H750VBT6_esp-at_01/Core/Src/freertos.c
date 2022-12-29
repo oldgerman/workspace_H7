@@ -53,9 +53,6 @@ osStaticThreadDef_t uart_taskControlBlock;
 osThreadId led_taskHandle;
 uint32_t led_taskBuffer[ 256 ];
 osStaticThreadDef_t led_taskControlBlock;
-osThreadId spi_trans_control_taskHandle;
-uint32_t spi_trans_control_taskBuffer[ 1024 ];
-osStaticThreadDef_t spi_trans_control_taskControlBlock;
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -64,7 +61,6 @@ osStaticThreadDef_t spi_trans_control_taskControlBlock;
 
 void start_uart_task(void const * argument);
 void start_led_task(void const * argument);
-void start_spi_trans_control_task(void const * argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -119,10 +115,6 @@ setup();
   osThreadStaticDef(led_task, start_led_task, osPriorityLow, 0, 256, led_taskBuffer, &led_taskControlBlock);
   led_taskHandle = osThreadCreate(osThread(led_task), NULL);
 
-  /* definition and creation of spi_trans_control_task */
-//  osThreadStaticDef(spi_trans_control_task, start_spi_trans_control_task, osPriorityHigh, 0, 1024, spi_trans_control_taskBuffer, &spi_trans_control_taskControlBlock);
-//  spi_trans_control_taskHandle = osThreadCreate(osThread(spi_trans_control_task), NULL);
-
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
   /* USER CODE END RTOS_THREADS */
@@ -165,25 +157,6 @@ void start_led_task(void const * argument)
     osDelay(1);
   }
   /* USER CODE END start_led_task */
-}
-
-/* USER CODE BEGIN Header_start_spi_trans_control_task */
-/**
-* @brief Function implementing the spi_trans_control_task thread.
-* @param argument: Not used
-* @retval None
-*/
-/* USER CODE END Header_start_spi_trans_control_task */
-void start_spi_trans_control_task(void const * argument)
-{
-  /* USER CODE BEGIN start_spi_trans_control_task */
-	spi_thread();
-  /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
-  }
-  /* USER CODE END start_spi_trans_control_task */
 }
 
 /* Private application code --------------------------------------------------*/
