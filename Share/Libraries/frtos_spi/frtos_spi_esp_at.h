@@ -142,8 +142,8 @@ public:
 	 * 发送查询请求后，slave 返回的状态信息将存储在 4 字节的 slave_status
 	 */
 	typedef struct {
-		uint32_t     direct : 8;		// bit[24:31]	slave 的可读/可写状态，长度 24～31 bit， 其中，0x1 代表可读， 0x2 代表可写
-		uint32_t     seq_num : 8;		// bit[16:23]	数据包序列号，长度 16～23 bit，
+		uint32_t     direct 	: 8;	// bit[24:31]	slave 的可读/可写状态，长度 24～31 bit， 其中，0x1 代表可读， 0x2 代表可写
+		uint32_t     seq_num 	: 8;	// bit[16:23]	数据包序列号，长度 16～23 bit，
 										//				当序列号达到最大值 0xFF 时，下一个数据包的序列号需要重新设置为 0x0 。
 										//				当 slave 处于可写状态时，该字段为 master 需向 slave 发送的下一个数据包的序列号；
 										//				当 slave 处于可读状态时，该字段为 slave 向 master 发送的下一个数据包的序列号。
@@ -151,7 +151,7 @@ public:
 										//				仅当 slave 处于可读状态时，该字段数字有效
 	} spi_recv_opt_t;
 
-	static const size_t     	TaskStackSize = 1024 * 2;
+	static const size_t     	TaskStackSize = 512 * 4;
 	static osThreadId       	TaskHandle;
 
 private:
@@ -175,7 +175,7 @@ private:
 	 * | ------------- | -------------- | --------------- | ----------------------------- |
 	 * | CMD（1 字节） | ADDR（1 字节） | DUMMY（1 字节） | DATA（读/写，高达 4092 字节） |
 	 * | ------------- | -------------- | --------------- | ----------------------------- |
-	 * 以下宏常量用于 SPI AT Master端的6种通信报文
+	 * 以下静态成员常量用于 SPI AT Master端的6种通信报文
 	 */
 	static const uint8_t 	CMD_HD_WRBUF_REG    = 0x01;		// CMD段：5) Master 向 slave 发送请求传输指定大小数据
 	static const uint8_t 	CMD_HD_RDBUF_REG    = 0x02;		// CMD段：6) Master 检测到握手线上有 slave 发出的信号后，需要发送一条消息查询 slave 进入接收数据的工作模式，还是进入到发送数据的工作模式
