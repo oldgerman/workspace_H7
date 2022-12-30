@@ -13,6 +13,8 @@
 - 我的模块是自己焊接的IPEX天线，信号质量应该有亿点点问题，esp32-C3天线到路由器天线5cm到50cm距离的变化对传输速率影响很大
 
   > ![测试环境（电脑端通过有线连接路由器）](Images/测试环境（电脑端通过有线连接路由器）.JPG)
+  
+- 电脑端使用的TCP服务端测速工具：[安富莱_TCPUDPDbg_TCP_UDP_网络调试工具](https://www.armbbs.cn/forum.php?mod=viewthread&tid=1568&fromuid=58)
 
 ### 测试命令与ESP32-C3的响应
 
@@ -76,13 +78,13 @@ Send done, send count: 10240000, time: 148259 ms
 
 | 2.4秒才20次？                                                | 放大看看，紫色线是 HANDSHAKE信号，可见透传下，还是需要HANDSHAKE |
 | ------------------------------------------------------------ | :----------------------------------------------------------- |
-| ![RIGOL Print Screen2022-12-30 14_15_58.614](Images/RIGOL Print Screen2022-12-30 14_15_58.614.png) | ![RIGOL Print Screen2022-12-30 14_12_07.231](Images/RIGOL Print Screen2022-12-30 14_12_07.231.png) |
+| ![RIGOL_2022-12-30 14_15_58.614](Images/RIGOL_2022-12-30 14_15_58.614.png) | ![RIGOL_2022-12-30 14_12_07.231](Images/RIGOL_2022-12-30 14_12_07.231.png) |
 | 继续放大                                                     | 继续放大                                                     |
-| ![RIGOL Print Screen2022-12-30 14_09_42.576](Images/RIGOL Print Screen2022-12-30 14_09_42.576.png) | ![RIGOL Print Screen2022-12-30 14_11_22.095](Images/RIGOL Print Screen2022-12-30 14_11_22.095.png) |
+| ![RIGOL_2022-12-30 14_09_42.576](Images/RIGOL_2022-12-30 14_09_42.576.png) | ![RIGOL_2022-12-30 14_11_22.095](Images/RIGOL_2022-12-30 14_11_22.095.png) |
 
 继续放大，由于SPI CLK是40MHz，我示波器每通道只有50MHz，所以波形显示比较奇怪，但可以看到，WIFI TCP 透传下cmd段还是发送了的：见透传下，还是需要等HANDSHAKE，然后Master向Slave查询可发送的包大小，具体可以看 `debug状态下发送1024000字节数据时，send_opt和recv_opt数据变化.mp4`
 
-![RIGOL Print Screen2022-12-30 14_11_02.577](Images/RIGOL Print Screen2022-12-30 14_11_02.577.png)
+![RIGOL_2022-12-30 14_11_02.577](Images/RIGOL_2022-12-30 14_11_02.577.png)
 
 ### Time Base优先级为 0 
 
@@ -131,9 +133,9 @@ Send done, send count: 10240000, time: 34987 ms			//间隔 5cm
 
 与wifi天线距离5cm，可以看到发送频率明显变高：
 
-| ![RIGOL Print Screen2022-12-30 16_02_46.845](Images/RIGOL Print Screen2022-12-30 16_02_46.845.png) | ![RIGOL Print Screen2022-12-30 16_30_11.254](Images/RIGOL Print Screen2022-12-30 16_30_11.254.png) |
+| ![RIGOL_2022-12-30 16_02_46.845](Images/RIGOL_2022-12-30 16_02_46.845.png) | ![RIGOL_2022-12-30 16_30_11.254](Images/RIGOL_2022-12-30 16_30_11.254.png) |
 | ------------------------------------------------------------ | ------------------------------------------------------------ |
-| ![RIGOL Print Screen2022-12-30 16_30_39.054](Images/RIGOL Print Screen2022-12-30 16_30_39.054.png) | ![RIGOL Print Screen2022-12-30 16_30_27.762](Images/RIGOL Print Screen2022-12-30 16_30_27.762.png) |
+| ![RIGOL_2022-12-30 16_30_39.054](Images/RIGOL_2022-12-30 16_30_39.054.png) | ![RIGOL_2022-12-30 16_30_27.762](Images/RIGOL_2022-12-30 16_30_27.762.png) |
 
 ## HANDSHAKE引脚
 
