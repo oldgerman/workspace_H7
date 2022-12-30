@@ -8,7 +8,7 @@
 
 - 使用 [issue：ESP32-C3 SPI 慢速传输 #662](https://github.com/espressif/esp-at/issues/662) 中**[Jacques-zhao](https://github.com/Jacques-zhao)**的方式测试
 
-  > ![](Images/#662_测试方法.png)
+  > ![](Images/i662_测试方法.png)
 
 - 我的模块是自己焊接的IPEX天线，信号质量应该有亿点点问题，esp32-C3天线到路由器天线5cm到50cm距离的变化对传输速率影响很大
 
@@ -139,9 +139,9 @@ Send done, send count: 10240000, time: 34987 ms			//间隔 5cm
 
 我遇到一个很奇怪的问题，当我连接示波器探头到 SCK MOSI时，SPI发数据后从机才会响应，断开示波器探头后，就日志会报错 Unkown Direct: 255，此时debug看recv_opt结构体数据异常，direct = 255、seq_num = 255、transmit_len = 65535，同样的问题在issue里也有：
 
-![](Images/#646_HANDSKAE不再拉高的问题.png)
+![](Images/i646_HANDSKAE不再拉高的问题.png)
 
-![](Images/#662_HANDSHAKE不再切换.png)
+![](Images/i662_HANDSHAKE不再切换.png)
 
 ### 需要内部上拉
 
