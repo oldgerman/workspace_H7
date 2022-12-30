@@ -266,28 +266,18 @@ void FRTOS_SPIBase::baseTransferExt(transfer_mode_t spiTransMode, uint8_t* pTxDa
 			Error_Handler();
 		}
 		break;
+	case TRANSMIT_MODE_POLL:
+		if(HAL_SPI_Transmit(&_hspi, (uint8_t*)pTxData, size, HAL_MAX_DELAY) != HAL_OK){
+			Error_Handler();
+		}
+		break;
+	case RECEIVE_MODE_POLL:
+		if(HAL_SPI_Receive(&_hspi, (uint8_t*)pRxData, size, HAL_MAX_DELAY) != HAL_OK){
+			Error_Handler();
+		}
+		break;
 	default:
 		break;
-	}
-}
-
-/**
-  *	@brief: 	阻塞式数据发送
-  *	@retval: 	None
-  */
-void FRTOS_SPIBase::baseTransmitPollExt(uint8_t* pTxData, uint16_t size){
-	if(HAL_SPI_Transmit(&_hspi, (uint8_t*)pTxData, size, HAL_MAX_DELAY) != HAL_OK){
-		Error_Handler();
-	}
-}
-
-/**
-  *	@brief: 	阻塞式接收发送
-  *	@retval: 	None
-  */
-void FRTOS_SPIBase::baseReceivePollExt(uint8_t* pRxData, uint16_t size){
-	if(HAL_SPI_Receive(&_hspi, (uint8_t*)pRxData, size, HAL_MAX_DELAY) != HAL_OK){
-		Error_Handler();
 	}
 }
 

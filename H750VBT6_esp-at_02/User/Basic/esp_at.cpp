@@ -58,17 +58,21 @@ RAM_REGION_NO_CACHE uint8_t SPI2_TxBuf[FRTOS_SPIBase::sizeCmdOnly];
 
 FRTOS_SPIBase SPI2_Base(hspi2, SPI2_TxBuf, SPI2_RxBuf, FRTOS_SPIBase::sizeCmdOnly);
 
-//const uint32_t SPI2_Cmd_PSC  = SPI_BAUDRATEPRESCALER_8;		//20MHz
-const uint32_t SPI2_Cmd_PSC  = SPI_BAUDRATEPRESCALER_16;	//10MHz
+const uint32_t SPI2_Cmd_PSC  = SPI_BAUDRATEPRESCALER_4;		//40MHz
+//const uint32_t SPI2_Cmd_PSC  = SPI_BAUDRATEPRESCALER_16;	//10MHz
 //const uint32_t SPI2_Cmd_PSC  = SPI_BAUDRATEPRESCALER_64;	//2.5MHz
 
+/*
+ * 当CPOL = 0， CPHA = 0 时 SCK 引脚在空闲状态处于低电平，SCK 引脚的第 1 个边沿捕获传输的第 1 个数据。
+ * 乐鑫示例代码spi mode 使用 0模式，即 - 0: (0, 0)，(CPOL, CPHA)
+ */
 FRTOS_SPICmd SPI2_Cmd(
 		&SPI2_Base,
 		USR_SPI_CS_GPIO_Port,
 		USR_SPI_CS_Pin,
 		SPI2_Cmd_PSC,
-		SPI_PHASE_1EDGE,
-		SPI_POLARITY_LOW);
+		SPI_PHASE_1EDGE,	//第一个边沿 CPHA = 0
+		SPI_POLARITY_LOW);	//极性为LOW  CPOL = 0
 
 RAM_REGION_NO_CACHE uint8_t trans_data[ESP_SPI_DMA_MAX_LEN] = {0};
 RAM_REGION_NO_CACHE uint8_t trans_data_dummy[ESP_SPI_DMA_MAX_LEN] = {0};
@@ -130,8 +134,8 @@ static void at_spi_master_send_data(uint8_t* data, uint16_t len)
 			.addr_bytes = 1,							/* 地址字节数 */
 			.dummy_bytes = 1,							/* 等待字节数 */
 			.data_bytes = len,							/* 数据字节数*/
-			.cmd_transfer_mode = TRANSFER_MODE_POLL,	/* 指令轮询传输 */
-			.data_transfer_mode = TRANSFER_MODE_DMA,    /* 数据量可能较大，使用DMA传输 */
+			.cmd_transfer_mode = TRANSMIT_MODE_POLL,	/* 指令轮询传输 */
+			.data_transfer_mode = TRANSMIT_MODE_POLL,    /* 数据量可能较大，使用DMA传输 */
 	};
 	SPI2_Cmd.busTransferExtCmdAndData(&trans);
 }
@@ -146,8 +150,8 @@ static void at_spi_master_recv_data(uint8_t* data, uint16_t len)
 			.addr_bytes = 1,							/* 地址字节数 */
 			.dummy_bytes = 1,							/* 等待字节数 */
 			.data_bytes = len,							/* 数据字节数*/
-			.cmd_transfer_mode = TRANSFER_MODE_POLL,	/* 指令轮询传输 */
-			.data_transfer_mode = TRANSFER_MODE_DMA,	/* 数据量可能较大，使用DMA传输 */
+			.cmd_transfer_mode = TRANSMIT_MODE_POLL,	/* 指令轮询传输 */
+			.data_transfer_mode = RECEIVE_MODE_POLL,	/* 数据量可能较大，使用DMA传输 */
 	};
 	SPI2_Cmd.busTransferExtCmdAndData(&trans);
 }
@@ -160,7 +164,7 @@ static void at_spi_rddma_done(void)
 			.instr_bytes = 1,							/* 命令字节数 */
 			.addr_bytes = 1,							/* 地址字节数 */
 			.dummy_bytes = 1,							/* 等待字节数 */
-			.cmd_transfer_mode = TRANSFER_MODE_POLL,	/* 指令轮询传输 */
+			.cmd_transfer_mode = TRANSMIT_MODE_POLL,	/* 指令轮询传输 */
 	};
 	SPI2_Cmd.busTransferExtCmdAndData(&end_t);
 }
@@ -173,7 +177,7 @@ static void at_spi_wrdma_done(void)
 			.instr_bytes = 1,							/* 命令字节数 */
 			.addr_bytes = 1,							/* 地址字节数 */
 			.dummy_bytes = 1,							/* 等待字节数 */
-			.cmd_transfer_mode = TRANSFER_MODE_POLL,	/* 指令轮询传输 */
+			.cmd_transfer_mode = TRANSMIT_MODE_POLL,	/* 指令轮询传输 */
 	};
 	SPI2_Cmd.busTransferExtCmdAndData(&end_t);
 }
@@ -192,8 +196,8 @@ static void query_slave_data_trans_info()
 			.addr_bytes = 1,							/* 地址字节数 */
 			.dummy_bytes = 1,							/* 等待字节数 */
 			.data_bytes = 4,							/* 数据字节数*/
-			.cmd_transfer_mode = TRANSFER_MODE_POLL,	/* 指令轮询传输 */
-			.data_transfer_mode = TRANSFER_MODE_POLL,	/* 数据量太短，使用轮询传输 */
+			.cmd_transfer_mode = TRANSMIT_MODE_POLL,	/* 指令轮询传输 */
+			.data_transfer_mode = RECEIVE_MODE_POLL,	/* 数据量太短，使用轮询传输 */
 	};
 	SPI2_Cmd.busTransferExtCmdAndData(&trans);
 }
@@ -216,8 +220,8 @@ static void spi_master_request_to_write(uint8_t send_seq, uint16_t send_len)
 			.addr_bytes = 1,							/* 地址字节数 */
 			.dummy_bytes = 1,							/* 等待字节数 */
 			.data_bytes = 4,							/* 数据字节数*/
-			.cmd_transfer_mode = TRANSFER_MODE_POLL,	/* 指令轮询传输 */
-			.data_transfer_mode = TRANSFER_MODE_POLL,	/* 数据量太短，使用轮询传输 */
+			.cmd_transfer_mode = TRANSMIT_MODE_POLL,	/* 指令轮询传输 */
+			.data_transfer_mode = TRANSMIT_MODE_POLL,	/* 数据量太短，使用轮询传输 */
 	};
 	SPI2_Cmd.busTransferExtCmdAndData(&trans);
 	// increment
@@ -267,8 +271,6 @@ void notify_slave_to_recv(void)
 
 static void IRAM_ATTR spi_trans_control_task(const void *arg)
 {
-    init_master_hd();
-
 	int8_t ret;
     spi_master_msg_t trans_msg = {0};
     uint32_t send_len = 0;
@@ -341,13 +343,20 @@ static void IRAM_ATTR spi_trans_control_task(const void *arg)
 //            fflush(stdout);    //Force to print even if have not '\n'
         } else {
             ESP_LOGE(TAG, "Unknow direct: %d", recv_opt.direct);
+//            recv_opt.direct = SPI_READ;
+//            while(recv_opt.direct == SPI_READ){
+//            	query_slave_data_trans_info();
+//            	ESP_LOGE(TAG, "now direct:%u", recv_opt.direct);
+//            	osDelay(500);
+//            }
+//        	ESP_LOGE(TAG, "now direct:%u", recv_opt.direct);
             spi_mutex_unlock();
             continue;
         }
 
         spi_mutex_unlock();
     }
-//    vTaskDelete(NULL);
+    vTaskDelete(NULL);
 }
 
 
@@ -356,12 +365,12 @@ static void esp_at_reset_slave(){
 		HAL_GPIO_WritePin(GPIO_RESET_GPIO_Port, GPIO_RESET_Pin, GPIO_PIN_RESET);
 		HAL_Delay(200);	//保持100ms低电平
 		HAL_GPIO_WritePin(GPIO_RESET_GPIO_Port, GPIO_RESET_Pin, GPIO_PIN_SET);
-//		HAL_Delay(10000);	//等待10秒以确保esp_at从机初始化完毕
+		HAL_Delay(5000);	//等待10秒以确保esp_at从机初始化完毕
 }
 
 static void init_master_hd()
 {
-	esp_at_reset_slave();
+//	esp_at_reset_slave();
     // Create the meaasge queue.
     msg_queue = xQueueCreate(5, sizeof(spi_master_msg_t));
     // Create the tx_buf.
@@ -392,14 +401,15 @@ static void init_master_hd()
 
 void esp_at_init()
 {
-	  osThreadStaticDef(
-			  spi_at_task,
-			  spi_trans_control_task,
-			  osPriorityHigh,
-			  0, 1024 * 2,
-			  spi_at_taskBuffer,
-			  &spi_at_taskControlBlock);
-	  spi_at_taskHandle = osThreadCreate(osThread(spi_at_task), NULL);
+    init_master_hd();
+	osThreadStaticDef(
+		  spi_at_task,
+		  spi_trans_control_task,
+		  osPriorityHigh,
+		  0, 1024 * 2,
+		  spi_at_taskBuffer,
+		  &spi_at_taskControlBlock);
+	spi_at_taskHandle = osThreadCreate(osThread(spi_at_task), NULL);
 }
 
 

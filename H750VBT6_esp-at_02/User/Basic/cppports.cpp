@@ -30,6 +30,12 @@
 #include  "esp_at.h"
 
 /* Private function prototypes */
+#define WRITE_BUFFER_LEN    2048
+#define READ_BUFFER_LEN     4096
+
+uint8_t send_buffer[WRITE_BUFFER_LEN] = "";
+uint8_t rcv_buffer[READ_BUFFER_LEN] = "";
+
 
 /* USART related functions */
 void    usart_init(void);
@@ -244,13 +250,31 @@ void uart_thread(){
 			uint16_t nBytes = lwrb_get_full(&usart_rx_rb);
 			if(nBytes){
 	    		memset(usart_thread_rx_to_tx, 0x0, UART_RING_BUF_SIZE);
+
+
 	    		/**
 				 * 从RX环形缓冲区读取nBytes(最大待读取读数据大小) ，存到临时缓冲区：usart_thread_rx_to_tx，
 				 * 再将 usart_thread_rx_to_tx 的数据写入TX环形缓冲区
 				 */
 				if (lwrb_read(&usart_rx_rb, &usart_thread_rx_to_tx, nBytes) == nBytes) {
-					/* Write data to transmit buffer */
-					lwrb_write(&usart_tx_rb, &usart_thread_rx_to_tx, nBytes);
+
+					if(strstr((char*)usart_thread_rx_to_tx, "AT+TESTSEND") != NULL) {
+						usart_printf("Start test send data\r\n");
+						memset(send_buffer, 0x33, WRITE_BUFFER_LEN);
+						uint32_t start, finish;
+						start = xTaskGetTickCount();
+						for(int i=0;i< 5000;i++) {
+							// send data to spi task
+							write_data_to_spi_task_tx_ring_buf(send_buffer, WRITE_BUFFER_LEN);
+							notify_slave_to_recv();
+						}
+						finish = xTaskGetTickCount();
+						usart_printf("Send done, send count: %d, time: %ld ms\r\n", WRITE_BUFFER_LEN * 5000, (finish - start));
+						continue;
+					}
+
+//					/* Write data to transmit buffer */
+//					lwrb_write(&usart_tx_rb, &usart_thread_rx_to_tx, nBytes);
 					/**
 					 * 拷贝UART缓冲区数据到1024bytes的usart_thread_rx_to_tx，使用流缓冲API发给SPI task
 					 */
@@ -258,8 +282,8 @@ void uart_thread(){
 					write_data_to_spi_task_tx_ring_buf(usart_thread_rx_to_tx, nBytes);	//使用了 xStreamBufferSend() 进行任务间通信
 					notify_slave_to_recv();
 
-					/* DMA 将接收到的数据发回 */
-					usart_start_tx_dma_transfer();
+//					/* DMA 将接收到的数据发回 */
+//					usart_start_tx_dma_transfer();
 				}
 			}
 		}

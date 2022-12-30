@@ -347,7 +347,7 @@ void uart_thread(){
 
 ### 测试
 
-本节所有测试视频是在frtos_conf.h 的  RTOS_EN = 1，帧数据包的data部分使用 HAL_SPI_TransmitReceive_DMA 发送，使用了 SPIBase的spiMutex，且 baseTransferExt()函数内等待标记时调用了osDelay(1); 使用H750VBT6_esp-at_02 示例工程进行的
+本节所有测试视频是在frtos_conf.h 的  RTOS_EN = 1，帧数据包的data部分使用 HAL_SPI_TransmitReceive_DMA 发送，使用了 SPIBase的spiMutex，且 baseTransferExt()函数内等待标记时调用了osDelay(1); SPI时钟为10MHz，使用H750VBT6_esp-at_02 示例工程进行的
 
 路径：
 

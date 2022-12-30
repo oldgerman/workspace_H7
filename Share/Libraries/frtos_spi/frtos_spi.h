@@ -51,9 +51,11 @@ namespace ns_frtos_spi
 /* transfer mode */
 typedef enum {
 	TRANSFER_MODE_NONE = 0,	/* 不传输 */
-	TRANSFER_MODE_DMA,    	/* DMA方式  */
-	TRANSFER_MODE_INT,    	/* 中断方式 */
-	TRANSFER_MODE_POLL,   	/* 查询方式 */
+	TRANSFER_MODE_DMA,    	/* DMA  */
+	TRANSFER_MODE_INT,    	/* 中断 */
+	TRANSFER_MODE_POLL,   	/* 查询 */
+	TRANSMIT_MODE_POLL,    	/* 查询发送 */
+	RECEIVE_MODE_POLL,   	/* 查询接收 */
 }transfer_mode_t;
 
 /* transfer state */
@@ -94,8 +96,6 @@ public:
 	void baseSetParam(uint32_t _BaudRatePrescaler, uint32_t _CLKPhase, uint32_t _CLKPolarity);
 	void baseTransfer(transfer_mode_t spiTransMode);
 	void baseTransferExt(transfer_mode_t spiTransMode, uint8_t* pTxData, uint8_t* pRxData, uint16_t size);
-	void baseTransmitPollExt(uint8_t* pTxData, uint16_t size);
-	void baseReceivePollExt(uint8_t* pRxData, uint16_t size);
 	void baseEnter();
 	void baseExit();
 	bool baseBusy(void);
