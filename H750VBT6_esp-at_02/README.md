@@ -90,7 +90,7 @@ Send done, send count: 10240000, time: 148259 ms
 
 发现Time Base优先级我配置是15，而esp-at sdio里STM32示例配置优先级是0
 
-![sdio-at示例的stm32的freertos下，TIme base优先级是0，而我设置为了15，改为0后，TCP透传速度从68KB提升到104KB每秒](Images/sdio-at示例的stm32的freertos下，TIme base优先级是0，而我设置为了15，改为0后，TCP透传速度从68KB提升到104KB每秒.png)
+![sdio-at示例的stm32的freertos下Timebase优先级是0](Images/sdio-at示例的stm32的freertos下Timebase优先级是0.png)
 
 改为0后，速率有提升
 
