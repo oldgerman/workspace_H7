@@ -82,7 +82,7 @@ Send done, send count: 10240000, time: 148259 ms
 | 继续放大                                                     | 继续放大                                                     |
 | ![RIGOL_2022-12-30_14_09_42.576](Images/RIGOL_2022-12-30_14_09_42.576.png) | ![RIGOL_2022-12-30_14_11_22.095](Images/RIGOL_2022-12-30_14_11_22.095.png) |
 
-继续放大，由于SPI CLK是40MHz，我示波器每通道只有50MHz，所以波形显示比较奇怪，但可以看到，WIFI TCP 透传下cmd段还是发送了的：见透传下，还是需要等HANDSHAKE，然后Master向Slave查询可发送的包大小，具体可以看 `debug状态下发送1024000字节数据时，send_opt和recv_opt数据变化.mp4`
+继续放大，由于SPI CLK是40MHz，我示波器每通道只有50MHz，所以波形显示比较奇怪，但可以看到，WIFI TCP 透传下cmd段还是发送了的：说明透传模式下，Master还是要等Slave的产生HANDSHAKE上升沿信号，然后Master向Slave查询可发送的包大小，具体可以看 `debug状态下发送1024000字节数据时，send_opt和recv_opt数据变化.mp4`
 
 ![RIGOL_2022-12-30_14_11_02.577](Images/RIGOL_2022-12-30_14_11_02.577.png)
 
@@ -105,7 +105,7 @@ Send done, send count: 10240000, time: 102918 ms
 
 ### 不同距离对速率影响
 
-感觉我焊接的IPEX天线的问题有点大，最高到292KB/s，最低才73KB/s
+感觉我焊接的IPEX天线的问题有点大，最高到293KB/s，最低才73KB/s
 
 ```c
 Start test send data
@@ -126,10 +126,9 @@ Start test send data
 Send done, send count: 10240000, time: 34987 ms			//间隔 5cm
 ```
 
-与wifi天线距离5cm，最高可以飙到 293KB/s，但50cm就很慢了：
-
-| ![天线距离5vm，293KBps](Images/天线距离5vm，293KBps.png) | ![安富莱TCPUDPng工具测试1](Images/安富莱TCPUDPng工具测试1.png) |
-| -------------------------------------------------------- | ------------------------------------------------------------ |
+| 与wifi天线距离5cm，最高可以飙到 293KB/s                    | 与wifi天线距离50cm就很慢了                                   |
+| ---------------------------------------------------------- | ------------------------------------------------------------ |
+| ![天线距c离5cm，293KBps](Images/天线距离5cm，293KBps.png)c | ![安富莱TCPUDPng工具测试1](Images/安富莱TCPUDPng工具测试1.png) |
 
 与wifi天线距离5cm，可以看到发送频率明显变高：
 
