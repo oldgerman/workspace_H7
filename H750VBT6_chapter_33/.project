@@ -32,9 +32,9 @@
 	</natures>
 	<linkedResources>
 		<link>
-			<name>Share</name>
+			<name>Bsp</name>
 			<type>2</type>
-			<locationURI>$%7BPARENT-1-PROJECT_LOC%7D/Share</locationURI>
+			<location>D:/ODG-PROJECT/STM32H7/workspace_H7/Share/Bsp</location>
 		</link>
 	</linkedResources>
 </projectDescription>
