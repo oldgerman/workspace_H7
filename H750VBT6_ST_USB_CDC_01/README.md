@@ -16,7 +16,7 @@
 
 ![](Images/任务列表.png)
 
-## 信号量
+## USB相关的信号量
 
 路径 `Core/Src/Freertos.c`
 
@@ -223,7 +223,7 @@ void USB_Status_Init(void);
 /* USER CODE END EXPORTED_FUNCTIONS */
 ```
 
-## printf()
+## printf() 相关
 
 ### 重定向
 
@@ -268,9 +268,7 @@ __io_putchar(*ptr++);
 
 因此可以直接在其他源代码文件中定义 强函数，可选方式是 重写 __io_putchar() 与 `__io_getchar()` 与外设的收发API对接，或者直接重写 `_read()`与 `_write()`，可参考：[STM32CubeIDE printf重定向設置](https://blog.csdn.net/kyzb002/article/details/101100922)
 
-本工程仅将 _write 对接到 USB 输出流
-
-使用 fibre框架 的工程处理方式
+使用 fibre框架 的一些项目的处理方式：
 
 ODrive新版由于使用 devel 分支的 fibre，实现地很复杂，先放在这里吧
 
@@ -313,9 +311,28 @@ int _write(int file, const char *data, int len)
 }
 ```
 
+本工程仅将 _write 对接到 USB 输出流：
+
+路径：`Bsp\communication\communication.cpp`
+
+```c
+extern "C" {
+int _write(int file, const char *data, int len);
+}
+
+// @brief This is what printf calls internally
+int _write(int file, const char *data, int len)
+{
+    usb_stream_output_ptr->process_bytes((uint8_t *) data, len, nullptr);
+    return len;
+}
+```
+
 ### 指定串口打印
 
 使用 Respod()
+
+路径：`Bsp\communication\ascii_processor.hpp`
 
 ```C++
 // Function to send messages back through specific channel (UART or USB-VCP).
@@ -325,15 +342,31 @@ void Respond(StreamSink &output, bool include_checksum, const char *fmt, TArgs &
 {...(略)}
 ```
 
-参数 `StreamSink &output` 给 外设输出流对象
+参数 `StreamSink &output` 给 外设输出流对象 就行
 
-### 指定串口解析命令
+参考用法：OnAsciiCmd()，路径：`UserApp\protocols\ascii_protocol.cpp`
+
+### 指定串口解析ASCII命令
+
+路径：`Bsp\communication\ascii_processor.hpp`
+
+```c
+void ASCII_protocol_parse_stream(const uint8_t *buffer, size_t len, StreamSink &response_channel)
+```
+
+参考用法1：
+
+UsbServerTask()，路径：`Bsp\communication\interface_usb.cpp`
 
 ```c
 ASCII_protocol_parse_stream(CDC_interface.rx_buf, CDC_interface.rx_len, usb_stream_output);
 ```
 
-Dummy-Robot 源码的 ASCII_protocol_process_line()中根据response_channel.channelType 调用不同的 OnXXXAsciiCmd()命令解析函数
+参考用法2：
+
+由于 `ASCII_protocol_parse_stream()` 会调用 `ASCII_protocol_process_line()` 
+
+[Dummy-Robot](https://github.com/peng-zhihui/Dummy-Robot) 源码的`ASCII_protocol_process_line()` 中根据`response_channel.channelType` 调用不同的 `OnXXXAsciiCmd()`，路径：`Dummy-Robot/2.Firmware/Core-STM32F4-fw/Bsp/communication/ascii_processor.cpp`
 
 ```c
 // @brief Executes an ASCII protocol command
@@ -363,7 +396,7 @@ void ASCII_protocol_process_line(
 }
 ```
 
-然后分别在 OnUsbAsciiCmd()、OnUart4AsciiCmd()、OnUart5AsciiCmd()中自定义命令解析即可
+然后分别在 OnUsbAsciiCmd()、OnUart4AsciiCmd()、OnUart5AsciiCmd()中自定义命令解析即可，路径：`Dummy-Robot/2.Firmware/Core-STM32F4-fw/UserApp/protocols/ascii_protocol.cpp`
 
 ### 打印浮点数崩溃
 
@@ -452,6 +485,6 @@ void ASCII_protocol_process_line(
 
 ## 测试
 
-混合自定义命令解析
+使用原子XCOM自动循环发送，UsbTaskServer任务进行混合自定义命令解析，与此同时ledTask任务打印系统时间
 
 ![ASCIICMD解析压力测试](Images/ASCIICMD解析压力测试.png)
