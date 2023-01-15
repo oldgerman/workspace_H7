@@ -1,5 +1,16 @@
 ## H750VBT6_esp-at_02 
 
+## 测试AT命令
+
+```c
+AT+CWMODE=1
+AT+CWJAP="PDCN","1234567890"				//改为你的wifi和密码
+AT+CIPSTA?
+AT+CIPSTART="TCP","192.168.101.229",1347	//TCP服务端IP和端口
+AT+CIPMODE=1
+AT+CIPSEND								// 开始 SPI 透传
+```
+
 ## 传输10MB数据测试
 
 ### 关于
@@ -149,3 +160,4 @@ Send done, send count: 10240000, time: 34987 ms			//间隔 5cm
 ![HANDSHAKE主机端需要内部上拉1](Images/HANDSHAKE主机端需要内部上拉1.png)
 
 ![HANDSHAKE主机端需要内部上拉2](Images/HANDSHAKE主机端需要内部上拉2.png)
+

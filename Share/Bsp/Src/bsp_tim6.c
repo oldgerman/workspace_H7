@@ -29,7 +29,7 @@ void bsp_tim6_disable_IT(){
 void bsp_tim6_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 	if(htim == &htim6)
 	{
-		HAL_GPIO_TogglePin(LRGB_G_GPIO_Port, LRGB_G_Pin);
+//		HAL_GPIO_TogglePin(LRGB_G_GPIO_Port, LRGB_G_Pin);
 //
 //		HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_13|GPIO_PIN_14|GPIO_PIN_15);
 //		HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_8);

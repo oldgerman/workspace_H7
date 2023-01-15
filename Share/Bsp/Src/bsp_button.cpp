@@ -75,8 +75,8 @@ void bsp_Button_Init()
   */
 void bsp_Button_Update()
 {
-    btA.EventMonitor(HAL_GPIO_ReadPin(KEY_A_GPIO_Port, KEY_A_Pin) == GPIO_PIN_SET);
-    btB.EventMonitor(HAL_GPIO_ReadPin(KEY_B_GPIO_Port, KEY_B_Pin) == GPIO_PIN_RESET);
+//    btA.EventMonitor(HAL_GPIO_ReadPin(KEY_A_GPIO_Port, KEY_A_Pin) == GPIO_PIN_SET);
+//    btB.EventMonitor(HAL_GPIO_ReadPin(KEY_B_GPIO_Port, KEY_B_Pin) == GPIO_PIN_RESET);
 }
 #endif
 
