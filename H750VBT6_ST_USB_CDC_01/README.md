@@ -40,7 +40,7 @@ ST USB不是仅有一个版本兼容 所有带 USB 外设的STM32，对于 F4 �
 #include "freertos_inc.h"		//提供信号量 sem_usb_tx
 ```
 
-将 `if(pdev->pClassData != NULL)`加入
+（此步骤跳过）~~将 `if(pdev->pClassData != NULL)`加入~~
 
 ```c
 USBD_CDC_DeInit()	//不必加，ST USB做了 pClassData NULL 检查
