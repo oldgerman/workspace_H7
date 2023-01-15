@@ -4,11 +4,10 @@
 
 使用USB虚拟串口解析接收到的命令并回复，支持输入浮点回复浮点数，所有USB处理相关的任务都是事件驱动的
 
-## 任务划分
+## 用户任务划分
 
 按照创建顺序依次是：
 
-- IDLE
 - usbIrqTask：CDC接收中断处理
 - StartDefaultTask：调用Main()执行完毕后此任务自行删除
 - CommunicationTask：调用创建 UsbServerTask 的函数，然后每秒1次打酱油
