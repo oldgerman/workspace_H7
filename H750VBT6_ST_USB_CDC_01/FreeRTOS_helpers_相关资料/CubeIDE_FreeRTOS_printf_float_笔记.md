@@ -2,7 +2,7 @@
 
 优先级：LED任务Normal，USBServer任务AboveNormal
 
-问题场景：若不开LED任务，不会出现此情况。若LED任务使用printf，USB命令解析任务调用 Respond() 使用 %f 转义字符打印浮点数 ，那么就进 HardFault ，将将%f 改成%d，不会跳到HardFault_Handler 中，非常奇怪
+问题场景：若不开LED任务，不会出现此情况。若LED任务使用printf，USB命令解析任务调用 Respond() 使用 %f 转义字符打印浮点数 ，那么就进 HardFault ，将%f 改成%d，不会跳到HardFault_Handler 中，非常奇怪
 
 排错环节：
 
@@ -59,6 +59,8 @@ Github：[https://github.com/DRNadler/FreeRTOS_helpers](https://github.com/DRNad
 > - **通过 STM 提供的 HAL-LL 代码（例如 STM 的 USB 堆栈）**
 >
 > 本文档解释了如何解决此问题（按照本页底部的说明进行操作）。
+>
+> ![](CubeIDE_FreeRTOS_printf_float/newlibAndFreeRTOS_FreeRTOS_support_newlib.PNG)
 
 讨论贴：[https://community.st.com/s/question/0D50X0000BB1eL7SQJ/bug-cubemx-freertos-projects-corrupt-memory](https://community.st.com/s/question/0D50X0000BB1eL7SQJ/bug-cubemx-freertos-projects-corrupt-memory)
 
