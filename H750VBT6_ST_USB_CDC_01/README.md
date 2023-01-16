@@ -4,7 +4,7 @@
 
 使用USB虚拟串口解析接收到的命令并回复，支持输入浮点回复浮点数，所有USB处理相关的任务都是事件驱动的
 
-## 用户任务划分
+## 任务划分
 
 按照创建顺序依次是：
 
@@ -13,6 +13,7 @@
 - CommunicationTask：调用创建 UsbServerTask 的函数，然后每秒1次打酱油
 - UsbServerTask：进行VCP命令解析
 - ledTask：每200ms闪烁一次开发板红色led
+- 系统任务：略
 
 ![](Images/任务列表.png)
 
@@ -487,8 +488,34 @@ void ASCII_protocol_process_line(
 
 按照 [Dave Nadler 博客 ](https://nadler.com/embedded/newlibAndFreeRTOS.html) 的方法（本项目根目录的 `FreeRTOS_helpers_相关资料`文件夹中有记录）搞定
 
-## 测试
+## 测试：ASCII命令解析
 
-使用原子XCOM自动循环发送，UsbTaskServer任务进行混合自定义命令解析，与此同时ledTask任务打印系统时间
+使用原子XCOM自动循环发送，UsbTaskServer任务进行自定义ASCII命令解析，与此同时ledTask任务打印系统时间
 
-![ASCIICMD解析压力测试](Images/ASCIICMD解析压力测试.png)
+> 测试命令
+>
+> ```
+> f123.456789
+> ^STOP
+> #GETFLOAT
+> #CMDMODE 123
+> #GETINT
+> ```
+>
+> ![ASCIICMD解析压力测试](Images/ASCIICMD解析压力测试.png)
+
+发送 `$ISR_STACK`  命令查看 ISR 堆栈（需要 [Dave Nadler 的 FreeRTOS_helpers 的  port_DRN.c ](https://github.com/DRNadler/FreeRTOS_helpers)支持）
+
+```c
+ISR Stack : 100/256  39%
+```
+
+发送 `$TASK_STACK` 命令查看 任务堆栈
+
+```c
+commTask : 70/128  54%
+UsbServerTask : 408/512  79%
+usbIrqTask : 50/128  39%
+ledTask : 152/256  59%
+```
+

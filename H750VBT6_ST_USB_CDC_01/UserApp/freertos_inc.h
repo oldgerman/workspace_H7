@@ -24,14 +24,17 @@ extern osSemaphoreId sem_usb_tx;
 /* List of quenes ------------------------------------------------------------*/
 
 /* List of tasks -------------------------------------------------------------*/
-
-/* List of tasks -------------------------------------------------------------*/
 /*--------------------------------- System Tasks ------------------------------*/
-extern osThreadId defaultTaskHandle;      // Usage: 2048 Bytes stack
-extern osThreadId usbIrqTaskHandle;       // Usage: 512  Bytes stack
-extern osThreadId usbServerTaskHandle;    // Usage: 2048 Bytes stack
-
+extern const uint32_t commTaskStackSize;
+extern const uint32_t UsbIrqTaskStackSize;
+extern const uint32_t usbServerTaskStackSize;
+extern osThreadId_t defaultTaskHandle;
+extern osThreadId_t commTaskHandle;
+extern osThreadId_t usbIrqTaskHandle;
+extern osThreadId_t usbServerTaskHandle;
 /*---------------------------------- User Tasks -------------------------------*/
+extern const uint32_t ledTaskStackSize;
+extern osThreadId_t ledTaskHandle;
 
 /*------------- xxxK (used) / xxxK (for FreeRTOS) / xxxK (total) --------------*/
 

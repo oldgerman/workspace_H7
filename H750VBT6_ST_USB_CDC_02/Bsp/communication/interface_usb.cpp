@@ -148,10 +148,10 @@ void usb_rx_process_packet(uint8_t *buf, uint32_t len)
     osSemaphoreRelease(sem_usb_rx);
 }
 
-
+const uint32_t usbServerTaskStackSize = 512 * 4;
 const osThreadAttr_t usbServerTask_attributes = {
     .name = "UsbServerTask",
-    .stack_size = 1024 * 8,
+    .stack_size = usbServerTaskStackSize,
     .priority = (osPriority_t) osPriorityAboveNormal,
 };
 

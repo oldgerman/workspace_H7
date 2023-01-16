@@ -46,10 +46,10 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
-// List of semaphores
 osSemaphoreId sem_usb_irq;
 osSemaphoreId sem_usb_rx;
 osSemaphoreId sem_usb_tx;
+const uint32_t UsbIrqTaskStackSize = 128 * 4;
 
 /* USER CODE END Variables */
 /* Definitions for defaultTask */
@@ -108,7 +108,7 @@ void MX_FREERTOS_Init(void) {
   // This Task must run before MX_USB_DEVICE_Init(), so have to put it here.
   const osThreadAttr_t usbIrqTask_attributes = {
       .name = "usbIrqTask",
-      .stack_size = 512,
+      .stack_size = UsbIrqTaskStackSize,
       .priority = (osPriority_t) osPriorityAboveNormal,
   };
   usbIrqTaskHandle = osThreadNew(UsbDeferredInterruptTask, NULL, &usbIrqTask_attributes);

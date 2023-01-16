@@ -15,6 +15,7 @@
 /* Private macros ------------------------------------------------------------*/
 /* Private typedef -----------------------------------------------------------*/
 /* Global constant data ------------------------------------------------------*/
+const uint32_t ledTaskStackSize = 256 * 4;
 /* Global variables ----------------------------------------------------------*/
 /* Private constant data -----------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
@@ -46,7 +47,7 @@ void Main(){
 
     const osThreadAttr_t ledTask_attributes = {
         .name = "ledTask",
-        .stack_size = 1024 * 8,
+        .stack_size = ledTaskStackSize,
         .priority = (osPriority_t) osPriorityNormal,
     };
     ledTaskHandle = osThreadNew(ThreadLedUpdate, nullptr, &ledTask_attributes);

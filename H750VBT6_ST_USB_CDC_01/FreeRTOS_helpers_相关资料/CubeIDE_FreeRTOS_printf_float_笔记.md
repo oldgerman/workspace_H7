@@ -129,7 +129,7 @@ configISR_STACK_SIZE_WORDS 定义在  [README.md 中的 FreeRTOS ISR 堆栈使�
 
 运行，复现问题场景，还是进入 HardFault，服气
 
-最后看到 [taotao830 的两篇博客](https://blog.csdn.net/tao475824827/article/details/107286336)，确认是 ledTask 任务栈太小，从 `64*8` 暴力增加到 `1024*8` byte  解决，实际上用不到这么大
+最后看到 [taotao830 的两篇博客](https://blog.csdn.net/tao475824827/article/details/107286336)，确认是 ledTask 任务栈太小，从 `128*4` 增加到 `256*4` byte  解决，使用`uxTaskGetStackHighWaterMark()`查看 ledTask 任务栈使用率是 152/256 ，即 59%，所以 `128*4`确实小了导致栈溢出
 
 ## 线程安全的printf ？
 

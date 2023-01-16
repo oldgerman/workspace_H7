@@ -3,6 +3,9 @@
 #include <string>
 using namespace std;
 
+void RespondIsrStackUsageInWords(StreamSink &output);
+void RespondTaskStackUsageInWords(StreamSink &output, osThreadId_t TaskHandle, uint32_t stackSizeInWords);
+
 void OnAsciiCmd(const char* _cmd, size_t _len, StreamSink &_responseChannel)
 {
     /*---------------------------- ↓ Add Your CMDs Here ↓ -----------------------------*/
@@ -57,9 +60,57 @@ void OnAsciiCmd(const char* _cmd, size_t _len, StreamSink &_responseChannel)
             uint32_t mode;
             sscanf(_cmd, "#CMDMODE %lu", &mode);
             Respond(_responseChannel, false, "Set command mode to [%lu]", mode);
-        } else
+        }
+        else
+        {
             Respond(_responseChannel, false, "ok");
+        }
+    }
+    else if(_cmd[0] == '$')
+    {
+        std::string s(_cmd);
+        if (s.find("ISR_STACK") != std::string::npos)
+        {
+        	RespondIsrStackUsageInWords(_responseChannel);
+        }
+        else if(s.find("TASK_STACK") != std::string::npos){
+        	RespondTaskStackUsageInWords(_responseChannel, commTaskHandle, 		commTaskStackSize / 4);
+        	RespondTaskStackUsageInWords(_responseChannel, usbServerTaskHandle, usbServerTaskStackSize / 4);
+        	RespondTaskStackUsageInWords(_responseChannel, usbIrqTaskHandle, 	UsbIrqTaskStackSize / 4);
+        	RespondTaskStackUsageInWords(_responseChannel, ledTaskHandle, 		ledTaskStackSize / 4);
+        }
     }
 
     /*---------------------------- ↑ Add Your CMDs Here ↑ -----------------------------*/
+}
+
+/**
+ * @brief 		以字为单位打印任务堆栈的使用占比
+ * @example		fooTask :  50/128  39%
+ * @param		output				: StreamSink 输出流
+ * @param		TaskHandle			: 任务句柄
+ * @param		stackSizeInWords	: 任务栈大小，以字为单位
+ * @retval		None
+ */
+void RespondTaskStackUsageInWords(StreamSink &output, osThreadId_t TaskHandle, uint32_t stackSizeInWords)
+{
+	uint32_t stackFreeSizeInWords = uxTaskGetStackHighWaterMark((TaskHandle_t)TaskHandle);
+	uint32_t used = stackSizeInWords - stackFreeSizeInWords;
+	Respond(output, false, "%s : %lu/%lu  %lu%%",
+			pcTaskGetName((TaskHandle_t)TaskHandle), used, stackSizeInWords, used * 100 / stackSizeInWords);
+}
+
+/**
+ * @brief		以字为单位打印ISR堆栈的使用占比
+ * @example		ISR Stack : 100/256  39%
+ * @param		output				: StreamSink 输出流
+ * @retval		None
+ */
+void RespondIsrStackUsageInWords(StreamSink &output)
+{
+	const uint32_t stackSizeInWords = configISR_STACK_SIZE_WORDS;
+	uint32_t stackFreeSizeInWords = xUnusedISRstackWords();
+	uint32_t used = stackSizeInWords - stackFreeSizeInWords;
+	Respond(output, false, "ISR Stack : %lu/%lu  %lu%%",
+			used, stackSizeInWords, used * 100 / stackSizeInWords);
 }

@@ -14,9 +14,10 @@ osThreadId_t commTaskHandle;
 osThreadId_t usbIrqTaskHandle;
 
 /* Private constant data -----------------------------------------------------*/
+const uint32_t commTaskStackSize = 128 * 4;
 const osThreadAttr_t commTask_attributes = {
     .name = "commTask",
-    .stack_size = 2048 * 4,
+    .stack_size = commTaskStackSize,
     .priority = (osPriority_t) osPriorityNormal,
 };
 
