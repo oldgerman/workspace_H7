@@ -24,9 +24,7 @@ ST USB CDC VCP ，加入FreeRTOS 和 fibre 框架 ，USB收发使用事件驱动
 
 ### H750VBT6_ST_USB_CDC_03
 
-加入 第二组 CDC 无 CMD 端点 ，修改 ST USB 库为 CDC+VCP 和 CDC+BULK 的复合设备
-
-同时与CDC+VCP、CDC+BULK的上位机通信
+修改为 CDC+VCP 和 CDC+BULK 的复合设备，同时与CDC+VCP、CDC+BULK的上位机通信
 
 ### H750VBT6_ST_USB_CDC_04
 
