@@ -20,16 +20,20 @@ ST USB CDC VCP ，加入FreeRTOS 和 fibre 框架 ，USB收发使用事件驱动
 
 ### H750VBT6_ST_USB_CDC_02
 
-将 VCP 改为 CDC 无 CMD 端点 ，与上位机（libusb + QT）进行 BULK 通信
+修改 VID 和 PID，与上位机（libusb + QT）进行 BULK 通信
 
 ### H750VBT6_ST_USB_CDC_03
 
-修改为 CDC+VCP 和 CDC+BULK 的复合设备，同时与CDC+VCP、CDC+BULK的上位机通信
+去掉 CMD 端点 ，与上位机（libusb + QT）进行 BULK 通信
 
 ### H750VBT6_ST_USB_CDC_04
 
-下位机与上位机加入  JSON 序列化反序列化
+修改为 CDC+VCP 和 CDC+BULK 的复合设备，同时与串口助手、QT上位机通信
 
-## 待加入的
+## 待考虑实现
 
 fibre的循环缓冲区class
+
+下位机与上位机加入  JSON 序列化反序列化
+
+数据包压缩/解压缩通信

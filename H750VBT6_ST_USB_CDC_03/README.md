@@ -37,14 +37,16 @@ Libusb 提供了与 CDC（和其他类）设备通信的 API，无需默认的 W
 - 需要Windows端具有签名的驱动程序
 - 终端应用程序的发布不透明
 
-优点主要是 libusb不需要中断端点的协议，可以节约一个端点，对于CDC只需要IN/OUT两个端点，这意味着程序不需要处理中断端点、LineCoding（CDC下ACM协议的东西），在windows端的优势是没有额外的VCP协议层与本机即插即用
+优点主要是 libusb不需要中断端点的协议，可以节约1个端点，对于CDC只需要IN/OUT两个端点，这意味着程序不需要处理中断端点、LineCoding（CDC下ACM协议的东西），在windows端的优势是没有额外的VCP协议层与本机即插即用
 
-> STM32F405的USB-FS有6个端点，1个端点0，5个双向端点
->
-> > - CDC+VCP使用2个，剩3个双向端点
-> > - CDC+libusb使用1个，剩4个双向端点
->
-> STM32H750的USB-FS有9个端点，1个端点0，8个双向端点
+关于端点个数，以USB-FS设备端点为例
+
+| F103：7个                                                    | F413：11个                                                   | H750：17个                                                   |
+| ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
+| ![STM32F103_USB-FS_设备端点个数](Images/STM32F103_USB-FS_设备端点个数.png) | ![STM32F413_USB-FS_设备端点个数](Images/STM32F413_USB-FS_设备端点个数.png) | ![STM32H750_USB-FS_设备端点个数](Images/STM32H750_USB-FS_设备端点个数.png) |
+
+- CDC+VCP使用3个：BULK IN、BULK OUT、CMD IN
+- CDC+libusb使用2个：BULK IN、BULK OUT
 
 缺点主要是终端应用程序和API不像标准COM端口那样通俗易懂（绝大多数程序都是准备好连接一些COM端口）
 
@@ -53,6 +55,8 @@ Libusb 提供了与 CDC（和其他类）设备通信的 API，无需默认的 W
 视频中上位机使用 Visual Basic 的 Windows 窗体应用 (.NET Framework) 模板整的，但C# 的那一套本id不会，换QT的C++整好了
 
 视频中改 ST USB  库的 usbd_cdc.c 时，删除了 USB-LS 和 USB-HS 相关的东西，仅支持 USB FS
+
+ST USB 描述符的详细介绍可参考： [【经验分享】STM32 USB相关知识扫盲](https://shequ.stmicroelectronics.cn/thread-634273-1-1.html)
 
 ## H750VBT6_ST_USB_CDC_02的修改
 
