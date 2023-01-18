@@ -18,8 +18,10 @@ public:
     int process_packet(uint8_t *buffer, size_t length) override
     {
         // cannot send partial packets
+#if 0
         if (length > CDC_DATA_FS_MAX_PACKET_SIZE)
             return -1;
+#endif
         // wait for USB interface to become ready
         if (osSemaphoreAcquire(sem_usb_tx_, PROTOCOL_SERVER_TIMEOUT_MS) != osOK)
         {
@@ -57,6 +59,7 @@ public:
 
     int process_bytes(uint8_t *buffer, size_t length, size_t *processed_bytes)
     {
+#if 0
         // Loop to ensure all bytes get sent
         while (length)
         {
@@ -68,6 +71,10 @@ public:
             if (processed_bytes)
                 *processed_bytes += chunk;
         }
+#else
+        if (output_.process_packet(buffer, length) != 0)
+            return -1;
+#endif
         return 0;
     }
 

@@ -6,6 +6,8 @@ using namespace std;
 void RespondIsrStackUsageInWords(StreamSink &output);
 void RespondTaskStackUsageInWords(StreamSink &output, osThreadId_t TaskHandle, uint32_t stackSizeInWords);
 
+uint8_t usb_data[1024];
+
 void OnAsciiCmd(const char* _cmd, size_t _len, StreamSink &_responseChannel)
 {
     /*---------------------------- ↓ Add Your CMDs Here ↓ -----------------------------*/
@@ -80,7 +82,14 @@ void OnAsciiCmd(const char* _cmd, size_t _len, StreamSink &_responseChannel)
         	RespondTaskStackUsageInWords(_responseChannel, ledTaskHandle, 		ledTaskStackSize / 4);
         }
     }
-
+    /* 返回1024个随机数据 */
+    else if(_cmd[0] == 0x02)
+    {
+    	for(int i = 0; i<1024; i++) {
+    		usb_data[i] = rand() % 50;
+    	}
+		_responseChannel.process_bytes((uint8_t *) usb_data, 1024, nullptr);
+    }
     /*---------------------------- ↑ Add Your CMDs Here ↑ -----------------------------*/
 }
 
