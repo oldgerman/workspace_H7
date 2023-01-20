@@ -16,7 +16,7 @@
 
 ### H750VBT6_ST_USB_CDC_01
 
-ST USB CDC VCP ，加入FreeRTOS 和 fibre 框架 ，USB收发使用事件驱动的任务管理，支持自定义ASCII命令解析
+ST USB Device模式 CDC VCP ，加入FreeRTOS 和 fibre 框架 ，USB收发使用事件驱动的任务管理，支持自定义ASCII命令解析
 
 ### H750VBT6_ST_USB_CDC_02
 
@@ -28,7 +28,7 @@ ST USB CDC VCP ，加入FreeRTOS 和 fibre 框架 ，USB收发使用事件驱动
 
 ### H750VBT6_ST_USB_CDC_04
 
-修改为 CDC+VCP 和 CDC+BULK 的复合设备，同时与串口助手、QT上位机通信
+修改为USB CDC + VCP 与 CDC + libusb（BULK）的复合设备，同时与串口助手、QT上位机通信
 
 ## 待考虑实现
 

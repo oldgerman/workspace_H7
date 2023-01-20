@@ -7,3 +7,5 @@ H750VBT6_esp-hosted_01_ex
 stm32-usart-uart-dma-rx-tx-main
 Core-STM32F4
 HelloWord-Dynamic-fw
+H750VBT6_ST_USBD_AL94_01
+STM32H750_USB_composite
