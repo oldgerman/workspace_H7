@@ -2,6 +2,8 @@
 
 ## 关于
 
+**失败工程，仅在此备份**
+
 在 H750VBT6_ST_USB_CDC_02 与 H750VBT6_ST_USB_CDC_03 工程的基础上修改为USB-FS Device模式的 CDC + VCP 与 CDC + libusb（BULK）的复合设备
 
 ## fibre 相关的修改
@@ -100,7 +102,7 @@ TreatPacketSinkAsStreamSink usb_stream_cdc_output(usb_packet_output_cdc, StreamS
 新增 TreatPacketSinkAsStreamSink 类的 usb_stream_bulk_output 对象
 
 ```C++
-TreatPacketSinkAsStreamSink usb_stream_bulk_output(usb_packet_output_cdc, StreamSink::CHANNEL_TYPE_USB_BULK);
+TreatPacketSinkAsStreamSink usb_stream_bulk_output(usb_packet_output_bulk, StreamSink::CHANNEL_TYPE_USB_BULK);
 ```
 
 usb_rx_process_packet，CDC_Receive_FS 自定义回调函数 ，新增参数 endpoint_pair ，内部也需要根据 endpoint 做处理
@@ -1179,7 +1181,13 @@ uint8_t CDC_Transmit_FS(uint8_t* Buf, uint16_t Len, uint8_t endpoint_pair)
 #define MS_VendorCode 'P'
 ```
 
+### usbd_conf.h
 
+修改最大接口数：`USBD_MAX_NUM_INTERFACES` 从 1U 增加到 2U，此修改很重要
+
+```c
+#define USBD_MAX_NUM_INTERFACES     2U
+```
 
 ### usbd_conf.c
 
@@ -1319,5 +1327,4 @@ usbd_cdc.c 内 `/* WinUSB support */`的一大堆代码作用是让windows为其
 
 ![Demo复合设备BULK覆盖默认是winUSB驱动为libusb](Images/Demo复合设备BULK覆盖默认是winUSB驱动为libusb.png)
 
-
-
+QT上位机通信失败

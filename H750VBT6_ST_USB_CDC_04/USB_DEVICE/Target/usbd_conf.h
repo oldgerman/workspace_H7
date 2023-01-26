@@ -64,7 +64,7 @@
 #define MS_VendorCode 'P'
 
 /*---------- -----------*/
-#define USBD_MAX_NUM_INTERFACES     1U//2U//1U
+#define USBD_MAX_NUM_INTERFACES     2U
 /*---------- -----------*/
 #define USBD_MAX_NUM_CONFIGURATION     1U
 /*---------- -----------*/

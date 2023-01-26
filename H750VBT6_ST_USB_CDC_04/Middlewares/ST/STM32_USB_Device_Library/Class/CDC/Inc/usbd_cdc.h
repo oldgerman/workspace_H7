@@ -41,20 +41,20 @@ extern "C" {
   * @{
   */
 #ifndef CDC_IN_EP
-#define CDC_IN_EP                                   0x81U  /* EP1 for data IN */
+#define CDC_IN_EP                                   0x83U  /* EP1 for data IN */
 #endif /* CDC_IN_EP */
 #ifndef CDC_OUT_EP
-#define CDC_OUT_EP                                  0x01U  /* EP1 for data OUT */
+#define CDC_OUT_EP                                  0x03U  /* EP1 for data OUT */
 #endif /* CDC_OUT_EP */
 #ifndef CDC_CMD_EP
 #define CDC_CMD_EP                                  0x82U  /* EP2 for CDC commands */
 #endif /* CDC_CMD_EP  */
 
 #ifndef BULK_IN_EP
-#define BULK_IN_EP                                   0x83  /* EP3 IN: device TX endpoint */
+#define BULK_IN_EP                                   0x81U  /* EP3 IN: device TX endpoint */
 #endif /* BULK_IN_EP */
 #ifndef BULK_OUT_EP
-#define BULK_OUT_EP                                  0x03  /* EP3 OUT: device RX endpoint */
+#define BULK_OUT_EP                                  0x01U  /* EP3 OUT: device RX endpoint */
 #endif /* BULK_OUT_EP */
 
 #ifndef CDC_HS_BINTERVAL

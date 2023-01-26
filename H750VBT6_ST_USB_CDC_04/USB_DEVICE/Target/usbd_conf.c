@@ -383,9 +383,9 @@ USBD_StatusTypeDef USBD_LL_Init(USBD_HandleTypeDef *pdev)
 #endif /* USE_HAL_PCD_REGISTER_CALLBACKS */
   /* USER CODE BEGIN TxRx_Configuration */
   HAL_PCDEx_SetRxFiFo(&hpcd_USB_OTG_FS, 0x80);		//  0x80 = 128, 128*4 = 512byte,  ALL OUT EP Buffer
-  HAL_PCDEx_SetTxFiFo(&hpcd_USB_OTG_FS, 0, 0x40);	//  0x80 = 128, 128*4 = 256byte,  EP0 IN
-  HAL_PCDEx_SetTxFiFo(&hpcd_USB_OTG_FS, 1, 0x40);	//  0x80 = 128, 128*4 = 512byte,  CDC IN endpoint
-  HAL_PCDEx_SetTxFiFo(&hpcd_USB_OTG_FS, 3, 0x40); 	// 0x200 = 512, 512*4 = 2048byte, BULK IN endpoint
+  HAL_PCDEx_SetTxFiFo(&hpcd_USB_OTG_FS, 0, 0x80);	//  0x80 = 128, 128*4 = 256byte,  EP0 IN
+  HAL_PCDEx_SetTxFiFo(&hpcd_USB_OTG_FS, 1, 0x80);	//  0x80 = 128, 128*4 = 512byte,  CDC IN endpoint
+  HAL_PCDEx_SetTxFiFo(&hpcd_USB_OTG_FS, 3, 0x200); 	// 0x200 = 512, 512*4 = 2048byte, BULK IN endpoint
   /* USER CODE END TxRx_Configuration */
   }
   return USBD_OK;

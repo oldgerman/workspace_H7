@@ -25,9 +25,11 @@ const uint32_t ledTaskStackSize = 256 * 4;
 
 /* Thread definitions */
 osThreadId_t ledTaskHandle;
+//uint8_t i_usb_data[1024];
+
 void ThreadLedUpdate(void* argument){
 	TickType_t xLastWakeTime = xTaskGetTickCount();
-	const TickType_t xFrequency = 100;
+	const TickType_t xFrequency = 500;
 
 	/* 获取当前的系统时间 */
 	xLastWakeTime = xTaskGetTickCount();
@@ -37,6 +39,14 @@ void ThreadLedUpdate(void* argument){
 
 		/* 打印时间节拍 */
 //		printf("[led_task] sysTick : %ld ms\r\n", xTaskGetTickCount());
+
+//
+//	    	for(int i = 0; i<1024; i++) {
+//	    		i_usb_data[i] = rand() % 50;
+//	    	}
+//	    	printf("%s",i_usb_data);
+//
+
 		vTaskDelayUntil(&xLastWakeTime, xFrequency);
 	}
 }

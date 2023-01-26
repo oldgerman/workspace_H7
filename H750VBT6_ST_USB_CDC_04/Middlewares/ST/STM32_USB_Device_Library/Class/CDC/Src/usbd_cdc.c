@@ -288,10 +288,11 @@ __ALIGN_BEGIN static uint8_t USBD_CDC_CfgDesc[USB_CDC_CONFIG_DESC_SIZ] __ALIGN_E
   0x0B,   /* bDescriptorType: Interface Association Descriptor */
   0x02,   /* bFirstInterface */
   0x01,   /* bInterfaceCount */
-  0x00,   /* bFunctionClass: */
+//  0x00,   /* bFunctionClass: */
+  0x02,   /* bFunctionClass: Communication Interface Class */
   0x00,   /* bFunctionSubClass: */
   0x00,   /* bFunctionProtocol: */
-  0x06,   /* iFunction */
+  0x00,   /* iFunction */
 
   /*---------------------------------------------------------------------------*/
 
@@ -301,8 +302,8 @@ __ALIGN_BEGIN static uint8_t USBD_CDC_CfgDesc[USB_CDC_CONFIG_DESC_SIZ] __ALIGN_E
   0x02,   								/* bInterfaceNumber: Number of Interface */
   0x00,   								/* bAlternateSetting: Alternate setting */
   0x02,   								/* bNumEndpoints: Two endpoints used */
-  0x00,   								/* bInterfaceClass: vendor specific */
-  0x01,   								/* bInterfaceSubClass: REF Communication */
+  0x0A,   								/* bInterfaceClass: vendor specific */
+  0x00,   								/* bInterfaceSubClass: BULK Communication */
   0x00,   								/* bInterfaceProtocol: */
   0x00,   								/* iInterface: */
 
@@ -608,8 +609,8 @@ static uint8_t USBD_CDC_Setup(USBD_HandleTypeDef *pdev,
           break;
       }
       break;
-  case USB_REQ_TYPE_VENDOR:
-	  return USBD_WinUSBComm_SetupVendor(pdev, req);
+//  case USB_REQ_TYPE_VENDOR:
+//	  return USBD_WinUSBComm_SetupVendor(pdev, req);
 
     default:
       USBD_CtlError(pdev, req);

@@ -65,7 +65,7 @@
 #define USBD_VID     0xC251
 #define USBD_LANGID_STRING     1033		// language ID:  0x0409 = 1033
 #define USBD_MANUFACTURER_STRING     "Keil Software"
-#define USBD_PID_FS     0x1212
+#define USBD_PID_FS     0x1253
 
 #define USBD_PRODUCT_XSTR(s) USBD_PRODUCT_STR(s)
 #define USBD_PRODUCT_STR(s) #s
