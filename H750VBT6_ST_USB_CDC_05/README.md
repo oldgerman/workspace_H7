@@ -2,7 +2,7 @@
 
 ## 介绍
 
-在 H750VBT6_ST_USB_CDC_02 的基础上修改，改为 2个虚拟串口 的 USB 复合设备 ，
+在 H750VBT6_ST_USB_CDC_02 的基础上修改，改为 2个虚拟串口 的 USB 复合设备 
 
 02工程大部分都是CubeMX自动生成的单个虚拟串口的代码，`usbd_cdc.c`中的改动只有`USBD_CDC_DataIn()`加了一句释放信号量
 
@@ -31,6 +31,14 @@
 > - 缺点：2个VCP共用一组临时循环缓冲区，而Odrive修改为两组临时循环缓冲区提供给两个VCP分别使用
 >
 > H750VBT6_ST_USB_CDC_05 参考了此文对ST-USB库发送和接收的一部分函数，增加端点参数，而其他的修改部分不同
+
+[STM32 USB进阶培训：02- USB复合设备概念及CDC_MSC深入介绍.PDF](https://www.stmcu.com.cn/Designresource/design_resource_detail?file_name=STM32+USB%E8%BF%9B%E9%98%B6%E5%9F%B9%E8%AE%AD%EF%BC%9A02-+USB%E5%A4%8D%E5%90%88%E8%AE%BE%E5%A4%87%E6%A6%82%E5%BF%B5%E5%8F%8ACDC_MSC%E6%B7%B1%E5%85%A5%E4%BB%8B%E7%BB%8D&lang=EN&ver=1)
+
+> 介绍USB复合设备的基本概念，使用USB CDC+MSC来介绍如何实现USB复合设备的过程
+
+[MOOC - STM32 USB training：STM32 USB training - 08 STM32 USB Device library](https://www.youtube.com/watch?v=I1HfAkz-brc&list=PLnMKNibPkDnFFRBVD206EfnnHhQZI4Hxa&index=8&t=134s) 课件资料的 PPT
+
+> 此PPT讲述ST-USB的驱动分层，其中层之间API的调用关系非常受用
 
 ## ST-USB改动
 
@@ -531,4 +539,4 @@ void ASCII_protocol_process_line(const uint8_t *buffer, size_t len, StreamSink &
 
 ![](Images/卸载libusb-win32驱动后.png)
 
-结论：libusb-win32 对复合设备的VCP的驱动覆盖失败，暂未找到可用参考的资料，开摆！
+结论：libusb-win32 对复合设备的VCP驱动覆盖失败，暂未找到可用参考的资料，开摆！

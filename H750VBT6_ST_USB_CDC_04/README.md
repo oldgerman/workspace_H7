@@ -1289,8 +1289,6 @@ HAL_PCD_SetupStageCallback()
 暂时不加
 ```
 
-
-
 ### usbd_def.h
 
 ```c
