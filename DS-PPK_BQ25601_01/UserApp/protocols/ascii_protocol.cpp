@@ -1,5 +1,5 @@
 #include "common_inc.h"
-
+#include "bq25601.h"
 #include <string>
 using namespace std;
 
@@ -20,23 +20,30 @@ void OnAsciiCmd(const char* _cmd, size_t _len, StreamSink &_responseChannel)
         argNum = sscanf(&_cmd[1], "%f", &value);
         Respond(_responseChannel, false, "Got float: %f\n", argNum, value);
     }
+    /**
+     * 	使用std::string的find算法查找命令字符串,
+     * 	find返回第一个匹配项的第一个字符的位置。
+     * 	如果未找到匹配项，则该函数返回string::npos
+     */
     else if (_cmd[0] == '^')
     {
         std::string s(_cmd);
-        /**
-         * 	使用std::string的find算法查找命令字符串,
-         * 	find返回第一个匹配项的第一个字符的位置。
-         * 	如果未找到匹配项，则该函数返回string::npos
-         */
-        if (s.find("STOP") != std::string::npos)
+        if (s.find("BATFET_TURN_OFF_FAST") != std::string::npos)
         {
-            Respond(_responseChannel, false, "Stopped ok");	// USB 发回的消息
-        } else if (s.find("START") != std::string::npos)
+            Respond(_responseChannel, false, "Turn off BATFET immediately");
+            bq25601_set_batfet_delay(0);
+            bq25601_set_batfet_disable(1);
+        }
+        else if (s.find("BATFET_TURN_OFF_SLOW") != std::string::npos)
         {
-            Respond(_responseChannel, false, "Started ok");
-        } else if (s.find("DISABLE") != std::string::npos)
+            Respond(_responseChannel, false, "Turn off BATFET after t(BATFET_DLY) (typ. 10 s)");
+            bq25601_set_batfet_delay(1);
+            bq25601_set_batfet_disable(1);
+        }
+        else if (s.find("BATFET_TURN_ON") != std::string::npos)
         {
-            Respond(_responseChannel, false, "Disabled ok");
+            Respond(_responseChannel, false, "Turn on BATFET");
+            bq25601_set_batfet_disable(0);
         }
     }
     else if (_cmd[0] == '#')
@@ -54,16 +61,6 @@ void OnAsciiCmd(const char* _cmd, size_t _len, StreamSink &_responseChannel)
         {
             Respond(_responseChannel, false, "ok %d %d %d",
                     123, 456, 789);
-        }
-        else if (s.find("CMDMODE") != std::string::npos)
-        {
-            uint32_t mode;
-            sscanf(_cmd, "#CMDMODE %lu", &mode);
-            Respond(_responseChannel, false, "Set command mode to [%lu]", mode);
-        }
-        else
-        {
-            Respond(_responseChannel, false, "ok");
         }
     }
     else if(_cmd[0] == '$')

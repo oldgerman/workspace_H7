@@ -636,6 +636,14 @@ void bq25601_set_tmr2x_en(uint8_t val)
 				      );
 }
 
+/**
+ * @brief	设置BATFET
+ * 			Set REG07 BATFET_DIS bit[5]
+ * 			xxvx,xxxx
+ * 			0 – Allow Q4 turn on,
+ * 			1 – Turn off Q4 with tBATFET_DLY delay time (REG07[3])
+ * 			Default: Allow Q4 turn on(0)
+ */
 void bq25601_set_batfet_disable(uint8_t val)
 {
 	bq25601_config_interface((uint8_t)(bq25601_CON7),
@@ -645,6 +653,14 @@ void bq25601_set_batfet_disable(uint8_t val)
 				);
 }
 
+/**
+ * @brief	设置BATFET关闭的延时
+ * 			Set REG07 BATFET_DIS bit[3]
+ * 			xxxx,vxxx
+ * 			0 – Turn off BATFET immediately when BATFET_DIS bit is set
+ * 			1 –Turn off BATFET after tBATFET_DLY (typ. 10 s) when BATFET_DIS bit is set
+ * 			Default: 1
+ */
 void bq25601_set_batfet_delay(uint8_t val)
 {
 	bq25601_config_interface((uint8_t)(bq25601_CON7),

@@ -90,6 +90,67 @@ https://github.com/MiCode/Xiaomi_Kernel_OpenSource/tree/riva-n-oss/drivers/power
 
 ## 测试
 
-打印所有寄存器
+### 打印所有寄存器
 
 ![](Images/测试：打印所有寄存器.png)
+
+### VCP解析命令控制BATFET的开关
+
+> BQ25601实现关机只能写寄存器控制BATFET关闭，对应的功能是不充电下的关机，“不充电下的关机” 是什么鬼？手机插电是无法完全关机的，不信你试试~
+
+在ascii_protocol.cpp中插入以下命令：
+
+```C++
+void OnAsciiCmd(const char* _cmd, size_t _len, StreamSink &_responseChannel)
+{
+	...
+	else if (_cmd[0] == '^')
+    {
+        std::string s(_cmd);
+        if (s.find("BATFET_TURN_OFF_FAST") != std::string::npos)
+        {
+            Respond(_responseChannel, false, "Turn off BATFET immediately");
+            bq25601_set_batfet_delay(0);
+            bq25601_set_batfet_disable(1);
+        }
+        else if (s.find("BATFET_TURN_OFF_SLOW") != std::string::npos)
+        {
+            Respond(_responseChannel, false, "Turn off BATFET after t(BATFET_DLY) (typ. 10 s)");
+            bq25601_set_batfet_delay(1);
+            bq25601_set_batfet_disable(1);
+        }
+        else if (s.find("BATFET_TURN_ON") != std::string::npos)
+        {
+            Respond(_responseChannel, false, "Turn on BATFET");
+            bq25601_set_batfet_disable(0);
+        }
+    }
+...
+}
+```
+
+然后接通BQ25601的电源，接一个电压小于4.0V的锂电池，可以发送以下命令测试
+
+立即关闭BATFET
+
+```shell
+^BATFET_TURN_ON
+^BATFET_TURN_OFF_FAST
+```
+
+延时10s左右关闭BATFET
+
+```
+^BATFET_TURN_ON
+^BATFET_TURN_OFF_SLOW
+```
+
+使用万用表测量锂电池电压，即可确认BATFET是否打开，打开锂电池电压4.2V左右处于充电状态，关闭即停止充电电压小于4.0V
+
+延时关机的10s典型时间，本id手头的片子实测是12s左右
+
+### DS-PPK v1.0 关机状态锂电池电流
+
+断开USB的VBUS，仅USB和GND连接DS-PPK，锂电池串联电流表，测得运行时锂电池电流200mA左右，BQ25601关断BATFET下锂电池电流**37uA**，此时锂电池还在给BQ25601关机模式，CW2015上电默认模式，加速度上电默认模式计休眠模式，H750的VBAT直供电流，说明DS-PPK的关机电流控制还算成功
+
+关机下，短接 BQ25601 的 QON 引脚到 GND，可正常打开BATFET开机，此状态电脑能识别USB VCP，可继续发送测试命令关机

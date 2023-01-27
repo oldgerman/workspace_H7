@@ -116,7 +116,7 @@ static void mux_FunTest()
 osThreadId_t ledTaskHandle;
 void ThreadLedUpdate(void* argument){
 	TickType_t xLastWakeTime = xTaskGetTickCount();
-	const TickType_t xFrequency = 100;
+	const TickType_t xFrequency = 250;
 	/* 获取当前的系统时间 */
 	xLastWakeTime = xTaskGetTickCount();
 	charging_driver_probe();

@@ -242,6 +242,7 @@ void bq25601_set_treg(uint8_t val);
 //CON7----------------------------------------------------
 void bq25601_set_tmr2x_en(uint8_t val);
 void bq25601_set_batfet_disable(uint8_t val);
+void bq25601_set_batfet_delay(uint8_t val);
 void bq25601_set_int_mask(uint8_t val);
 //CON8----------------------------------------------------
 uint8_t bq25601_get_system_status(void);
