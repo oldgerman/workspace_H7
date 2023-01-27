@@ -2,30 +2,24 @@
 // BQ256XX Battery Charger Driver
 // Copyright (C) 2020 Texas Instruments Incorporated - http://www.ti.com/
 
-//#include <linux/err.h>
-//#include <linux/i2c.h>
-//#include <linux/init.h>
-//#include <linux/interrupt.h>
-//#include <linux/kernel.h>
-//#include <linux/module.h>
-//#include <linux/gpio/consumer.h>
-//#include <linux/power_supply.h>
-//#include <linux/regmap.h>
-//#include <linux/types.h>
-//#include <linux/usb/phy.h>
-//#include <linux/device.h>
-//#include <linux/moduleparam.h>
-//#include <linux/slab.h>
-//#include <linux/acpi.h>
+#include <linux/err.h>
+#include <linux/i2c.h>
+#include <linux/init.h>
+#include <linux/interrupt.h>
+#include <linux/kernel.h>
+#include <linux/module.h>
+#include <linux/gpio/consumer.h>
+#include <linux/power_supply.h>
+#include <linux/regmap.h>
+#include <linux/types.h>
+#include <linux/usb/phy.h>
+#include <linux/device.h>
+#include <linux/moduleparam.h>
+#include <linux/slab.h>
+#include <linux/acpi.h>
 
 #define BQ256XX_MANUFACTURER "Texas Instruments"
 
-/**
- * 寄存器组
- *
- * @{
- *
- */
 #define BQ256XX_INPUT_CURRENT_LIMIT		0x00
 #define BQ256XX_CHARGER_CONTROL_0		0x01
 #define BQ256XX_CHARGE_CURRENT_LIMIT		0x02
@@ -38,18 +32,8 @@
 #define BQ256XX_CHARGER_STATUS_1		0x09
 #define BQ256XX_CHARGER_STATUS_2		0x0a
 #define BQ256XX_PART_INFORMATION		0x0b
-#define BQ256XX_CHARGER_CONTROL_4		0x0c	//BQ25601 无REG0C （0x0c）
-/**
- * @}
- *
- */
+#define BQ256XX_CHARGER_CONTROL_4		0x0c
 
-/**
- * 寄存器某个功能对应位域的掩码、并列出位域可以配置的值
- *
- * @{
- *
- */
 #define BQ256XX_IINDPM_MASK		GENMASK(4, 0)
 #define BQ256XX_IINDPM_STEP_uA		100000
 #define BQ256XX_IINDPM_OFFSET_uA	100000
@@ -158,10 +142,6 @@
 #define BQ256XX_WDT_BIT_SHIFT	4
 
 #define BQ256XX_REG_RST		BIT(7)
-/**
- * @}
- *
- */
 
 /**
  * struct bq256xx_init_data -
@@ -1639,9 +1619,9 @@ static int bq256xx_parse_dt(struct bq256xx_device *bq,
 	return 0;
 }
 
-static int bq256xx_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id)
+static int bq256xx_probe(struct i2c_client *client)
 {
+	const struct i2c_device_id *id = i2c_client_get_device_id(client);
 	struct device *dev = &client->dev;
 	struct bq256xx_device *bq;
 	struct power_supply_config psy_cfg = { };
@@ -1764,7 +1744,7 @@ static struct i2c_driver bq256xx_driver = {
 		.of_match_table = bq256xx_of_match,
 		.acpi_match_table = bq256xx_acpi_match,
 	},
-	.probe = bq256xx_probe,
+	.probe_new = bq256xx_probe,
 	.id_table = bq256xx_i2c_ids,
 };
 module_i2c_driver(bq256xx_driver);

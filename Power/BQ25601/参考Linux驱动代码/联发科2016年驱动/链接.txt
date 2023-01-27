@@ -1,0 +1,2 @@
+https://github.com/dotOS-Devices/kernel_xiaomi_mt6768/tree/3e2496d807ae09f10b0ee2db996f8e829b89f537/drivers/power/supply/mediatek/charger
+https://github.com/dotOS-Devices/kernel_xiaomi_mt6768/tree/3e2496d807ae09f10b0ee2db996f8e829b89f537/drivers/power/supply/mediatek/charger

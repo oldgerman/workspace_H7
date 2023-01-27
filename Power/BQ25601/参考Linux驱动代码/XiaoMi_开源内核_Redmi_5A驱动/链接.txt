@@ -1,0 +1,2 @@
+https://github.com/MiCode/Xiaomi_Kernel_OpenSource/blob/riva-n-oss/drivers/power/bq2560x_charger.c
+https://github.com/MiCode/Xiaomi_Kernel_OpenSource/blob/riva-n-oss/drivers/power
