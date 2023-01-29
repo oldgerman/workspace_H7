@@ -1,0 +1,8 @@
+## DS-PPK_ANALOG_01
+
+在 DS-PPK_CW2015_01 基础上修改
+
+>已支持的：USB VCP、HC4051、BQ25601、CW2015
+>
+>待加入的：HC138按键读取，ADC+DAC+PID 闭环控制VLOGIC 和 VLDO 的输出电压，自动量程换挡
+
