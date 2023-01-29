@@ -4,6 +4,30 @@
 
 DS-PPK v1.0 项目的BQ25601驱动demo
 
+## BQ25601 的一些疑问
+
+### PSEL引脚
+
+> DS-PPK v1.0 是悬空的，独立模式下LOW是2.4A，HIGH是500mA
+
+[BQ25601能否改变PSEL处于高电平时的充电电流？](https://e2e.ti.com/support/power-management-group/power-management/f/power-management-forum/919931/bq25601-can-bq25601-change-the-charge-current-when-the-psel-is-in-high-level)
+
+> PSEL 在我的客户电路中始终处于高电平，这导致输入电流限制仅为 500mA。客户已尝试向 WD_RST 位写入 1 以退出默认模式并通过 I2C 将输入电流限制更改为 2A。但输入电流限制仍然是 500mA。BQ25601 能否在 PSEL 处于高电平时将充电电流更改为 2A？谢谢！
+>
+> 回复
+>
+> PSEL 设置默认输入电流限制。一旦建立了主机通信（上电），主机就**可以使用 IINDPM 寄存器覆盖 PSEL 设置的输入电流限制**。输入源检测完成后，主机可以覆盖 IINDPM 寄存器位。
+>
+> PSEL 限制在上电之后和 I2C 通信配置寄存器之前存在。
+
+[BQ25601: Can left PSEL pin float?](https://e2e.ti.com/support/power-management-group/power-management/f/power-management-forum/749459/bq25601-can-left-psel-pin-float)
+
+> 我的客户在低电量模式下遇到一些充电问题，需要在插入 VBUS 时将设计 PSEL 从拉高 500mA 充电到拉低 2A。但该项目状态接近MP阶段，无法在PSEL引脚上加拉低电阻。那么，我们能否让PSEL引脚悬空，让它成为2A模式呢？我测试了 EVM，当我浮动 PSEL 引脚时，它似乎总是 2A。感谢评判和帮助！
+>
+> 回复
+>
+> 数据表并未表明 PSEL 上有下拉电阻。大多数 IC 的 PSEL 管脚不会浮高；但是，我无法保证在所有操作条件下所有 IC 的 PSEL 都处于浮动状态。
+
 ## 地址扫描
 
 总线上哟个24C64，返回的7bit地址在0x58响应了一次，应该是BUG，因为 24C64的内部地址寻址是16bit，这样7bit 地址0x50相当于 10100000 8bit地址，就是写命令，然后 扫描 i2c 后面的 0x51、0x52 看作写模式的 EEPROM内部寻址地址，后面的 0x53 7bit 是 1010011，8bit是 10100110，看作单次写入...有点头晕，算了不分析了，反正三个设备地址都扫得到：
@@ -154,3 +178,28 @@ void OnAsciiCmd(const char* _cmd, size_t _len, StreamSink &_responseChannel)
 断开USB的VBUS，仅USB和GND连接DS-PPK，锂电池串联电流表，测得运行时锂电池电流200mA左右，BQ25601关断BATFET下锂电池电流**37uA**，此时锂电池还在给BQ25601关机模式，CW2015上电默认模式，加速度上电默认模式计休眠模式，H750的VBAT直供电流，说明DS-PPK的关机电流控制还算成功
 
 关机下，短接 BQ25601 的 QON 引脚到 GND，可正常打开BATFET开机，此状态电脑能识别USB VCP，可继续发送测试命令关机
+
+### PSEL悬空电压
+
+不论是否接入充电头或是否充电，电压0--0.18V左右
+
+### 充电电流
+
+电路上BQ25601的PSEL引脚悬空，H750写ICHG位设置快速模式下充电电流为1.5A，电源输入电流限制3A，对应代码：
+
+```c
+uint8_t bq25601_hw_init(void)
+{
+	uint8_t status = 0;
+	bq25601_set_input_current(3000000);			/* uA, 3.0A 	REG00	xxx1,1101 */
+	bq25601_set_fast_charge_current(1500000); 	/* uA, 1.5A		REG02	xxx1,1001 */
+...
+}
+```
+
+使用的3000mAh电池电压为3.6V，大于V(BATLOWV)的3V但小于VREG的4.2V，那么此阶段接入充电器就对应手册下表快速充电下的横流区间，全程横流充电：
+
+![](Images/8.3.7.2_Battery_Charging_Profile_Figure_11.png)
+
+接入PD电源（氮化镓充电头），由于DS-PPK的type-C只有5.1K下拉，所以只能搞5V3A档位，PD充电头接功率计到插座上（手头无type-c功率计，寄），无电池显示1.5W左右，接入电压为3.6V电池后，显示9.2W左右，若用万用表电流档串联在BQ25601的BAT引脚和电池正极之间，则功率计显示由9.1W左右降低至5.5W左右，此时电流0.72A左右，推测是串联的万用表的采样电阻让BQ25601误判了电池内阻，5.5W-1.5W=4W，9.2W-5.5W=3.7W，快速充电模式下BQ25601给电池施加的电压在4.4V左右，0.72A*4.4V = 3.17W，3.17W / 4W = 79%，由数据表5V 1.5A下BQ25601效率约92%，那么氮化镓充电头效率约85%，3.7W * 79% / 4.4V = 0.62A，0.73A + 0.62A = 1.35A，考虑到PD充电头效率会随着输出电流变化，由此推测是处于1.5A充电
+
