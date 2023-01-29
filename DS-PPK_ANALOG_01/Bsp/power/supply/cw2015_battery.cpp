@@ -178,7 +178,7 @@ int CW2015_test_init=0;	//测试初始化成功的标志
 
 extern int Charger_enable_Flag; //add by longcheer_liml_2015_10_12
 
-#define cw_work_freq  8000 	//ms
+uint16_t cw_work_freq = 8000; 	//ms
 
 /*Chaman add for create sysfs start*/
 static int file_sys_state = 1;

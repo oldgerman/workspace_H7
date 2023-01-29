@@ -1,5 +1,6 @@
 #include "common_inc.h"
 #include "bq25601.h"
+#include "cw2015_battery.h"
 #include <string>
 using namespace std;
 
@@ -19,6 +20,7 @@ void OnAsciiCmd(const char* _cmd, size_t _len, StreamSink &_responseChannel)
         float value;
         argNum = sscanf(&_cmd[1], "%f", &value);
         Respond(_responseChannel, false, "Got float: %f\n", argNum, value);
+
     }
     /**
      * 	使用std::string的find算法查找命令字符串,
@@ -45,6 +47,13 @@ void OnAsciiCmd(const char* _cmd, size_t _len, StreamSink &_responseChannel)
             Respond(_responseChannel, false, "Turn on BATFET");
             bq25601_set_batfet_disable(0);
         }
+    }
+    else if (_cmd[0] == 'c' && _cmd[1] == 'w' )
+    {
+        int value;
+        sscanf(&_cmd[2], "%u", &value);
+        cw_work_freq = value;
+        Respond(_responseChannel, false, "Set cw_work_freq: %u ms\n", value);
     }
     else if (_cmd[0] == '#')
     {

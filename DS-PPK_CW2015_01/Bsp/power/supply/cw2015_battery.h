@@ -37,6 +37,6 @@ struct cw_bat_platform_data {
 extern int g_cw2015_capacity;
 extern int g_mtk_init_vol;
 extern int g_cw2015_vol;
-
+extern uint16_t cw_work_freq;
 int cw_bat_init();
 #endif
