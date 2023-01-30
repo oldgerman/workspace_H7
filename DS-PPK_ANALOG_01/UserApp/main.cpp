@@ -15,6 +15,7 @@
 #include "bq25601.h"
 #include "cw2015_battery.h"
 #include "I2C_Wrapper.h"
+#include "bsp_analog.h"
 /* Private define ------------------------------------------------------------*/
 /* Private macros ------------------------------------------------------------*/
 /* Private typedef -----------------------------------------------------------*/
@@ -131,6 +132,7 @@ void ThreadLedUpdate(void* argument){
 //		i2c_scaner(&hi2c2,2);
 		charging_hw_update();
 		vTaskDelayUntil(&xLastWakeTime, xFrequency);
+		bsp_adc2GetValues();
 //		mux_FunTest();
 	}
 }
@@ -150,4 +152,6 @@ void Main(){
     ledTaskHandle = osThreadNew(ThreadLedUpdate, nullptr, &ledTask_attributes);
 
     cw_bat_init();
+
+	bsp_adc2Init();
 }

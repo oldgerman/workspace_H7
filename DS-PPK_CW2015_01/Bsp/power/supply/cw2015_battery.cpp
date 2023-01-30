@@ -1728,7 +1728,10 @@ static void threadCwBatUpdate(void *ctx)
 		g_cw2015_capacity = cw_bat->capacity;
 		g_cw2015_vol = cw_bat->voltage;
 
-		printf("[cwBatTask] vol = %d, cap = %d\r\n",cw_bat->voltage, cw_bat->capacity);
+
+//		printf("[cwBatTask] vol = %d, cap = %d\r\n",cw_bat->voltage, cw_bat->capacity);
+		// Vofa+ FireWter协议格式
+		printf("[cwBatTask] vol & cap : %d, %d\r\n", cw_bat->voltage, cw_bat->capacity);
 		if (cw_bat->bat_change) {
 			cw_bat->bat_change = 0;
 		}

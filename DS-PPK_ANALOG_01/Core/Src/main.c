@@ -20,6 +20,8 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "cmsis_os.h"
+#include "adc.h"
+#include "dma.h"
 #include "i2c.h"
 #include "tim.h"
 #include "usb_device.h"
@@ -104,6 +106,8 @@ int main(void)
   MX_TIM3_Init();
   MX_I2C2_Init();
   MX_I2C1_Init();
+  MX_DMA_Init();
+  MX_ADC2_Init();
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */

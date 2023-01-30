@@ -40,6 +40,7 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/DS-PPK_ANALOG_01/UserApp/protocols}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/DS-PPK_ANALOG_01/I2C_Wrapper}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/DS-PPK_ANALOG_01/Bsp/power/supply}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/DS-PPK_ANALOG_01/Bsp/analog}&quot;"/>
 								</option>
 								<inputType id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler.input.941236922" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler.input"/>
 							</tool>
@@ -71,6 +72,7 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/DS-PPK_ANALOG_01/UserApp/protocols}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/DS-PPK_ANALOG_01/I2C_Wrapper}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/DS-PPK_ANALOG_01/Bsp/power/supply}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/DS-PPK_ANALOG_01/Bsp/analog}&quot;"/>
 								</option>
 								<inputType id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.input.c.1159842195" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.input.c"/>
 							</tool>
@@ -102,6 +104,7 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/DS-PPK_ANALOG_01/UserApp/protocols}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/DS-PPK_ANALOG_01/I2C_Wrapper}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/DS-PPK_ANALOG_01/Bsp/power/supply}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/DS-PPK_ANALOG_01/Bsp/analog}&quot;"/>
 								</option>
 								<inputType id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.cpp.compiler.input.cpp.412494339" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.cpp.compiler.input.cpp"/>
 							</tool>
@@ -124,13 +127,13 @@
 						</toolChain>
 					</folderInfo>
 					<sourceEntries>
+						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="UserApp"/>
+						<entry excluding="App/usbd_cdc_if.c|App/usbd_cdc_if.h" flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="USB_DEVICE"/>
+						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="I2C_Wrapper"/>
 						<entry excluding="power/supply/backup/" flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="Bsp"/>
 						<entry excluding="Src/sysmem.c" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Core"/>
-						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Drivers"/>
-						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="I2C_Wrapper"/>
 						<entry excluding="Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F/port.c|Third_Party/FreeRTOS/Source/portable/MemMang/heap_4.c|ST/STM32_USB_Device_Library/Class/CDC/Src/usbd_cdc.c" flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="Middlewares"/>
-						<entry excluding="App/usbd_cdc_if.c|App/usbd_cdc_if.h" flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="USB_DEVICE"/>
-						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="UserApp"/>
+						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Drivers"/>
 					</sourceEntries>
 				</configuration>
 			</storageModule>
@@ -170,6 +173,7 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/DS-PPK_ANALOG_01/UserApp/protocols}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/DS-PPK_ANALOG_01/I2C_Wrapper}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/DS-PPK_ANALOG_01/Bsp/power/supply}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/DS-PPK_ANALOG_01/Bsp/analog}&quot;"/>
 								</option>
 								<inputType id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler.input.2122766719" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler.input"/>
 							</tool>
@@ -200,6 +204,7 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/DS-PPK_ANALOG_01/UserApp/protocols}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/DS-PPK_ANALOG_01/I2C_Wrapper}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/DS-PPK_ANALOG_01/Bsp/power/supply}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/DS-PPK_ANALOG_01/Bsp/analog}&quot;"/>
 								</option>
 								<inputType id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.input.c.1803422908" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.input.c"/>
 							</tool>
@@ -230,6 +235,7 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/DS-PPK_ANALOG_01/UserApp/protocols}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/DS-PPK_ANALOG_01/I2C_Wrapper}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/DS-PPK_ANALOG_01/Bsp/power/supply}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/DS-PPK_ANALOG_01/Bsp/analog}&quot;"/>
 								</option>
 								<inputType id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.cpp.compiler.input.cpp.1515180750" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.cpp.compiler.input.cpp"/>
 							</tool>
