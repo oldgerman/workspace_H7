@@ -63,6 +63,8 @@ void Error_Handler(void);
 #define MUX_A_GPIO_Port GPIOE
 #define MUX_B_Pin GPIO_PIN_6
 #define MUX_B_GPIO_Port GPIOE
+#define SMU_EN_Pin GPIO_PIN_1
+#define SMU_EN_GPIO_Port GPIOH
 #define SCL2_Pin GPIO_PIN_10
 #define SCL2_GPIO_Port GPIOB
 #define SDA2_Pin GPIO_PIN_11

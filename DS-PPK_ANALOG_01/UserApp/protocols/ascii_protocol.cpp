@@ -1,6 +1,7 @@
 #include "common_inc.h"
 #include "bq25601.h"
 #include "cw2015_battery.h"
+#include "bsp_analog.h"
 #include <string>
 using namespace std;
 
@@ -54,6 +55,18 @@ void OnAsciiCmd(const char* _cmd, size_t _len, StreamSink &_responseChannel)
         sscanf(&_cmd[2], "%u", &value);
         cw_work_freq = value;
         Respond(_responseChannel, false, "Set cw_work_freq: %u ms\n", value);
+    }
+    else if(_cmd[0] == 'A' && _cmd[1] == '+')
+    {
+        std::string s(_cmd);
+        if (s.find("SMU_TURN_ON") != std::string::npos){
+        	bsp_smu_set_en(true);
+            Respond(_responseChannel, false, "Turn on SMU");
+        }
+        else if (s.find("SMU_TURN_OFF") != std::string::npos){
+        	bsp_smu_set_en(false);
+            Respond(_responseChannel, false, "Turn off SMU");
+        }
     }
     else if (_cmd[0] == '#')
     {

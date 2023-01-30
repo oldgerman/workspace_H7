@@ -34,11 +34,36 @@
   >
   > 算了还是用异步时钟
 
-## ADC 
+## SMU
 
+### 命令开关
 
+USB发送命令 A+SMU_TURN_ON 或 A+SMU_TURN_OFF 来打开或关闭 TPS65131、TPS63020、TPS7A8300电源芯片，上电默认关闭
+
+## VREF+
+
+使用外部2.5V基准REF5025，CubeMX 里 VREFBUF 选择External voltage reference 后就OK
+
+## ADC2
+
+### 配置
+
+仅6个规则通道循环采集 + DMA循环，无注入通道
 
 ### 时钟
 
 DS-PPK ADC2负责轮询采集多个通道数据，这些通道的RC滤波器带宽 350Hz 左右，配置 ADC采样频率为 5倍以上带宽，即2KHz，采样时间给最大的810.5cycles，转换时间 = 采样时间 + 逐次逼近时间 = 810.5 + 8.5(16bit) = 820cycles，那么ADC2时钟 = 820 x 2KHz = 1.640MHz，由于其他ADC还要取同一个时钟，所以先取个32分频，72MHz / 32 / 820 = 2.743KHz，大约7.8倍模拟带宽
 
+### 测试
+
+万用表测量DAC后VREF_IA会降低到0.2V，之后慢慢升到0.5V以上，推测是IA_OFFSET对应 DAC_OUT1 引脚还未使能处于开漏，导致DAC输出接的100nF电容慢慢充电所致，万用表测量的瞬间从100nF电容汲取电流，电容放电，VREF_IA 降低
+
+![](Images/仅ADC2，万用表测量DAC后VREF_IA会降低到0.2V，之后慢慢升到0.5V以上.png)
+
+## ADC3
+
+仅采集一路差分通道
+
+## ADC1
+
+仅采集一路差分通道

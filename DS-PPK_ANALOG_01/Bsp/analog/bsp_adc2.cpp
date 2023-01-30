@@ -65,7 +65,7 @@ void bsp_adc2GetValues()
 	adc2_values.float_el.val_vref_ia = vref * adc2_data.uint_el.val_vref_ia / 65536 ;
 
 	SCB_InvalidateDCache_by_Addr((uint32_t *)adc2_data.uint_arr, sizeof(adc2_data));
-	printf("adc2 values: %f, %f, %f, %f, %f, %f",
+	printf("adc2 values: %.6f, %.6f, %.6f, %.6f, %.6f, %.6f\r\n",
 			adc2_values.float_el.val_vldo,
 			adc2_values.float_el.val_vin,
 			adc2_values.float_el.val_vntc,

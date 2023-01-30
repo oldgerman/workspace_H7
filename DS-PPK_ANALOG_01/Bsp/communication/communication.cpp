@@ -49,7 +49,7 @@ void UsbDeferredInterruptTask(void *ctx)
 /* 初始化通信相关的任务 */
 void InitCommunication(void)
 {
-    printf("\r\nHello, PROJECT v%.1f Started!\r\n", PROJECT_FW_VERSION);
+//    printf("\r\nHello, PROJECT v%.1f Started!\r\n", PROJECT_FW_VERSION);
 
     // Start command handling thread
     commTaskHandle = osThreadNew(CommunicationTask, nullptr, &commTask_attributes);

@@ -131,8 +131,8 @@ void ThreadLedUpdate(void* argument){
 //		i2c_scaner(&hi2c1,1);
 //		i2c_scaner(&hi2c2,2);
 		charging_hw_update();
-		vTaskDelayUntil(&xLastWakeTime, xFrequency);
 		bsp_adc2GetValues();
+		vTaskDelayUntil(&xLastWakeTime, xFrequency);
 //		mux_FunTest();
 	}
 }
