@@ -17,7 +17,7 @@ extern float vref;
 
 
 /* 方便Cache类的API操作，做32字节对齐 */
-const uint16_t adc1_data_num = 1000;
+const uint16_t adc1_data_num = 10;
 ALIGN_32BYTES(__attribute__((section (".RAM_D2_Array"))) uint16_t adc1_data[adc1_data_num]);
 
 float adc1_value;
@@ -37,7 +37,8 @@ void bsp_adc1Init()
 	if (HAL_ADCEx_Calibration_Start(
 			&hadc1,
 			ADC_CALIB_OFFSET,
-			ADC_DIFFERENTIAL_ENDED) 	//差分模式校准
+//			ADC_DIFFERENTIAL_ENDED) 	//差分模式校准
+			ADC_SINGLE_ENDED) 	//单端模式校准
 			!= HAL_OK)
 	{
 		Error_Handler();
@@ -62,7 +63,8 @@ void bsp_adc1GetValues()
 		adc1_value += adc1_data[i];
 	}
 	adc1_value /= adc1_data_num;
-	adc1_value = (adc1_value - 32767) / 32767 * vref; // 单位V, VDOUT
+//	adc1_value = (adc1_value - 32767) / 32767 * vref; // 单位V, VDOUT
+	adc1_value = adc1_value / 65535 * vref;
 	printf("IA_SE_OUT: %.6f\r\n", adc1_value);
 }
 

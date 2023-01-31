@@ -188,7 +188,14 @@ void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef* tim_baseHandle)
     __HAL_RCC_TIM6_CLK_DISABLE();
 
     /* TIM6 interrupt Deinit */
-    HAL_NVIC_DisableIRQ(TIM6_DAC_IRQn);
+  /* USER CODE BEGIN TIM6:TIM6_DAC_IRQn disable */
+    /**
+    * Uncomment the line below to disable the "TIM6_DAC_IRQn" interrupt
+    * Be aware, disabling shared interrupt may affect other IPs
+    */
+    /* HAL_NVIC_DisableIRQ(TIM6_DAC_IRQn); */
+  /* USER CODE END TIM6:TIM6_DAC_IRQn disable */
+
   /* USER CODE BEGIN TIM6_MspDeInit 1 */
 
   /* USER CODE END TIM6_MspDeInit 1 */

@@ -18,7 +18,7 @@ extern float vref;
 
 
 /* 方便Cache类的API操作，做32字节对齐 */
-const uint16_t adc3_data_num = 1000;
+const uint16_t adc3_data_num = 10;
 ALIGN_32BYTES(__attribute__((section (".RAM_D2_Array"))) uint16_t adc3_data[adc3_data_num]);
 
 float adc3_value;
@@ -114,7 +114,7 @@ void bsp_adc3Init()
 	 */
 
 	/* 配置触发ADC的定时器 */
-	bsp_LPTIMx_PWM_Set(&hlptim1, 6400000, 2000, 50);
+	bsp_LPTIMx_PWM_Set(&hlptim1, 6400000, 100, 50);
 	/* 配置DMA回调函数 */
 //	bsp_DMA_Set(&hdma_adc3, bsp_DMA__XferCpltCallback, bsp_DMA_XferM1CpltCallback);
 	/* 开启ADC */

@@ -21,6 +21,7 @@
 #include "main.h"
 #include "cmsis_os.h"
 #include "adc.h"
+#include "dac.h"
 #include "dma.h"
 #include "i2c.h"
 #include "lptim.h"
@@ -116,6 +117,7 @@ int main(void)
   MX_LPTIM1_Init();
   MX_ADC3_Init();
   MX_I2C1_Init();
+  MX_DAC1_Init();
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */

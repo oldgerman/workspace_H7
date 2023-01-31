@@ -2,6 +2,8 @@
 #include "bq25601.h"
 #include "cw2015_battery.h"
 #include "bsp_analog.h"
+#include "dac.h"
+
 #include <string>
 using namespace std;
 
@@ -16,7 +18,7 @@ void OnAsciiCmd(const char* _cmd, size_t _len, StreamSink &_responseChannel)
     uint8_t argNum;
 
     // Check incoming packet type
-    if (_cmd[0] == 'f')
+    if (_cmd[0] == 'F')
     {
         float value;
         argNum = sscanf(&_cmd[1], "%f", &value);
@@ -49,7 +51,7 @@ void OnAsciiCmd(const char* _cmd, size_t _len, StreamSink &_responseChannel)
             bq25601_set_batfet_disable(0);
         }
     }
-    else if (_cmd[0] == 'c' && _cmd[1] == 'w' )
+    else if (_cmd[0] == 'C' && _cmd[1] == 'W' )
     {
         int value;
         sscanf(&_cmd[2], "%u", &value);
@@ -75,6 +77,85 @@ void OnAsciiCmd(const char* _cmd, size_t _len, StreamSink &_responseChannel)
         	bsp_vdout_fet_en(false);
             Respond(_responseChannel, false, "Turn off VDOUT-FET");
         }
+
+        else if (s.find("TURN_ON_DAC_CH1") != std::string::npos){
+        	HAL_DAC_Start(&hdac1, DAC_CHANNEL_1);
+            Respond(_responseChannel, false, "TURN_ON_DAC_CH1");
+        }
+        else if (s.find("TURN_OFF_DAC_CH1") != std::string::npos){
+        	HAL_DAC_Stop(&hdac1, DAC_CHANNEL_1);
+            Respond(_responseChannel, false, "TURN_OFF_DAC_CH1");
+        }
+        else if (s.find("TURN_ON_DAC_CH2") != std::string::npos){
+        	HAL_DAC_Start(&hdac1, DAC_CHANNEL_2);
+            Respond(_responseChannel, false, "TURN_ON_DAC_CH2");
+        }
+        else if (s.find("TURN_OFF_DAC_CH2") != std::string::npos){
+        	HAL_DAC_Start(&hdac1, DAC_CHANNEL_2);
+            Respond(_responseChannel, false, "TURN_OFF_DAC_CH2");
+        }
+    }
+    else if (_cmd[0] == 'D')
+    {
+        std::string s(_cmd);
+        uint32_t dac_channel;
+        if (s.find("DAC_CH1_SET+") != std::string::npos){
+        	dac_channel = DAC_CHANNEL_1;
+        }
+        else if (s.find("DAC_CH2_SET+") != std::string::npos){
+        	dac_channel = DAC_CHANNEL_2;
+        }
+        else {
+        	return;
+        }
+        int Data;
+        sscanf(&_cmd[12], "%u", &Data);
+        /* DAC软件触发模式每次 HAL_DAC_SetValue() 还要调用 HAL_DAC_Start() 使能才能反映到DAC输出 */
+    	HAL_DAC_SetValue(&hdac1, dac_channel, DAC_ALIGN_12B_R, Data);
+    	HAL_DAC_Start(&hdac1, DAC_CHANNEL_2);
+        Respond(_responseChannel, false, "Set DAC_CH%d: %u ms\n", dac_channel ? 0 : 1, Data);
+    }
+    else if (_cmd[0] == 'M')
+    {
+    	/**
+			MUX_FUN_CAL_RES_500mR 	= 6,
+			MUX_FUN_CAL_RES_50R 	= 1,
+			MUX_FUN_CAL_RES_500R 	= 0,
+			MUX_FUN_CAL_RES_5KR 	= 3,
+			MUX_FUN_CAL_RES_50KR 	= 4,
+			MUX_FUN_CAL_RES_500KR 	= 7,
+			MUX_FUN_DPDT_7222_S 	= 2,
+			MUX_FUN_NC 				= 5,
+    	 */
+    	 std::string s(_cmd);
+    	 mux_fun_t sLinesCode = MUX_FUN_NC;
+         if (s.find("MUX_FUN_CAL_RES_500mR") != std::string::npos){
+        	 sLinesCode = MUX_FUN_CAL_RES_500mR;
+         }
+         else if (s.find("MUX_FUN_CAL_RES_50R") != std::string::npos){
+        	 sLinesCode = MUX_FUN_CAL_RES_50R;
+         }
+         else if (s.find("MUX_FUN_CAL_RES_500R") != std::string::npos){
+        	 sLinesCode = MUX_FUN_CAL_RES_500R;
+         }
+         else if (s.find("MUX_FUN_CAL_RES_5KR") != std::string::npos){
+        	 sLinesCode = MUX_FUN_CAL_RES_5KR;
+         }
+         else if (s.find("MUX_FUN_CAL_RES_50KR") != std::string::npos){
+        	 sLinesCode = MUX_FUN_CAL_RES_50KR;
+         }
+         else if (s.find("MUX_FUN_CAL_RES_500KR") != std::string::npos){
+        	 sLinesCode = MUX_FUN_CAL_RES_500KR;
+         }
+         else if (s.find("MUX_FUN_DPDT_7222_S") != std::string::npos){
+        	 sLinesCode = MUX_FUN_DPDT_7222_S;
+         }
+         else {
+        	 sLinesCode = MUX_FUN_NC;
+         }
+    	mux_FunSet(sLinesCode);
+        Respond(_responseChannel, false, "Set mux sLinesCode: %d", sLinesCode);
+
     }
     else if (_cmd[0] == '#')
     {
