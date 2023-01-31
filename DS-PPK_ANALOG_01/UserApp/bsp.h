@@ -23,6 +23,9 @@ extern "C" {
 #include <stdlib.h>
 #include "stdbool.h"
 #include "bsp_config.h"
+#include "bsp_functions.h"
+#include "bsp_data structure.h"
+#include "bsp_lptim_pwm.h"
 
 /* Exported types ------------------------------------------------------------*/
 

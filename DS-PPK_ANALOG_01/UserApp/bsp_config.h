@@ -17,4 +17,6 @@
 #define EN_BSP_QSPI_W25QXX
 
 #define EN_BSP_FT6x36
+#define EN_BSP_LPTIM_PWM
+#define EN_BSP_LPTIM_DMA
 #endif /* _BSP_CONFOG_H */

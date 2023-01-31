@@ -16,3 +16,13 @@ void bsp_smu_set_en(bool enable)
 {
 	HAL_GPIO_WritePin(SMU_EN_GPIO_Port, SMU_EN_Pin, (GPIO_PinState)enable);
 }
+
+/**
+ * @brief	控制VDOUT-FET
+ * 			控制输出MOSFET的开关
+ * @param	enable	1: 关闭 0: 使能
+ */
+void bsp_vdout_fet_en(bool enable)
+{
+	HAL_GPIO_WritePin(VOUT_EN_GPIO_Port, VOUT_EN_Pin, (GPIO_PinState)(!enable));
+}

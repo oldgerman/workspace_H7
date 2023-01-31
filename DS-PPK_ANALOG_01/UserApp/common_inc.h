@@ -21,6 +21,7 @@ extern "C" {
 #include "FreeRTOS.h"
 #include "task.h"
 #include "main.h"
+#include "bsp.h"
 #include "cmsis_os.h"
 #include "freertos_inc.h"
 

@@ -14,7 +14,7 @@
 const uint8_t adc2_chx_num_regular = 6;		//ADC2规则通道数
 const uint8_t adc2_chx_num_inject = 0;		//ADC2注入通道数
 
-float vref = 2.5000;	//单位：V，REF5025基准电压，TODO：外部更高精度仪器校准？
+float vref = 2.5000;	//单位：V，REF5025基准电压，TODO：待预留给外部更高精度仪器校准
 
 typedef union {
 	struct val_t{
@@ -44,6 +44,19 @@ adc2_chx_values_t adc2_values;
 
 void bsp_adc2Start()
 {
+	/* 校准ADC，采用偏移校准 */
+	if (HAL_ADCEx_Calibration_Start(&hadc2, ADC_CALIB_OFFSET, ADC_SINGLE_ENDED) != HAL_OK)
+	{
+		Error_Handler();
+	}
+
+	/**
+	 * TODO: 	ADC线性校准
+	 * @armfly	STM32H7的ADC支持偏移校准和线性度校准。如果使用线性度校准的话，特别要注意此贴的问题：
+	 * 			http://www.armbbs.cn/forum.php?mod=viewthread&tid=91436
+	 * 			现在STM32H7Cube库已经修改了溢出时间，看起来是够了
+	 */
+
 	/* 启动ADC的DMA方式传输 */
 	if (HAL_ADC_Start_DMA(&hadc2, (uint32_t *)adc2_data.uint_arr, adc2_chx_num_regular) != HAL_OK)
 	{

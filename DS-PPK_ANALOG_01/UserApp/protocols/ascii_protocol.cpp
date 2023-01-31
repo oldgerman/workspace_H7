@@ -59,13 +59,21 @@ void OnAsciiCmd(const char* _cmd, size_t _len, StreamSink &_responseChannel)
     else if(_cmd[0] == 'A' && _cmd[1] == '+')
     {
         std::string s(_cmd);
-        if (s.find("SMU_TURN_ON") != std::string::npos){
+        if (s.find("TURN_ON_SMU") != std::string::npos){
         	bsp_smu_set_en(true);
             Respond(_responseChannel, false, "Turn on SMU");
         }
-        else if (s.find("SMU_TURN_OFF") != std::string::npos){
+        else if (s.find("TURN_OFF_SMU") != std::string::npos){
         	bsp_smu_set_en(false);
             Respond(_responseChannel, false, "Turn off SMU");
+        }
+        else if (s.find("TURN_ON_VDOUT") != std::string::npos){
+        	bsp_vdout_fet_en(true);
+            Respond(_responseChannel, false, "Turn on VDOUT-FET");
+        }
+        else if (s.find("TURN_OFF_VDOUT") != std::string::npos){
+        	bsp_vdout_fet_en(false);
+            Respond(_responseChannel, false, "Turn off VDOUT-FET");
         }
     }
     else if (_cmd[0] == '#')

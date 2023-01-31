@@ -124,7 +124,7 @@ void ThreadLedUpdate(void* argument){
 	charging_driver_probe();
 	for(;;){
 		/* 翻转开发板引脚 */
-		HAL_GPIO_TogglePin(VOUT_EN_GPIO_Port, VOUT_EN_Pin);
+//		HAL_GPIO_TogglePin(VOUT_EN_GPIO_Port, VOUT_EN_Pin);
 
 		/* 打印时间节拍 */
 //		printf("[led_task] sysTick : %ld ms\r\n", xTaskGetTickCount());
@@ -132,6 +132,8 @@ void ThreadLedUpdate(void* argument){
 //		i2c_scaner(&hi2c2,2);
 		charging_hw_update();
 		bsp_adc2GetValues();
+		bsp_adc3GetValues();
+		bsp_adc1GetValues();
 		vTaskDelayUntil(&xLastWakeTime, xFrequency);
 //		mux_FunTest();
 	}
@@ -154,4 +156,6 @@ void Main(){
     cw_bat_init();
 
 	bsp_adc2Init();
+	bsp_adc3Init();
+	bsp_adc1Init();
 }
