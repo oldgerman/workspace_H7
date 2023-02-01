@@ -50,7 +50,7 @@ void i2c_scaner(I2C_HandleTypeDef *hi2c, uint8_t i2cBusNum) {
 osThreadId_t ledTaskHandle;
 void ThreadLedUpdate(void* argument){
 	TickType_t xLastWakeTime;
-	const TickType_t xFrequency = 250;
+	const TickType_t xFrequency = 1000;
 	/* 获取当前的系统时间 */
 	xLastWakeTime = xTaskGetTickCount();
 	charging_driver_probe();
@@ -65,7 +65,6 @@ void ThreadLedUpdate(void* argument){
 		charging_hw_update();
 		bsp_adc2GetValues();
 		bsp_adc3GetValues();
-		bsp_adc1GetValues();
 		vTaskDelayUntil(&xLastWakeTime, xFrequency);
 	}
 }

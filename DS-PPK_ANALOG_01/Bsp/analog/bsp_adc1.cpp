@@ -22,6 +22,24 @@ ALIGN_32BYTES(__attribute__((section (".RAM_D2_Array"))) uint16_t adc1_data[adc1
 
 float adc1_value;
 
+const uint32_t adc1TaskStackSize = 256 * 4;
+osThreadId_t adc1TaskHandle;
+void threadAdc1Update(void* argument){
+	TickType_t xLastWakeTime;
+	const TickType_t xFrequency = 100;
+	/* 获取当前的系统时间 */
+	xLastWakeTime = xTaskGetTickCount();
+	for(;;){
+		bsp_adc1GetValues();
+		vTaskDelayUntil(&xLastWakeTime, xFrequency);
+	}
+};
+const osThreadAttr_t adc1Task_attributes = {
+    .name = "adc1Task",
+    .stack_size = adc1TaskStackSize,
+    .priority = (osPriority_t) osPriorityHigh,
+};
+
 void bsp_adc1Start()
 {
 	/* 启动ADC的DMA方式传输 */
@@ -53,6 +71,8 @@ void bsp_adc1Init()
 //	bsp_DMA_Set(&hdma_adc1, bsp_DMA__XferCpltCallback, bsp_DMA_XferM1CpltCallback);
 	/* 开启ADC */
 	bsp_adc1Start();
+
+	adc1TaskHandle = osThreadNew(threadAdc1Update, nullptr, &adc1Task_attributes);
 }
 
 void bsp_adc1GetValues()
@@ -63,9 +83,34 @@ void bsp_adc1GetValues()
 		adc1_value += adc1_data[i];
 	}
 	adc1_value /= adc1_data_num;
-//	adc1_value = (adc1_value - 32767) / 32767 * vref; // 单位V, VDOUT
+//	adc1_value = (adc1_value - 32767) / 32767 * vref; // 单位V, IA_SE_OUT
 	adc1_value = adc1_value / 65535 * vref;
-	printf("IA_SE_OUT: %.6f\r\n", adc1_value);
+	float mA = 0;
+	float mv_drop_sample_res = (adc1_value - adc2_values.float_el.val_vref_ia) * 1000.0f / gain;
+	float res_sample = 0;
+
+	switch (auto_sw_data.swx) {
+		case 0:
+			res_sample = res_val_sample.rs_0uA_100uA;
+			break;
+		case 1:
+			res_sample = res_val_sample.rs_100uA_1mA;
+			break;
+		case 3:
+			res_sample = res_val_sample.rs_1mA_10mA;
+			break;
+		case 7:
+			res_sample = res_val_sample.rs_10mA_100mA;
+			break;
+		case 15:
+			res_sample = res_val_sample.rs_100mA_2A;
+			break;
+		default:
+			break;
+	}
+	mA = mv_drop_sample_res / res_sample;
+	printf("[IA_SE_OUT] %.6f\r\n", adc1_value);
+	printf("mA: %.6f\r\n", mA);
 }
 
 

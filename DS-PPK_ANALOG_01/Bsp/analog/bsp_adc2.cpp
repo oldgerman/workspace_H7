@@ -11,36 +11,12 @@
 #include "bsp_analog.h"
 #include "adc.h"
 
-const uint8_t adc2_chx_num_regular = 6;		//ADC2规则通道数
-const uint8_t adc2_chx_num_inject = 0;		//ADC2注入通道数
-
 float vref = 2.5000;	//单位：V，REF5025基准电压，TODO：待预留给外部更高精度仪器校准
-
-typedef union {
-	struct val_t{
-		float val_vldo;		//INP4
-		float val_vin;		//INP5
-		float val_vntc;		//INP8
-		float val_vbb;		//INP9
-		float val_vlogic;	//INP10
-		float val_vref_ia;	//INP11
-	}float_el;
-	float float_arr[adc2_chx_num_regular];
-	struct data_t{
-		uint16_t val_vldo;		//INP4
-		uint16_t val_vin;		//INP5
-		uint16_t val_vntc;		//INP8
-		uint16_t val_vbb;		//INP9
-		uint16_t val_vlogic;	//INP10
-		uint16_t val_vref_ia;	//INP11
-	}uint_el;
-	uint16_t uint_arr[adc2_chx_num_regular];
-}adc2_chx_values_t;
 
 /* 方便Cache类的API操作，做32字节对齐 */
 ALIGN_32BYTES(__attribute__((section (".RAM_D2_Array"))) adc2_chx_values_t adc2_data);
 
-adc2_chx_values_t adc2_values;
+volatile adc2_chx_values_t adc2_values;
 
 void bsp_adc2Start()
 {
@@ -78,7 +54,8 @@ void bsp_adc2GetValues()
 	adc2_values.float_el.val_vref_ia = vref * adc2_data.uint_el.val_vref_ia / 65536 ;
 
 	SCB_InvalidateDCache_by_Addr((uint32_t *)adc2_data.uint_arr, sizeof(adc2_data));
-	printf("adc2 values: %.6f, %.6f, %.6f, %.6f, %.6f, %.6f\r\n",
+//	printf("adc2 values: %.6f, %.6f, %.6f, %.6f, %.6f, %.6f\r\n",
+	printf("[adc2 values] %.6f, %.6f, %.6f, %.6f, %.6f, %.6f\r\n",
 			adc2_values.float_el.val_vldo,
 			adc2_values.float_el.val_vin,
 			adc2_values.float_el.val_vntc,

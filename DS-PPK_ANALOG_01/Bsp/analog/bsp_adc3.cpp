@@ -130,6 +130,6 @@ void bsp_adc3GetValues()
 	}
 	adc3_value /= adc3_data_num;
 	adc3_value = (adc3_value - 32767) / 32767 * vref * 2; // 单位V, VDOUT
-	printf("VDOUT: %.6f\r\n", adc3_value);
+	printf("[VDOUT] %.6f\r\n", adc3_value);
 }
 
