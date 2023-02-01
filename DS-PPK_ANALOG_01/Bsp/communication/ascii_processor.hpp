@@ -24,7 +24,8 @@ void OnAsciiCmd(const char* _cmd, size_t _len, StreamSink& _responseChannel);
 template<typename ... TArgs>
 void Respond(StreamSink &output, bool include_checksum, const char *fmt, TArgs &&... args)
 {
-    char response[64];
+//	char response[64];
+    char response[256];	//USB发送临时缓冲区是2048，此处最大可以给2048
     size_t len = snprintf(response, sizeof(response), fmt, std::forward<TArgs>(args)...);
     output.process_bytes((uint8_t *) response, len, nullptr);
     if (include_checksum)

@@ -22,16 +22,18 @@ ALIGN_32BYTES(__attribute__((section (".RAM_D2_Array"))) uint16_t adc1_data[adc1
 
 float adc1_value;
 
+/* ADC1 任务调度频率 */
+TickType_t xFrequency_adc1Task = 500;
+
 const uint32_t adc1TaskStackSize = 256 * 4;
 osThreadId_t adc1TaskHandle;
 void threadAdc1Update(void* argument){
 	TickType_t xLastWakeTime;
-	const TickType_t xFrequency = 100;
 	/* 获取当前的系统时间 */
 	xLastWakeTime = xTaskGetTickCount();
 	for(;;){
 		bsp_adc1GetValues();
-		vTaskDelayUntil(&xLastWakeTime, xFrequency);
+		vTaskDelayUntil(&xLastWakeTime, xFrequency_adc1Task);
 	}
 };
 const osThreadAttr_t adc1Task_attributes = {

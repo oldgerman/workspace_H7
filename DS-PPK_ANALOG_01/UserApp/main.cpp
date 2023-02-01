@@ -16,6 +16,7 @@
 #include "cw2015_battery.h"
 #include "I2C_Wrapper.h"
 #include "bsp_analog.h"
+#include "dac.h"
 /* Private define ------------------------------------------------------------*/
 /* Private macros ------------------------------------------------------------*/
 /* Private typedef -----------------------------------------------------------*/
@@ -84,6 +85,14 @@ void Main(){
     ledTaskHandle = osThreadNew(ThreadLedUpdate, nullptr, &ledTask_attributes);
 
     cw_bat_init();
+
+    /* INA_VREF = 0V */
+	HAL_DAC_SetValue(&hdac1, DAC_CHANNEL_1, DAC_ALIGN_12B_R, 0);
+	HAL_DAC_Start(&hdac1, DAC_CHANNEL_1);
+
+    /* VLDO 输出5.00V */
+	HAL_DAC_SetValue(&hdac1, DAC_CHANNEL_2, DAC_ALIGN_12B_R, 550);
+	HAL_DAC_Start(&hdac1, DAC_CHANNEL_2);
 
 	bsp_adc2Init();
 	bsp_adc3Init();

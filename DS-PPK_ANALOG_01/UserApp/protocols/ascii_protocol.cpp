@@ -23,7 +23,6 @@ void OnAsciiCmd(const char* _cmd, size_t _len, StreamSink &_responseChannel)
         float value;
         argNum = sscanf(&_cmd[1], "%f", &value);
         Respond(_responseChannel, false, "Got float: %f\n", argNum, value);
-
     }
     /**
      * 	使用std::string的find算法查找命令字符串,
@@ -94,6 +93,20 @@ void OnAsciiCmd(const char* _cmd, size_t _len, StreamSink &_responseChannel)
         	HAL_DAC_Start(&hdac1, DAC_CHANNEL_2);
             Respond(_responseChannel, false, "TURN_OFF_DAC_CH2");
         }
+        else if (s.find("ADC1TASK") != std::string::npos){
+            int Data;
+            sscanf(&_cmd[10], "%u", &Data);
+            xFrequency_adc1Task = (TickType_t)Data;
+            Respond(_responseChannel, false, "Set adc1 task freq: %u ms\n", xFrequency_adc1Task);
+        }
+        else if (s.find("GET_RES_VAL_SAMPLE") != std::string::npos){
+            Respond(_responseChannel, false, "[RES_VAL_SAMPLE] %.6f, %.6f, %.6f, %.6f, %.6f",
+            		res_val_sample.rs_0uA_100uA,
+					res_val_sample.rs_100uA_1mA,
+					res_val_sample.rs_1mA_10mA,
+					res_val_sample.rs_10mA_100mA,
+					res_val_sample.rs_100mA_2A);
+        }
     }
     else if (_cmd[0] == 'D')
     {
@@ -112,7 +125,7 @@ void OnAsciiCmd(const char* _cmd, size_t _len, StreamSink &_responseChannel)
         sscanf(&_cmd[12], "%u", &Data);
         /* DAC软件触发模式每次 HAL_DAC_SetValue() 还要调用 HAL_DAC_Start() 使能才能反映到DAC输出 */
     	HAL_DAC_SetValue(&hdac1, dac_channel, DAC_ALIGN_12B_R, Data);
-    	HAL_DAC_Start(&hdac1, DAC_CHANNEL_2);
+    	HAL_DAC_Start(&hdac1, dac_channel);
         Respond(_responseChannel, false, "Set DAC_CH%d: %u ms\n", dac_channel ? 0 : 1, Data);
     }
     else if (_cmd[0] == 'M')
@@ -158,22 +171,7 @@ void OnAsciiCmd(const char* _cmd, size_t _len, StreamSink &_responseChannel)
 
     }
     else if (_cmd[0] == '#')
-    {
-        std::string s(_cmd);
-        if (s.find("GETFLOAT") != std::string::npos)
-        {
-            Respond(_responseChannel, false, "ok %.2f %.2f %.2f %.2f %.2f %.2f",
-                    1.23f, 4.56f,
-                    7.89f, 9.87f,
-                    6.54f, 3.21f);
-
-        }
-        else if (s.find("GETINT") != std::string::npos)
-        {
-            Respond(_responseChannel, false, "ok %d %d %d",
-                    123, 456, 789);
-        }
-    }
+    {}
     else if(_cmd[0] == '$')
     {
         std::string s(_cmd);
