@@ -92,19 +92,19 @@ void bsp_adc1GetValues()
 	float res_sample = 0;
 
 	switch (auto_sw_data.swx) {
-		case 0:
+		case 0b00000000:
 			res_sample = res_val_sample.rs_0uA_100uA;
 			break;
-		case 1:
+		case 0b00000001:
 			res_sample = res_val_sample.rs_100uA_1mA;
 			break;
-		case 3:
+		case 0b00000011:
 			res_sample = res_val_sample.rs_1mA_10mA;
 			break;
-		case 7:
+		case 0b00000111:
 			res_sample = res_val_sample.rs_10mA_100mA;
 			break;
-		case 15:
+		case 0b00001111:
 			res_sample = res_val_sample.rs_100mA_2A;
 			break;
 		default:
