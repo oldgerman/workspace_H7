@@ -98,4 +98,8 @@ void Main(){
 	bsp_adc3Init();
 	bsp_adc1Init();
 	bsp_auto_sw_init();
+
+//	float data;
+//	data = arm_sin_f32(3.1415926/6);		//对sin(PI/6 = 30� )正弦值，求浮点� �，理论上
+//	printf("sin=%.2f\r\n",data);
 }
