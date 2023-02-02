@@ -17,6 +17,7 @@
 #include "I2C_Wrapper.h"
 #include "bsp_analog.h"
 #include "dac.h"
+#include "arm_math.h"
 /* Private define ------------------------------------------------------------*/
 /* Private macros ------------------------------------------------------------*/
 /* Private typedef -----------------------------------------------------------*/
@@ -67,6 +68,13 @@ void ThreadLedUpdate(void* argument){
 		bsp_adc2GetValues();
 		bsp_adc3GetValues();
 		vTaskDelayUntil(&xLastWakeTime, xFrequency);
+
+		/* arm math 单精度硬件浮点测试 */
+//		float data[3];
+//		data[0] = arm_sin_f32(3.1415926/6);	// sin(PI/6)
+//		data[1] = arm_sin_f32(3.1415926/1);	// sin(PI/1)
+//		data[2] = arm_sin_f32(3.1415926/3);	// sin(PI/3)
+//		printf("[sin] 30°= %.6f, 45°= %.6f, 60°= %.6f\r\n", data[0], data[1], data[2]);
 	}
 }
 
@@ -98,8 +106,4 @@ void Main(){
 	bsp_adc3Init();
 	bsp_adc1Init();
 	bsp_auto_sw_init();
-
-//	float data;
-//	data = arm_sin_f32(3.1415926/6);		//对sin(PI/6 = 30� )正弦值，求浮点� �，理论上
-//	printf("sin=%.2f\r\n",data);
 }
