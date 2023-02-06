@@ -151,6 +151,18 @@ typedef struct os_thread_def  {
 
 ### 测试
 
+警告：SPI若以DMA模式传输，一定要特别注意 CubeMX自动生成代码的顺序BUG！！`MX_DMA_Init();` 必须要在 ` MX_SPI2_Init();` 之前调用，否则SPI DMA传输无法进入 HAL_SPI_TxRxCpltCallback()！！！
+
+```c
+  /*
+   * Warning! the CubeMX call the initializations of the elments in the wrong order
+   * first:  MX_USART1_UART_Init(); next: MX_DMA_Init(); then DMA trans RX buffer can't work
+   * https://github.com/MaJerle/stm32-usart-uart-dma-rx-tx/issues/21
+   */
+  MX_DMA_Init();
+  MX_SPI2_Init();				// SPI Init After DMA Init
+```
+
 当前程序 SPI data DMA收发AT指令正常
 
 ![](Images/DMA收发AT指令测试_2022-12-27.png)
