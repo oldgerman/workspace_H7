@@ -37,7 +37,7 @@ void ThreadLedUpdate(void* argument){
 		HAL_GPIO_TogglePin(LRGB_R_GPIO_Port, LRGB_R_Pin);
 
 		/* 打印时间节拍 */
-		printf("[led_task] sysTick : %ld ms\r\n", xTaskGetTickCount());
+//		printf("[led_task] sysTick : %ld ms\r\n", xTaskGetTickCount());
 		vTaskDelayUntil(&xLastWakeTime, xFrequency);
 	}
 }

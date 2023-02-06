@@ -81,10 +81,14 @@ void bsp_adc1GetValues()
 {
 	SCB_InvalidateDCache_by_Addr((uint32_t *)adc1_data, sizeof(adc1_data));
 	adc1_value = 0;
+#if 0
 	for(int i = 0; i < adc1_data_num; i++){
 		adc1_value += adc1_data[i];
 	}
 	adc1_value /= adc1_data_num;
+#else
+	adc1_value = adc1_data[0];
+#endif
 //	adc1_value = (adc1_value - 32767) / 32767 * vref; // 单位V, IA_SE_OUT
 	adc1_value = adc1_value / 65535 * vref;
 	float mA = 0;

@@ -364,7 +364,7 @@ void esp_at_reset_slave(){
 		osDelay(500);	//保持100ms低电平
 //		HAL_Delay(200);	//保持100ms低电平
 		HAL_GPIO_WritePin(GPIO_RESET_GPIO_Port, GPIO_RESET_Pin, GPIO_PIN_SET);
-		osDelay(10000);	//等待10秒以确保esp_at从机初始化完毕
+		osDelay(5000);	//等待10秒以确保esp_at从机初始化完毕
 }
 
 void init_master_hd()
@@ -380,8 +380,20 @@ void init_master_hd()
 
     spi_mutex_lock();
 
-    query_slave_data_trans_info();
-    ESP_LOGE(TAG, "now direct:%u", recv_opt.direct);
+#if 1
+
+    for(int i = 0; i < 5; i++) {
+		query_slave_data_trans_info();
+		ESP_LOGE(TAG, "now direct:%u", recv_opt.direct);
+		osDelay(100);
+        current_recv_seq = 0;
+        at_spi_rddma_done();
+    }
+#else
+    at_spi_rddma_done();
+	query_slave_data_trans_info();
+	ESP_LOGE(TAG, "now direct:%u", recv_opt.direct);
+#endif
 
     if (recv_opt.direct == SPI_READ) { // if slave in waiting response status, master need to give a read done single.
         if (recv_opt.seq_num != ((current_recv_seq + 1) & 0xFF)) {
@@ -410,6 +422,3 @@ void esp_at_init()
     spi_at_taskHandle = osThreadNew(spi_trans_control_task, nullptr, &spiAtTask_attributes);
     esp_initialized = true;
 }
-
-
-

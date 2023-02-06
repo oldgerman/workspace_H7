@@ -3,7 +3,8 @@
 #include <string>
 using namespace std;
 
-#define WRITE_BUFFER_LEN    2048
+//#define WRITE_BUFFER_LEN    2048
+#define WRITE_BUFFER_LEN    4092	//SPI-AT 一次发送的最大data端字节数
 //#define READ_BUFFER_LEN     4096
 
 uint8_t send_buffer[WRITE_BUFFER_LEN] = "";
@@ -86,11 +87,10 @@ void OnAsciiCmd(const char* _cmd, size_t _len, StreamSink &_responseChannel)
         	RespondTaskStackUsageInWords(_responseChannel, usbIrqTaskHandle, 	UsbIrqTaskStackSize / 4);
         	RespondTaskStackUsageInWords(_responseChannel, ledTaskHandle, 		ledTaskStackSize / 4);
         }
-        else if(s.find("ESP_RST") != std::string::npos)
+        else if(s.find("RST") != std::string::npos)
         {
-//        	esp_at_reset_slave();
-        	init_master_hd();
-            Respond(_responseChannel, false, "ESP_RST ok");
+            Respond(_responseChannel, false, "System Reset");
+            NVIC_SystemReset();
         }
     }
     else if(_cmd[0] == 'A' && _cmd[1] == 'T')
@@ -102,17 +102,33 @@ void OnAsciiCmd(const char* _cmd, size_t _len, StreamSink &_responseChannel)
 			memset(send_buffer, 0x33, WRITE_BUFFER_LEN);
 			uint32_t start, finish;
 			start = xTaskGetTickCount();
-			for(int i=0;i< 5000;i++) {
+			const uint16_t cnt = 2500;
+			for(int i=0;i< cnt;i++) {
 				// send data to spi task
 				write_data_to_spi_task_tx_ring_buf(send_buffer, WRITE_BUFFER_LEN);
 				notify_slave_to_recv();
+				/*
+				 * 配置 WRITE_BUFFER_LEN    2048 or 4092
+				 * 10240000Byte数据分5000次数据发完约23S，每4.6ms进行一次SPI传输
+				 * 在实际使用场景下，为了不阻塞其他低优先级轮询任务，
+				 * 这里设为4ms调度间隔，实测全程稳定440KB/s以上
+				 */
+//				osDelay(4);
+				/*
+				 * 配置 WRITE_BUFFER_LEN    4092
+				 * 10230000Byte数据分2500次数据发完约22.4S，每8.96ms进行一次SPI传输
+				 * 在实际使用场景下，为了不阻塞其他低优先级轮询任务，
+				 * 这里设为8ms调度间隔，实测全程稳定440KB/s以上
+				 */
+				osDelay(8);
 			}
 			finish = xTaskGetTickCount();
-			Respond(_responseChannel, false, "Send done, send count: %d, time: %ld ms\r\n", WRITE_BUFFER_LEN * 5000, (finish - start));
+			Respond(_responseChannel, false, "Send done, send count: %d byte, time: %ld ms\r\n", WRITE_BUFFER_LEN * cnt, (finish - start));
+			Respond(_responseChannel, false, "Speed: %.2fKB/s\r\n", (float)WRITE_BUFFER_LEN * cnt /1024.0f / ((float(finish) - float(start)) / 1000.0f));
         }
+        /* USB发回接收到的AT命令 */
+//        Respond(_responseChannel, false, s.c_str());
 
-
-        Respond(_responseChannel, false, s.c_str());
 		/**
 		 * ESP32-C3的 AT指令以”AT”开头,以\r\n结束
 		 * 实测：仅添加 \r ESP32-C3会无视AT指令，添加 \r\n 才会有回复
@@ -122,6 +138,20 @@ void OnAsciiCmd(const char* _cmd, size_t _len, StreamSink &_responseChannel)
 		/**
 		 * 拷贝UART缓冲区数据到1024bytes的usart_thread_rx_to_tx，使用流缓冲API发给SPI task
 		 */
+		// send data to spi task
+		write_data_to_spi_task_tx_ring_buf(s.c_str(), s.length());	//使用了 xStreamBufferSend() 进行任务间通信
+		notify_slave_to_recv();
+		uint16_t len = s.length();
+		(void)len;
+    }
+    else if(_cmd[0] == '+')
+    {
+    	std::string s(_cmd);
+        if (s.find("+++") != std::string::npos)
+        {
+        	Respond(_responseChannel, false, "Exit transparent transmission, please wait at least 1000ms.");
+        }
+//        s = s + '\r' + '\n';
 		// send data to spi task
 		write_data_to_spi_task_tx_ring_buf(s.c_str(), s.length());	//使用了 xStreamBufferSend() 进行任务间通信
 		notify_slave_to_recv();

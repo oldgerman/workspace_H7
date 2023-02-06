@@ -114,7 +114,8 @@ void bsp_adc3Init()
 	 */
 
 	/* 配置触发ADC的定时器 */
-	bsp_LPTIMx_PWM_Set(&hlptim1, 6400000, 100, 50);
+//	bsp_LPTIMx_PWM_Set(&hlptim1, 6400000, 100, 50);		//100Hz
+	bsp_LPTIMx_PWM_Set(&hlptim1, 6400000, 100000, 50);	//100KHz
 	/* 配置DMA回调函数 */
 //	bsp_DMA_Set(&hdma_adc3, bsp_DMA__XferCpltCallback, bsp_DMA_XferM1CpltCallback);
 	/* 开启ADC */
@@ -125,10 +126,14 @@ void bsp_adc3GetValues()
 {
 	SCB_InvalidateDCache_by_Addr((uint32_t *)adc3_data, sizeof(adc3_data));
 	adc3_value = 0;
+#if 0
 	for(int i = 0; i < adc3_data_num; i++){
 		adc3_value += adc3_data[i];
 	}
 	adc3_value /= adc3_data_num;
+#else
+	adc3_value = adc3_data[0];
+#endif
 	adc3_value = (adc3_value - 32767) / 32767 * vref * 2; // 单位V, VDOUT
 	printf("[VDOUT] %.6f\r\n", adc3_value);
 }

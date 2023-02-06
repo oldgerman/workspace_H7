@@ -99,7 +99,7 @@ void Main(){
 	HAL_DAC_Start(&hdac1, DAC_CHANNEL_1);
 
     /* VLDO 输出5.00V */
-	HAL_DAC_SetValue(&hdac1, DAC_CHANNEL_2, DAC_ALIGN_12B_R, 550);
+	HAL_DAC_SetValue(&hdac1, DAC_CHANNEL_2, DAC_ALIGN_12B_R, 751);
 	HAL_DAC_Start(&hdac1, DAC_CHANNEL_2);
 
 	bsp_adc2Init();
