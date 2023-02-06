@@ -125,3 +125,19 @@ at_spi_rddma_done();
     }
 ```
 
+### 发送和接收大量数据的函数 改为 DMA 模式后，发送 AT命令失败
+
+是 esp_at.cpp 中的以下两个函数
+
+```
+static void at_spi_master_send_data(uint8_t* data, uint16_t len)
+static void at_spi_master_recv_data(uint8_t* data, uint16_t len)
+```
+
+data_transfer_mode 都改为 TRANSFER_MODE_DMA
+
+```
+	.data_transfer_mode = TRANSFER_MODE_DMA,	/* 数据量可能较大，使用DMA传输 */
+```
+
+之后发送 AT 命令无反应，检查后DMA中断使能正常，但就是进不到`void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)`中断，BUG 待解决
