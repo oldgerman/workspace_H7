@@ -14,41 +14,24 @@
 extern "C" {
 #endif
 
-/* 私有包含 Private includes -------------------------------------------------*/
+/* Private includes -------------------------------------------------*/
 #include "spi.h"
 #include "cmsis_os.h"
 #include "queue.h"		    //提供消息队列
 #include "semphr.h"			//提供信号量
 #include "task.h"
 #include "frtos_spi_conf.h"
-/* USER CODE BEGIN Includes */
-/* USER CODE END Includes */
 
-/* 导出类型 Exported types ---------------------------------------------------*/
-/* USER CODE BEGIN ET */
+/* Exported types ---------------------------------------------------*/
 
-/* USER CODE END ET */
+/* Exported constants -----------------------------------------------*/
 
-/* 导出常量 Exported constants -----------------------------------------------*/
-/* USER CODE BEGIN EC */
+/* Exported macro ---------------------------------------------------*/
 
-/* USER CODE END EC */
+/* Exported functions prototypes ------------------------------------*/
 
-/* 导出的宏 Exported macro ---------------------------------------------------*/
-/* USER CODE BEGIN EM */
+/* Private defines --------------------------------------------------*/
 
-/* USER CODE END EM */
-
-/* 导出函数原型 Exported functions prototypes --------------------------------*/
-
-/* USER CODE BEGIN EFP */
-
-/* USER CODE END EFP */
-
-/* 私有定义 Private defines --------------------------------------------------*/
-/* USER CODE BEGIN Private defines */
-
-/* USER CODE END Private defines */
 #ifdef __cplusplus
 namespace ns_frtos_spi
 {

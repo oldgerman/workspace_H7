@@ -181,7 +181,7 @@ void FRTOS_SPIDev_ESP_AT::spi_master_request_to_write(uint8_t send_seq, uint16_t
 int8_t FRTOS_SPIDev_ESP_AT::spi_write_data(uint8_t* buf, int32_t len)
 {
 	if (len > ESP_SPI_DMA_MAX_LEN) {
-		ESP_LOGE(TAG, "Send length errot, len:%d", len);
+		ESP_LOGE(TAG, "Send length errot, len:%ld", len);
 		return -1;
 	}
 	at_spi_master_send_data(buf, len);
@@ -231,7 +231,7 @@ void IRAM_ATTR FRTOS_SPIDev_ESP_AT::thread(void *arg)
 			send_len = xStreamBufferReceive(spi_master_tx_stream_buffer, (void*) pTxData, plan_send_len, 0);
 
 			if (send_len != plan_send_len) {
-				ESP_LOGE(TAG, "Read len expect %d, but actual read %d", plan_send_len, send_len);
+				ESP_LOGE(TAG, "Read len expect %lu, but actual read %lu", plan_send_len, send_len);
 				break;
 			}
 
@@ -330,7 +330,7 @@ int32_t FRTOS_SPIDev_ESP_AT::write_data_to_spi_task_tx_ring_buf(const void* data
 
 	//检查需要发送的数据的合法性
 	if (data == NULL  || length > STREAM_BUFFER_SIZE) {
-		ESP_LOGE(TAG, "Send length errot, len:%d", length);
+		ESP_LOGE(TAG, "Send length errot, len:%ld", length);
 		return -1;
 	}
 

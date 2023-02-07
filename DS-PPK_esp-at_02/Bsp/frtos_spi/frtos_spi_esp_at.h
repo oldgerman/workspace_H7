@@ -14,7 +14,7 @@ using namespace ns_frtos_spi;
 extern "C" {
 #endif
 
-/* 私有包含 Private includes -------------------------------------------------*/
+/* Private includes -------------------------------------------------*/
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -27,37 +27,19 @@ extern "C" {
 #include "task.h"
 #include "stream_buffer.h"	//提供流缓冲区API
 #include "portmacro.h"		//提供portYIELD_FROM_ISR();
-/* USER CODE BEGIN Includes */
 
-/* USER CODE END Includes */
+/* Exported types ---------------------------------------------------*/
 
-/* 导出类型 Exported types ---------------------------------------------------*/
-/* USER CODE BEGIN ET */
+/* Exported constants -----------------------------------------------*/
 
-/* USER CODE END ET */
-
-/* 导出常量 Exported constants -----------------------------------------------*/
-/* USER CODE BEGIN EC */
-
-/* USER CODE END EC */
-
-/* 导出的宏 Exported macro ---------------------------------------------------*/
-/* USER CODE BEGIN EM */
+/* Exported macro ---------------------------------------------------*/
 #define ESP_LOGE( tag, format, ... ) do { \
 		printf("ESP (%lu) %s: " format "\r\n", xTaskGetTickCount(), tag, ##__VA_ARGS__);  \
 } while(0)
 
-/* USER CODE END EM */
+/* Exported functions prototypes ------------------------------------*/
 
-/* 导出函数原型 Exported functions prototypes --------------------------------*/
-/* USER CODE BEGIN EFP */
-
-/* USER CODE END EFP */
-
-/* 私有定义 Private defines --------------------------------------------------*/
-/* USER CODE BEGIN Private defines */
-
-/* USER CODE END Private defines */
+/* Private defines --------------------------------------------------*/
 #ifdef __cplusplus
 namespace ns_frtos_spi_esp_at
 {
@@ -65,7 +47,7 @@ namespace ns_frtos_spi_esp_at
 class FRTOS_SPIDev_ESP_AT {
 public:
 	/**
-	 * 任务使用的内存类型
+	 * 任务及相关组件（互斥量、消息队列、流缓冲区）使用的内存类型
 	 */
 	typedef enum {
 		TASK_DYNAMIC = 0,	//动态
@@ -232,7 +214,6 @@ private:
 
 	static volatile bool esp_initialized;
 };
-
 
 
 } /* ns_frtos_spi_esp_at */
