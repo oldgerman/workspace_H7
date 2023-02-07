@@ -49,7 +49,8 @@ void esp_at_init(){
 			&SPI2_Cmd,
 			GPIO_RESET_GPIO_Port,
 			GPIO_RESET_Pin,
-			osPriorityHigh);
+			osPriorityHigh,
+			FRTOS_SPIDev_ESP_AT::TASK_STATIC);
 }
 
 /* Thread definitions */

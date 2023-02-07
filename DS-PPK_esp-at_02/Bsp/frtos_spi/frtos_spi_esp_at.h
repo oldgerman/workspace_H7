@@ -64,12 +64,21 @@ namespace ns_frtos_spi_esp_at
 
 class FRTOS_SPIDev_ESP_AT {
 public:
+	/**
+	 * 任务使用的内存类型
+	 */
+	typedef enum {
+		TASK_DYNAMIC = 0,	//动态
+		TASK_STATIC,		//静态
+	} task_mem_type_t;
+
 	// Sets up internal state and registers the thread
 	static void init(
 			FRTOS_SPICmd *frtos_spi_cmd,
 			GPIO_TypeDef *RESET_GPIOx,
 			uint16_t RESET_GPIO_Pin,
-			osPriority os_priority);
+			osPriority_t os_priority,
+			FRTOS_SPIDev_ESP_AT::task_mem_type_t mem_type);
 
 	/** @defgroup 需要由用户在外部调用的API，用于与本类的线程交互信息
 	  * @{
@@ -103,6 +112,7 @@ public:
 		SPI_READ,         		// slave -> master
 		SPI_WRITE,              // maste -> slave
 	} spi_mode_t;
+
 	/**
 	 * spi_msg：可读/可写状态
 	 */
@@ -142,8 +152,9 @@ public:
 										//				仅当 slave 处于可读状态时，该字段数字有效
 	} spi_recv_opt_t;
 
-	static const size_t     	TaskStackSize = 512 * 4;
-	static osThreadId       	TaskHandle;
+	static const size_t     	TaskStackSize = 8 * 256;
+	static osThreadId_t       	TaskHandle;
+	static StaticTask_t 		TaskControlBlock;
 
 private:
 	/* 初始化Master端硬件 */
@@ -182,9 +193,8 @@ private:
 
 	/* 线程 */
 	static void                thread(void *arg);
-	static uint32_t            TaskBuffer[TaskStackSize];
-//	static osStaticThreadDef_t TaskControlBlock;
-	static osPriority 			Priority;
+	static uint64_t            TaskBuffer[TaskStackSize / 8];
+	static osPriority_t 		Priority;
 
 	static uint8_t 				initiative_send_flag; 	// it means master has data to send to slave
 	static uint32_t 			plan_send_len; 			// master plan to send data len
@@ -219,6 +229,8 @@ private:
 	static const uint8_t 		 	spi_master_tx_stream_buffer_trigger_level = 1;
 	static StaticStreamBuffer_t 	spi_master_tx_stream_buffer_struct;		/* The variable used to hold the stream buffer structure. */
 	static uint8_t 					spi_master_tx_stream_buffer_storage[STREAM_BUFFER_SIZE];
+
+	static volatile bool esp_initialized;
 };
 
 

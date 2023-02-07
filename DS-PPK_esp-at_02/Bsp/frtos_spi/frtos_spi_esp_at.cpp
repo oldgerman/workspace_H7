@@ -7,17 +7,12 @@
 
 #include "frtos_spi_esp_at.h"
 
-
-static volatile bool esp_initialized = false;
-osThreadId spi_at_taskHandle;
-
-
 FRTOS_SPICmd* 			FRTOS_SPIDev_ESP_AT::ptr_frtos_spi_cmd;
 
-osThreadId          	FRTOS_SPIDev_ESP_AT::TaskHandle = NULL;
-uint32_t            	FRTOS_SPIDev_ESP_AT::TaskBuffer[FRTOS_SPIDev_ESP_AT::TaskStackSize];
-//osStaticThreadDef_t 	FRTOS_SPIDev_ESP_AT::TaskControlBlock;
-osPriority 				FRTOS_SPIDev_ESP_AT::Priority;
+osThreadId_t          	FRTOS_SPIDev_ESP_AT::TaskHandle = NULL;
+uint64_t            	FRTOS_SPIDev_ESP_AT::TaskBuffer[FRTOS_SPIDev_ESP_AT::TaskStackSize / 8];	// CMSIS_OS_V2 文档要求 64 字节对齐
+StaticTask_t 			FRTOS_SPIDev_ESP_AT::TaskControlBlock;	//任务控制块
+osPriority_t 			FRTOS_SPIDev_ESP_AT::Priority;
 
 QueueHandle_t 	FRTOS_SPIDev_ESP_AT::msg_queue; 											// 队列句柄：用于表示通信开始 读/写
 uint8_t 		FRTOS_SPIDev_ESP_AT::msg_queue_storage[FRTOS_SPIDev_ESP_AT::msg_queue_length * FRTOS_SPIDev_ESP_AT::msg_queue_item_size];
@@ -49,6 +44,7 @@ RAM_REGION_NO_CACHE FRTOS_SPIDev_ESP_AT::spi_recv_opt_t 	FRTOS_SPIDev_ESP_AT::re
 RAM_REGION_NO_CACHE uint32_t 		FRTOS_SPIDev_ESP_AT::tx_buffer_dummy = 0;				//用作假装发送
 RAM_REGION_NO_CACHE uint32_t 		FRTOS_SPIDev_ESP_AT::rx_buffer_dummy = 0;				//用作假装接收
 
+volatile bool FRTOS_SPIDev_ESP_AT::esp_initialized = false;
 
 void FRTOS_SPIDev_ESP_AT::spi_transfer(spi_transaction_t * pTransaction_t){
 	ptr_frtos_spi_cmd->busTransferExtCmdAndData(pTransaction_t);
@@ -362,12 +358,12 @@ void FRTOS_SPIDev_ESP_AT::notify_slave_to_recv(void)
 	}
 }
 
-
 // Sets up internal state and registers the thread
 void FRTOS_SPIDev_ESP_AT::init(FRTOS_SPICmd *frtos_spi_cmd,
 		GPIO_TypeDef *RESET_GPIOx,
 		uint16_t RESET_GPIO_Pin,
-		osPriority os_priority) {
+		osPriority_t os_priority,
+		FRTOS_SPIDev_ESP_AT::task_mem_type_t mem_type) {
 	// Initialize static members
 	ptr_frtos_spi_cmd = frtos_spi_cmd;
 	_RESET_GPIOx = RESET_GPIOx;
@@ -376,32 +372,31 @@ void FRTOS_SPIDev_ESP_AT::init(FRTOS_SPICmd *frtos_spi_cmd,
 	pTxData = (uint8_t *)txDataBuffer;
 	pRxData = (uint8_t *)rxDataBuffer;
 
-#if 0
-	// Create the meaasge queue.(消息队列深度5)
-	msg_queue = xQueueCreateStatic(
-			msg_queue_length,
-			msg_queue_item_size,
-			msg_queue_storage,
-			&msg_quene_struct);
+	if(mem_type == TASK_STATIC) {	//静态方式
+		// Create the meaasge queue.(消息队列深度5)
+		msg_queue = xQueueCreateStatic(
+				msg_queue_length,
+				msg_queue_item_size,
+				msg_queue_storage,
+				&msg_quene_struct);
 
-	// Create the tx_buf. (发送环形缓冲区8192字节)
-	spi_master_tx_stream_buffer = xStreamBufferCreateStatic(
-			sizeof(spi_master_tx_stream_buffer_storage),
-			spi_master_tx_stream_buffer_trigger_level,
-			spi_master_tx_stream_buffer_storage,
-			&spi_master_tx_stream_buffer_struct);
+		// Create the tx_buf. (发送环形缓冲区8192字节)
+		spi_master_tx_stream_buffer = xStreamBufferCreateStatic(
+				sizeof(spi_master_tx_stream_buffer_storage),
+				spi_master_tx_stream_buffer_trigger_level,
+				spi_master_tx_stream_buffer_storage,
+				&spi_master_tx_stream_buffer_struct);
 
-	// Create the semaphore.
-	pxMutex = xSemaphoreCreateMutexStatic(&pxMutexBuffer);
-#else
-	// Create the meaasge queue.
-	msg_queue = xQueueCreate(5, sizeof(spi_master_msg_t));
-	// Create the tx_buf.
-	spi_master_tx_stream_buffer = xStreamBufferCreate(STREAM_BUFFER_SIZE, 1);
-	// Create the semaphore.
-	pxMutex = xSemaphoreCreateMutex();
-
-#endif
+		// Create the semaphore.
+		pxMutex = xSemaphoreCreateMutexStatic(&pxMutexBuffer);
+	}else {		//动态方式
+		// Create the meaasge queue.
+		msg_queue = xQueueCreate(5, sizeof(spi_master_msg_t));
+		// Create the tx_buf.
+		spi_master_tx_stream_buffer = xStreamBufferCreate(STREAM_BUFFER_SIZE, 1);
+		// Create the semaphore.
+		pxMutex = xSemaphoreCreateMutex();
+	}
 
 	/* 复位芯片 */
 	reset_esp_at_slave();
@@ -423,6 +418,7 @@ void FRTOS_SPIDev_ESP_AT::init(FRTOS_SPICmd *frtos_spi_cmd,
 	query_slave_data_trans_info();
 	ESP_LOGE(TAG, "now direct:%u", recv_opt.direct);
 #endif
+
 
 	if (recv_opt.direct == SPI_READ) { // if slave in waiting response status, master need to give a read done single.
 		if (recv_opt.seq_num != ((current_recv_seq + 1) & 0xFF)) {
@@ -447,12 +443,20 @@ void FRTOS_SPIDev_ESP_AT::init(FRTOS_SPICmd *frtos_spi_cmd,
 	/*pRxData 只是用作假装发送或接收，将其数据全设置为0 */
 	memset(pRxData, 0x0, ESP_SPI_DMA_MAX_LEN);
 
-	const osThreadAttr_t spiAtTask_attributes = {
+	osThreadAttr_t spiAtTask_attributes = {
 			.name = "spiAtTask",
-			.stack_size = 512 * 4,
-			.priority = (osPriority_t) osPriorityHigh,
+			.stack_size = TaskStackSize,
+			.priority = (osPriority_t) Priority,
 	};
-	spi_at_taskHandle = osThreadNew(thread, nullptr, &spiAtTask_attributes);
+
+	if(mem_type == TASK_STATIC) {
+		// 任务栈和任务控制块都用静态内存
+		spiAtTask_attributes.cb_mem  = &TaskControlBlock;
+		spiAtTask_attributes.cb_size = sizeof(TaskControlBlock);
+		spiAtTask_attributes.stack_mem = TaskBuffer;
+	}
+
+	TaskHandle = osThreadNew(thread, nullptr, &spiAtTask_attributes);
 
 	esp_initialized = true;
 }
