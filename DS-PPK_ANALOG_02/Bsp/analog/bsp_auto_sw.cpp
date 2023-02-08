@@ -21,15 +21,18 @@ const osThreadAttr_t autoSwInitTask_attributes = {
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
-	bs = timestamp.buffer_select;		//当前使用的缓冲区
-	cs = timestamp.auto_sw[bs].cursor;	//当前auto_sw 缓冲区的游标
+	bs = !(timestamp.bs);			//当前使用的缓冲区
+	cs = timestamp.auto_sw[bs].cs;	//当前auto_sw 缓冲区的游标
 
 	if ( GPIO_Pin == SW1_Pin ||  GPIO_Pin == SW2_Pin ||  GPIO_Pin == SW2_Pin ||  GPIO_Pin == SW2_Pin)
 	{
 		is_auto_sw_pin = true;
 
+		// 继承上一次档位的io电平状态
 		if(cs != 0) {
-			timestamp.auto_sw[bs].range[cs].swx = timestamp.auto_sw[bs].range[cs - 1].swx;
+			timestamp.auto_sw[bs].range[cs].swx =
+					timestamp.auto_sw[bs].range[cs - 1].swx;
+			//						  ^~~       ^~~~~~		 访问上一次
 		}
 
 		// 记录时间戳
@@ -60,9 +63,9 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 				(timestamp.auto_sw[bs].range[cs].sw4 = 1) :
 				(timestamp.auto_sw[bs].range[cs].sw4 = 0);
 	}
-	if(is_auto_sw_pin && (timestamp.auto_sw[bs].cursor < (adc1_adc3_buffer_size / 2)))
+	if(is_auto_sw_pin && (timestamp.auto_sw[bs].cs < (adc1_adc3_buffer_size / 2)))
 	{
-		timestamp.auto_sw[bs].cursor++;
+		timestamp.auto_sw[bs].cs++;
 		is_auto_sw_pin = false;			//复位换挡引脚判断标记
 	}
 }

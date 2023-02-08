@@ -58,9 +58,10 @@ void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef *hadc)
 {
 	if(hadc == &hadc1)
 	{
-		timestamp.buffer_select = TS_BUF_1ST;
+		timestamp.bs = TS_BUF_1ST;
 		timestamp.dma_adc1[TS_BUF_1ST] = bsp_timestamp_get();
 
+    	SCB_InvalidateDCache_by_Addr((uint32_t *)(&adc1_data[0]), adc1_data_num);
         osSemaphoreRelease(sem_adc_dma);
         adc_callback_cnt++;
 	}
@@ -77,9 +78,10 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
 {
 	if(hadc == &hadc1)
 	{
-		timestamp.buffer_select = TS_BUF_2ND;
+		timestamp.bs = TS_BUF_2ND;
 		timestamp.dma_adc1[TS_BUF_2ND] = bsp_timestamp_get();
 
+    	SCB_InvalidateDCache_by_Addr((uint32_t *)(&adc1_data[adc1_data_num / 2]), adc1_data_num);
         osSemaphoreRelease(sem_adc_dma);
         adc_callback_cnt++;
 	}

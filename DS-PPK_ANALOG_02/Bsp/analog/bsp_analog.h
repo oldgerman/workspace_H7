@@ -161,16 +161,19 @@ typedef enum
 	TS_BUF_2ND		//使用双缓冲区的后半
 }timestamp_buffer_select_t;
 
+//const uint32_t timestamp_auto_sw_buffer_size = adc1_adc3_buffer_size / 2;
+const uint32_t timestamp_auto_sw_buffer_size = 10;
+
 typedef struct
 {
 	/* 当前使用双缓冲区前半还是后半记录时间戳 */
-	uint32_t buffer_select;
+	uint32_t bs;	//buffer select
 
 	/* 双缓冲区：在自动换挡的GPIO外部中断回调函数中记录 */
 	struct{
-		auto_sw_range_t 	range[adc1_adc3_buffer_size / 2];	//量程
-		uint32_t 			time[adc1_adc3_buffer_size / 2];	//时间戳
-		uint32_t 			cursor;								//缓冲区游标
+		auto_sw_range_t 	range[timestamp_auto_sw_buffer_size];	//量程
+		uint32_t 			time[timestamp_auto_sw_buffer_size];	//时间戳
+		uint32_t 			cs;								//缓冲区游标
 	}auto_sw[2];
 
 	/* 双缓冲区：记录时间戳 */

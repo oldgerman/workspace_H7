@@ -43,14 +43,14 @@ ALIGN_32BYTES(__attribute__((section (".RAM_D2_Array"))) frame_t frame[1000]);
 osSemaphoreId sem_adc_dma;
 osThreadId_t frameProcessorTaskHandle;
 
-const uint32_t frameProcessorTaskStackSize = 128 * 4;
+const uint32_t frameProcessorTaskStackSize = 512 * 4;
 
 /* USER CODE END Variables */
 /* Definitions for defaultTask */
 const osThreadAttr_t frameProcessorTask_attributes = {
     .name = "frameProcessorTask",
     .stack_size = frameProcessorTaskStackSize,
-    .priority = (osPriority_t) osPriorityRealtime,
+    .priority = (osPriority_t) osPriorityNormal,
 };
 
 /* Private constant data -----------------------------------------------------*/
@@ -65,6 +65,7 @@ void frameProcessorTask(void* argument){
 	sw_range.swx  = timestamp.auto_sw[0].range[0].swx;
 
 	uint32_t 		sw_time;
+	uint32_t		sw_time_old; //	保存上一次的 sw_time
 	uint32_t 		adc_buf_end_time;	//adc半个缓冲区最后一个数据的时间戳
 	uint32_t 		adc_buf_begin_time;	//adc半个缓冲区第一个数据的时间戳
     for (;;)
@@ -72,22 +73,28 @@ void frameProcessorTask(void* argument){
     	/* 等待ADC DMA 半传输或传输完成中断释放信号量 */
         osSemaphoreAcquire(sem_adc_dma, osWaitForever);
 
-    	bs = timestamp.buffer_select;
-    	cs = timestamp.auto_sw[bs].cursor;
-    	adc_buf_end_time = timestamp.dma_adc1[!bs];
+    	bs = timestamp.bs;
+    	cs = timestamp.auto_sw[bs].cs;
+    	adc_buf_end_time = timestamp.dma_adc1[bs];
     	adc_buf_begin_time = adc_buf_end_time - adc1_adc3_buffer_size / 2;
 
 		static uint32_t adc_buf_proc_time;	//当前处理到的adc时间戳
 		adc_buf_proc_time = adc_buf_begin_time;
 
-		uint32_t adc_data_proc_begin = 0;	// 下方准备处理的adc缓冲区数据开始的下标
-		uint32_t adc_data_proc_end; 		// 下方准备处理的adc缓冲区数据结束的下标
+		uint32_t adc_data_proc_begin = 0;	// 准备处理的adc缓冲区数据开始的下标
+		uint32_t adc_data_proc_end = 0; 	// 准备处理的adc缓冲区数据结束的下标
 
 		// 当前ADC的一半缓冲区已经填满1000个数据，但不知道每个数据所在的量程
     	/* 遍历换挡时间戳 */
     	for(uint32_t i = 0; i < cs; i++)
     	{
+    		//读取时间戳缓冲区数据
     		sw_time = timestamp.auto_sw[bs].time[i];
+    		//至少比上一次时间戳大 1 step
+    		if(sw_time <= sw_time_old)
+    		{
+    			sw_time += 1;
+    		}
 
     		/* 若某个换挡时间戳 大于 adc缓冲区的第一个数据的时间戳... */
     		if(sw_time > adc_buf_proc_time){
@@ -103,18 +110,30 @@ void frameProcessorTask(void* argument){
     				frame[j].format_A.adc1 = adc1_data[j +  bs * adc1_adc3_buffer_size / 2] >> 4;	//16bit adc数据需要除以 16 才是 12bit
     				frame[j].format_A.swx = sw_range.swx;	//使用前一次处理的 sw_range
     			}
-    			//更新下次处理用到的 sw_range
-    			sw_range.swx = timestamp.auto_sw[bs].range[i].swx;
-    			//更新当前处理到的adc时间戳
-    			adc_buf_proc_time = sw_time;
     			//更新处理的adc缓冲区数据开始的下标
     			adc_data_proc_begin = adc_data_proc_end;
     		}
+			//更新下次处理用到的 sw_range
+			sw_range.swx = timestamp.auto_sw[bs].range[i].swx;
+			//更新当前处理到的adc时间戳
+			adc_buf_proc_time = sw_time;
+			//保存本次sw_time
+			sw_time_old = sw_time;
+    	}
+    	// 处理未处理完的缓冲区数据
+    	if(adc_data_proc_end < adc1_adc3_buffer_size / 2)
+    	{
+			for(uint32_t j = adc_data_proc_end; j < adc1_adc3_buffer_size / 2; j++){
+				frame[j].format_A.adc1 = adc1_data[j +  bs * adc1_adc3_buffer_size / 2] >> 4;	//16bit adc数据需要除以 16 才是 12bit
+				frame[j].format_A.swx = sw_range.swx;	//使用前一次处理的 sw_range
+			}
     	}
 
     	// 归零档位缓冲区游标
-    	timestamp.auto_sw[bs].cursor = 0;
+    	timestamp.auto_sw[bs].cs = 0;
 
+
+#if 1
     	//打印10个数据，每个数据间隔 100
     	for(int i = 0; i < 1; i++) {
 			float adc1_value = frame[i*100].format_A.adc1;
@@ -125,19 +144,19 @@ void frameProcessorTask(void* argument){
 			float res_sample = 0;
 
 			switch (frame[i*100].format_A.swx) {
-				case 0b00000000:
+				case 0b00000000:	//0
 					res_sample = res_val_sample.rs_0uA_100uA;
 					break;
-				case 0b00000001:
+				case 0b00000001:	//1
 					res_sample = res_val_sample.rs_100uA_1mA;
 					break;
-				case 0b00000011:
+				case 0b00000011:	//3
 					res_sample = res_val_sample.rs_1mA_10mA;
 					break;
-				case 0b00000111:
+				case 0b00000111:	//7
 					res_sample = res_val_sample.rs_10mA_100mA;
 					break;
-				case 0b00001111:
+				case 0b00001111:	//15
 					res_sample = res_val_sample.rs_100mA_2A;
 					break;
 				default:
@@ -146,7 +165,11 @@ void frameProcessorTask(void* argument){
 			mA = mv_drop_sample_res / res_sample;
 
 			printf("mA: %.6f\r\n", mA);
-    	}
+		}
+
+#endif
+       	printf("[adc1_data 01] %.u, %u\r\n", adc1_data[0 +  bs * adc1_adc3_buffer_size / 2 ], adc1_data[499 +  bs * adc1_adc3_buffer_size / 2]);
+
     }
 };
 

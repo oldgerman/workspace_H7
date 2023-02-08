@@ -95,8 +95,8 @@ void bsp_adc1GetValues()
 
 	uint32_t bs = 0;
 	uint32_t cs = 0;
-	bs = timestamp.buffer_select;		//当前使用的缓冲区
-	cs = timestamp.auto_sw[bs].cursor;	//当前auto_sw 缓冲区的游标
+	bs = timestamp.bs;		//当前使用的缓冲区
+	cs = timestamp.auto_sw[bs].cs;	//当前auto_sw 缓冲区的游标
 
 	switch (timestamp.auto_sw[bs].range[cs].swx) {
 		case 0b00000000:

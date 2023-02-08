@@ -107,9 +107,11 @@ void Main(){
 	HAL_DAC_Start(&hdac1, DAC_CHANNEL_2);
 
 	bsp_adc2Init();
-	bsp_adc3Init();
-	bsp_adc1Init();
-	bsp_auto_sw_init();
 
 	frame_processor_init();
+	bsp_auto_sw_init();
+
+	bsp_adc1Init();
+	bsp_adc3Init();
+
 }
