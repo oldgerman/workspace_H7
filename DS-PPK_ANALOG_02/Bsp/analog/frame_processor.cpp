@@ -131,7 +131,8 @@ void frameProcessorTask(void* argument){
     	timestamp.auto_sw[bs].cs = 0;
 
 #if 1
-    	//打印100个数据，每个数据间隔 10
+    	//从帧数据计算电流
+    	//每次任务调度时打印100个数据，每个数据下标间隔 10
     	//每秒打印10K个点
 
     	const uint16_t i_steps = 100;

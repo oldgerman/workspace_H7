@@ -20,17 +20,19 @@ extern float vref;
 volatile uint32_t adc_callback_cnt = 0;
 
 /**
- * 采样率 100KHz，数据帧 4byte，每秒 400KB 数据需要发送
- *
- * 缓冲区大小配置有讲究
- * 	 过大：滞后性明显，刷新或传输数据更新频率慢，一旦更新数据又过多
- * 	 过小：频繁进出中断，降低性能
- *
- * USB：USB FS 1号BULK端点Tx Fifo 为 2048byte，每秒400KB需要发送 200次
- * WIFI：ESP32-C3 一次最多发送 4092 byte，每秒400KB需要发送 101次，减少为每次发送3200 byte，每秒 128 次
- *
- * 将ADC1 和ADC3 的DMA缓冲区都设置为 2000 点，这样每秒传输完成和半传输完成中断的次数加起来就是 100次
- */
+  * 采样率 100KHz，数据帧 4byte，每秒发送数据 390.625KB
+  *   100K * 4byte = 400000byte = 390.625KB （注意100KHz的`K`不要按照1024换算）
+  *
+  * 缓冲区大小配置有讲究
+  * 	 过大：滞后性明显，刷新或传输数据更新频率慢，一旦更新数据又过多
+  * 	 过小：频繁进出中断，降低性能
+  *
+  * USB：USB FS 1号BULK端点 Tx Fifo 为了取整配置为 2000byte，每秒发送 200次
+  * WIFI：ESP32-C3 一次最多发送 4092byte，为了取整减少为每次发送4000byte，每秒发送 100 次
+  *
+  * 将ADC1 和ADC3 的DMA缓冲区都设置为 2000 点，这样每秒传输完成和半传输完成中断的次数加起来就是 100次
+  */
+
 const uint16_t adc3_data_num = adc1_adc3_buffer_size;	// 2K点缓冲区
 /* 方便Cache类的API操作，做32字节对齐 */
 ALIGN_32BYTES(__attribute__((section (".RAM_D2_Array"))) uint16_t adc3_data[adc3_data_num]);
