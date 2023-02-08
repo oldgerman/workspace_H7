@@ -60,13 +60,19 @@ void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef *hadc)
 {
 	if(hadc == &hadc1)
 	{
+    	SCB_InvalidateDCache_by_Addr((uint32_t *)(&adc1_data[0]), adc1_data_num);
+	}
+	else if(hadc == &hadc3)
+	{
+		/* ADC3 DMA流 优先级比 ADC1低，那么ADC3发生传输中断时ADC1必定已发生 */
+
 		//标记timestamp使用前半缓冲区
 		timestamp.bs = TS_BUF_1ST;
 		//在前半缓冲区记录dma_adc1的时间戳
 		timestamp.dma_adc1[TS_BUF_1ST] = bsp_timestamp_get();
 
 		// clean cache 操作，armfly v7 bsp P935
-    	SCB_InvalidateDCache_by_Addr((uint32_t *)(&adc1_data[0]), adc1_data_num);
+    	SCB_InvalidateDCache_by_Addr((uint32_t *)(&adc3_data[0]), adc3_data_num);
 
     	//释放信号量解除帧处理任务阻塞
         osSemaphoreRelease(sem_adc_dma);
@@ -74,10 +80,6 @@ void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef *hadc)
 
         //增加adc dma回调次数计数器
         adc_callback_cnt++;
-	}
-	else if(hadc == &hadc3)
-	{
-    	SCB_InvalidateDCache_by_Addr((uint32_t *)(&adc3_data[0]), adc3_data_num);
 	}
 }
 /**
@@ -89,18 +91,18 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
 {
 	if(hadc == &hadc1)
 	{
+    	SCB_InvalidateDCache_by_Addr((uint32_t *)(&adc1_data[adc1_data_num / 2]), adc1_data_num);
+	}
+	else if(hadc == &hadc3)
+	{
 		timestamp.bs = TS_BUF_2ND;
 		timestamp.dma_adc1[TS_BUF_2ND] = bsp_timestamp_get();
 
-    	SCB_InvalidateDCache_by_Addr((uint32_t *)(&adc1_data[adc1_data_num / 2]), adc1_data_num);
+    	SCB_InvalidateDCache_by_Addr((uint32_t *)(&adc3_data[0]), adc3_data_num);
 
         osSemaphoreRelease(sem_adc_dma);
 
         adc_callback_cnt++;
-	}
-	else if(hadc == &hadc3)
-	{
-    	SCB_InvalidateDCache_by_Addr((uint32_t *)(&adc3_data[0]), adc3_data_num);
 	}
 }
 
