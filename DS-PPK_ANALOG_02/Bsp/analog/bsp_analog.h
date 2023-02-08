@@ -161,8 +161,8 @@ typedef enum
 	TS_BUF_2ND		//使用双缓冲区的后半
 }timestamp_buffer_select_t;
 
-//const uint32_t timestamp_auto_sw_buffer_size = adc1_adc3_buffer_size / 2;
-const uint32_t timestamp_auto_sw_buffer_size = 10;
+const uint32_t timestamp_auto_sw_buffer_size = adc1_adc3_buffer_size / 2;
+//const uint32_t timestamp_auto_sw_buffer_size = 10;
 
 typedef struct
 {

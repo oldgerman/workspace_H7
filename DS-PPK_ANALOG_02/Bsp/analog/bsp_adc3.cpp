@@ -16,7 +16,9 @@ const uint8_t adc3_chx_num_inject = 0;		//adc3注入通道数
 
 extern float vref;
 
+//标记 HAL_ADC_ConvHalfCpltCallback 和 HAL_ADC_ConvCpltCallback 每秒调用的次数总和
 volatile uint32_t adc_callback_cnt = 0;
+
 /**
  * 采样率 100KHz，数据帧 4byte，每秒 400KB 数据需要发送
  *
@@ -58,15 +60,24 @@ void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef *hadc)
 {
 	if(hadc == &hadc1)
 	{
+		//标记timestamp使用前半缓冲区
 		timestamp.bs = TS_BUF_1ST;
+		//在前半缓冲区记录dma_adc1的时间戳
 		timestamp.dma_adc1[TS_BUF_1ST] = bsp_timestamp_get();
 
+		// clean cache 操作，armfly v7 bsp P935
     	SCB_InvalidateDCache_by_Addr((uint32_t *)(&adc1_data[0]), adc1_data_num);
+
+    	//释放信号量解除帧处理任务阻塞
         osSemaphoreRelease(sem_adc_dma);
+        // TODO：是否需要立即切换任务
+
+        //增加adc dma回调次数计数器
         adc_callback_cnt++;
 	}
 	else if(hadc == &hadc3)
 	{
+    	SCB_InvalidateDCache_by_Addr((uint32_t *)(&adc3_data[0]), adc3_data_num);
 	}
 }
 /**
@@ -82,11 +93,14 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
 		timestamp.dma_adc1[TS_BUF_2ND] = bsp_timestamp_get();
 
     	SCB_InvalidateDCache_by_Addr((uint32_t *)(&adc1_data[adc1_data_num / 2]), adc1_data_num);
+
         osSemaphoreRelease(sem_adc_dma);
+
         adc_callback_cnt++;
 	}
 	else if(hadc == &hadc3)
 	{
+    	SCB_InvalidateDCache_by_Addr((uint32_t *)(&adc3_data[0]), adc3_data_num);
 	}
 }
 

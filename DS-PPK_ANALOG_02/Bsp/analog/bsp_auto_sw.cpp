@@ -7,8 +7,8 @@
 
 #include "bsp_analog.h"
 
-static volatile uint32_t is_auto_sw_pin;
 static volatile uint32_t bs = 0;
+static volatile uint32_t swx_old = 0;
 static volatile uint32_t cs = 0;
 
 osThreadId_t autoSwInitTaskHandle;
@@ -21,53 +21,72 @@ const osThreadAttr_t autoSwInitTask_attributes = {
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
-	bs = !(timestamp.bs);			//当前使用的缓冲区
-	cs = timestamp.auto_sw[bs].cs;	//当前auto_sw 缓冲区的游标
-
-	if ( GPIO_Pin == SW1_Pin ||  GPIO_Pin == SW2_Pin ||  GPIO_Pin == SW2_Pin ||  GPIO_Pin == SW2_Pin)
+	if ( GPIO_Pin == SW1_Pin ||  GPIO_Pin == SW2_Pin ||
+			GPIO_Pin == SW3_Pin ||  GPIO_Pin == SW4_Pin)
 	{
-		is_auto_sw_pin = true;
+		bs = !(timestamp.bs);			//当前使用的缓冲区
+		cs = timestamp.auto_sw[bs].cs;	//当前auto_sw 缓冲区的游标
 
-		// 继承上一次档位的io电平状态
-		if(cs != 0) {
+		/* 继承上一次档位的io电平状态
+		 * 有两种情况，假设是前半缓冲区
+		 *  情况1. 第一次进入 前半缓冲区，上一次档位需用 后半缓冲区 的最后一次数据
+		 *  情况2. 第二次进入 前半缓冲区，上一次档位需用 前半缓冲区 的上一次数据
+		 */
+		timestamp.auto_sw[bs].range[cs].swx = swx_old;
+#if 0
+		//情况1
+		if(cs == 0)
+		{
+			timestamp.auto_sw[bs].range[cs].swx =
+					swx_old;
+		}
+		//情况2
+		else
+		{
 			timestamp.auto_sw[bs].range[cs].swx =
 					timestamp.auto_sw[bs].range[cs - 1].swx;
-			//						  ^~~       ^~~~~~		 访问上一次
+			//						  ^~~       ^~~~~~
 		}
+#endif
 
 		// 记录时间戳
 		timestamp.auto_sw[bs].time[cs] =  bsp_timestamp_get();
+
+		// 记录档位IO电平
+		if ( GPIO_Pin == SW1_Pin) {
+			//check pin state
+			uint8_t(HAL_GPIO_ReadPin(SW1_GPIO_Port, SW1_Pin)) ?
+					(timestamp.auto_sw[bs].range[cs].sw1 = 1) :
+					(timestamp.auto_sw[bs].range[cs].sw1 = 0);
+		}
+		else if ( GPIO_Pin == SW2_Pin) {
+			//check pin state
+			uint8_t(HAL_GPIO_ReadPin(SW2_GPIO_Port, SW2_Pin)) ?
+					(timestamp.auto_sw[bs].range[cs].sw2 = 1) :
+					(timestamp.auto_sw[bs].range[cs].sw2 = 0);
+		}
+		else if ( GPIO_Pin == SW3_Pin) {
+			//check pin state
+			uint8_t(HAL_GPIO_ReadPin(SW3_GPIO_Port, SW3_Pin)) ?
+					(timestamp.auto_sw[bs].range[cs].sw3 = 1) :
+					(timestamp.auto_sw[bs].range[cs].sw3 = 0);
+		}
+		else if ( GPIO_Pin == SW4_Pin) {
+			//check pin state
+			uint8_t(HAL_GPIO_ReadPin(SW4_GPIO_Port, SW4_Pin)) ?
+					(timestamp.auto_sw[bs].range[cs].sw4 = 1) :
+					(timestamp.auto_sw[bs].range[cs].sw4 = 0);
+		}
+
+//		if(timestamp.auto_sw[bs].cs < (adc1_adc3_buffer_size / 2))
+//		{
+			swx_old = timestamp.auto_sw[bs].range[cs].swx; 	//保存当前swx，做继承换挡数据备用
+			timestamp.auto_sw[bs].cs++;						//增加游标
+//		}
 	}
 
-	if ( GPIO_Pin == SW1_Pin) {
-		//check pin state
-		uint8_t(HAL_GPIO_ReadPin(SW1_GPIO_Port, SW1_Pin)) ?
-				(timestamp.auto_sw[bs].range[cs].sw1 = 1) :
-				(timestamp.auto_sw[bs].range[cs].sw1 = 0);
-	}
-	else if ( GPIO_Pin == SW2_Pin) {
-		//check pin state
-		uint8_t(HAL_GPIO_ReadPin(SW2_GPIO_Port, SW2_Pin)) ?
-				(timestamp.auto_sw[bs].range[cs].sw2 = 1) :
-				(timestamp.auto_sw[bs].range[cs].sw2 = 0);
-	}
-	else if ( GPIO_Pin == SW3_Pin) {
-		//check pin state
-		uint8_t(HAL_GPIO_ReadPin(SW3_GPIO_Port, SW3_Pin)) ?
-				(timestamp.auto_sw[bs].range[cs].sw3 = 1) :
-				(timestamp.auto_sw[bs].range[cs].sw3 = 0);
-	}
-	else if ( GPIO_Pin == SW4_Pin) {
-		//check pin state
-		uint8_t(HAL_GPIO_ReadPin(SW4_GPIO_Port, SW4_Pin)) ?
-				(timestamp.auto_sw[bs].range[cs].sw4 = 1) :
-				(timestamp.auto_sw[bs].range[cs].sw4 = 0);
-	}
-	if(is_auto_sw_pin && (timestamp.auto_sw[bs].cs < (adc1_adc3_buffer_size / 2)))
-	{
-		timestamp.auto_sw[bs].cs++;
-		is_auto_sw_pin = false;			//复位换挡引脚判断标记
-	}
+
+
 }
 
 
