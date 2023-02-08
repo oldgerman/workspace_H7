@@ -78,15 +78,12 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 					(timestamp.auto_sw[bs].range[cs].sw4 = 0);
 		}
 
-//		if(timestamp.auto_sw[bs].cs < (adc1_adc3_buffer_size / 2))
+//		if(timestamp.auto_sw[bs].cs < (adc1_adc3_buffer_size / 2))	//有效范围检查
 //		{
 			swx_old = timestamp.auto_sw[bs].range[cs].swx; 	//保存当前swx，做继承换挡数据备用
 			timestamp.auto_sw[bs].cs++;						//增加游标
 //		}
 	}
-
-
-
 }
 
 

@@ -128,7 +128,7 @@ void bsp_adc3Start()
 	}
 
 	/* 配置触发ADC的定时器 */
-//	bsp_LPTIMx_PWM_Set(&hlptim1, 6400000, 1000, 50);		//100Hz
+//	bsp_LPTIMx_PWM_Set(&hlptim1, 6400000, 100, 50);		//100Hz
 	bsp_LPTIMx_PWM_Set(&hlptim1, 6400000, 100000, 50);	//100KHz
 
 	/* 开启定时器触发ADC转换 */
