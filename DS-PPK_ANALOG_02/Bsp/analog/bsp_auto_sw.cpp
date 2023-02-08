@@ -28,7 +28,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 		cs = timestamp.auto_sw[bs].cs;	//当前auto_sw 缓冲区的游标
 
 		// 记录时间戳
-		timestamp.auto_sw[bs].time[cs] =  bsp_timestamp_get();
+		timestamp.auto_sw[bs].time[cs] = bsp_timestamp_get();
 
 		/* 继承上一次档位的io电平状态
 		 * 有两种情况，假设是前半缓冲区
@@ -80,7 +80,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 					(timestamp.auto_sw[bs].range[cs].sw4 = 0);
 		}
 
-		if(timestamp.auto_sw[bs].cs < (adc1_adc3_buffer_size / 2))	//有效范围检查，避免缓冲区游标越界访问
+		if(timestamp.auto_sw[bs].cs < timestamp_auto_sw_buffer_size)	//有效范围检查，避免缓冲区游标越界访问
 		{
 			swx_old = timestamp.auto_sw[bs].range[cs].swx; 			//保存当前swx，做继承换挡数据备用
 			timestamp.auto_sw[bs].cs++;								//增加游标

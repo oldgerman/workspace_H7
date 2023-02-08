@@ -110,20 +110,20 @@ typedef union {
 extern volatile adc2_chx_values_t adc2_values;
 
 const uint16_t adc1_data_num = adc1_adc3_buffer_size;
-/* 方便Cache类的API操作，做32字节对齐 */
-extern ALIGN_32BYTES(__attribute__((section (".RAM_D2_Array"))) uint16_t adc1_data[adc1_data_num]);
 
+extern uint16_t adc1_data[adc1_data_num];
 
+/* 自动换挡量程结构体 */
 typedef union{
 		/* 位域成员反映引脚电平，1：高，0：低*/
 		struct {
-			uint32_t sw1		:1;
-			uint32_t sw2		:1;
-			uint32_t sw3		:1;
-			uint32_t sw4		:1;
-			uint32_t unused 	:28;
+			uint8_t sw1		:1;
+			uint8_t sw2		:1;
+			uint8_t sw3		:1;
+			uint8_t sw4		:1;
+			uint8_t unused 	:4;
 		};	//匿名结构体成员
-		uint32_t swx;
+		uint8_t swx;
 }auto_sw_range_t;
 
 extern TickType_t xFrequency_adc1Task;
@@ -164,6 +164,7 @@ typedef enum
 const uint32_t timestamp_auto_sw_buffer_size = adc1_adc3_buffer_size / 2;
 //const uint32_t timestamp_auto_sw_buffer_size = 10;
 
+/* 时间戳结构体 */
 typedef struct
 {
 	/* 当前使用双缓冲区前半还是后半记录时间戳 */
@@ -173,7 +174,7 @@ typedef struct
 	struct{
 		auto_sw_range_t 	range[timestamp_auto_sw_buffer_size];	//量程
 		uint32_t 			time[timestamp_auto_sw_buffer_size];	//时间戳
-		uint32_t 			cs;								//缓冲区游标
+		uint32_t 			cs;										//缓冲区游标
 	}auto_sw[2];
 
 	/* 双缓冲区：记录时间戳 */
@@ -189,4 +190,5 @@ typedef struct
 extern timestamp_t timestamp;
 void bsp_timestamp_init();
 uint32_t bsp_timestamp_get();
+
 #endif /* ANALOG_BSP_ANALOG_H_ */
