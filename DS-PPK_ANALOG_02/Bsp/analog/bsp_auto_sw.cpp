@@ -27,13 +27,18 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 		bs = !(timestamp.bs);			//当前使用的缓冲区
 		cs = timestamp.auto_sw[bs].cs;	//当前auto_sw 缓冲区的游标
 
+		// 记录时间戳
+		timestamp.auto_sw[bs].time[cs] =  bsp_timestamp_get();
+
 		/* 继承上一次档位的io电平状态
 		 * 有两种情况，假设是前半缓冲区
 		 *  情况1. 第一次进入 前半缓冲区，上一次档位需用 后半缓冲区 的最后一次数据
 		 *  情况2. 第二次进入 前半缓冲区，上一次档位需用 前半缓冲区 的上一次数据
 		 */
+#if 1
+		//等效 #else 的 情况1、情况2
 		timestamp.auto_sw[bs].range[cs].swx = swx_old;
-#if 0
+#else
 		//情况1
 		if(cs == 0)
 		{
@@ -48,9 +53,6 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 			//						  ^~~       ^~~~~~
 		}
 #endif
-
-		// 记录时间戳
-		timestamp.auto_sw[bs].time[cs] =  bsp_timestamp_get();
 
 		// 记录档位IO电平
 		if ( GPIO_Pin == SW1_Pin) {
@@ -78,11 +80,11 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 					(timestamp.auto_sw[bs].range[cs].sw4 = 0);
 		}
 
-//		if(timestamp.auto_sw[bs].cs < (adc1_adc3_buffer_size / 2))	//有效范围检查
-//		{
-			swx_old = timestamp.auto_sw[bs].range[cs].swx; 	//保存当前swx，做继承换挡数据备用
-			timestamp.auto_sw[bs].cs++;						//增加游标
-//		}
+		if(timestamp.auto_sw[bs].cs < (adc1_adc3_buffer_size / 2))	//有效范围检查，避免缓冲区游标越界访问
+		{
+			swx_old = timestamp.auto_sw[bs].range[cs].swx; 			//保存当前swx，做继承换挡数据备用
+			timestamp.auto_sw[bs].cs++;								//增加游标
+		}
 	}
 }
 
