@@ -61,6 +61,8 @@ void Error_Handler(void);
 #define QSPI_FLASH_SIZE_2N_OFFSET 0
 #define MUX_A_Pin GPIO_PIN_4
 #define MUX_A_GPIO_Port GPIOE
+#define PWM_VLOGIC_Pin GPIO_PIN_5
+#define PWM_VLOGIC_GPIO_Port GPIOE
 #define MUX_B_Pin GPIO_PIN_6
 #define MUX_B_GPIO_Port GPIOE
 #define SMU_EN_Pin GPIO_PIN_1
@@ -87,6 +89,8 @@ void Error_Handler(void);
 #define SDA1_GPIO_Port GPIOB
 #define SCL1_Pin GPIO_PIN_8
 #define SCL1_GPIO_Port GPIOB
+#define PWM_BUZZER_Pin GPIO_PIN_9
+#define PWM_BUZZER_GPIO_Port GPIOB
 #define MUX_C_Pin GPIO_PIN_0
 #define MUX_C_GPIO_Port GPIOE
 #define VOUT_EN_Pin GPIO_PIN_1

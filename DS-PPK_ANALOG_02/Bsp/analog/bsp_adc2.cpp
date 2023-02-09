@@ -2,7 +2,7 @@
  * bsp_adc2.cpp
  *
  *  Created on: Jan 30, 2023
- *      Author: PSA
+ *      Author: OldGerman
  */
 
 #ifndef ANALOG_BSP_ADC2_CPP_

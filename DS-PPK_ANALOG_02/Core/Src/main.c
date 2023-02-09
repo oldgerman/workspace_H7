@@ -118,6 +118,8 @@ int main(void)
   MX_I2C1_Init();
   MX_DAC1_Init();
   MX_TIM2_Init();
+  MX_TIM15_Init();
+  MX_TIM17_Init();
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */
@@ -231,7 +233,7 @@ void PeriphCommonClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
-
+static uint8_t tim17_transmissionReceived = 0;
 /* USER CODE END 4 */
 
 /* MPU Configuration */
@@ -333,7 +335,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
     HAL_IncTick();
   }
   /* USER CODE BEGIN Callback 1 */
-
+	if(htim==&htim17) // check source
+	{
+		tim17_transmissionReceived = !tim17_transmissionReceived;
+	}
   /* USER CODE END Callback 1 */
 }
 

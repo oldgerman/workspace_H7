@@ -19,6 +19,7 @@
 #include "dac.h"
 #include "arm_math.h"
 #include "frame_processor.h"
+#include "bsp_logic.h"
 /* Private define ------------------------------------------------------------*/
 /* Private macros ------------------------------------------------------------*/
 /* Private typedef -----------------------------------------------------------*/
@@ -114,4 +115,5 @@ void Main(){
 	bsp_adc1Init();
 	bsp_adc3Init();
 
+	bsp_logicInit();
 }

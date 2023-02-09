@@ -2,7 +2,7 @@
  * bsp_auto_sw[bs].cpp
  *
  *  Created on: Jan 31, 2023
- *      Author: PSA
+ *      Author: OldGerman
  */
 
 #include "bsp_analog.h"
@@ -123,7 +123,5 @@ static void threadAutoSwInit(void* argument)
 }
 void bsp_auto_sw_init()
 {
-	//创建线程
     autoSwInitTaskHandle = osThreadNew(threadAutoSwInit, nullptr, &autoSwInitTask_attributes);
-
 }

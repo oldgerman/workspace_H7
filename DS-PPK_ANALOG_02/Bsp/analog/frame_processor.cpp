@@ -130,7 +130,7 @@ void frameProcessorTask(void* argument){
     	// 归零档位缓冲区游标
     	timestamp.auto_sw[bs].cs = 0;
 
-#if 1
+#if 0
     	//从帧数据计算电流
     	//每次任务调度时打印100个数据，每个数据下标间隔 10
     	//每秒打印10K个点

@@ -2,7 +2,7 @@
  * bsp_smu.cpp
  *
  *  Created on: Jan 30, 2023
- *      Author: PSA
+ *      Author: OldGerman
  */
 
 #include "bsp_analog.h"

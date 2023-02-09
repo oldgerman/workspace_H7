@@ -2,7 +2,7 @@
  * bsp_mux.cpp
  *
  *  Created on: Jan 31, 2023
- *      Author: PSA
+ *      Author: OldGerman
  */
 
 #include "bsp_analog.h"

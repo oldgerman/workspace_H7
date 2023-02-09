@@ -3,7 +3,8 @@
 #include "cw2015_battery.h"
 #include "bsp_analog.h"
 #include "dac.h"
-
+#include "bsp_sound.h"
+#include "bsp_logic.h"
 #include <string>
 using namespace std;
 
@@ -22,7 +23,7 @@ void OnAsciiCmd(const char* _cmd, size_t _len, StreamSink &_responseChannel)
     {
         float value;
         argNum = sscanf(&_cmd[1], "%f", &value);
-        Respond(_responseChannel, false, "Got float: %f\n", argNum, value);
+        Respond(_responseChannel, false, "Got float: %f", argNum, value);
     }
     /**
      * 	使用std::string的find算法查找命令字符串,
@@ -55,7 +56,7 @@ void OnAsciiCmd(const char* _cmd, size_t _len, StreamSink &_responseChannel)
         int value;
         sscanf(&_cmd[2], "%u", &value);
         cw_work_freq = value;
-        Respond(_responseChannel, false, "Set cw_work_freq: %u ms\n", value);
+        Respond(_responseChannel, false, "Set cw_work_freq: %u ms", value);
     }
     else if(_cmd[0] == 'A' && _cmd[1] == '+')
     {
@@ -97,7 +98,7 @@ void OnAsciiCmd(const char* _cmd, size_t _len, StreamSink &_responseChannel)
             int Data;
             sscanf(&_cmd[10], "%u", &Data);
             xFrequency_adc1Task = (TickType_t)Data;
-            Respond(_responseChannel, false, "Set adc1 task freq: %u ms\n", xFrequency_adc1Task);
+            Respond(_responseChannel, false, "Set adc1 task freq: %u ms", xFrequency_adc1Task);
         }
         else if (s.find("GET_RES_VAL_SAMPLE") != std::string::npos){
             Respond(_responseChannel, false, "[RES_VAL_SAMPLE] %.6f, %.6f, %.6f, %.6f, %.6f",
@@ -126,7 +127,7 @@ void OnAsciiCmd(const char* _cmd, size_t _len, StreamSink &_responseChannel)
         /* DAC软件触发模式每次 HAL_DAC_SetValue() 还要调用 HAL_DAC_Start() 使能才能反映到DAC输出 */
     	HAL_DAC_SetValue(&hdac1, dac_channel, DAC_ALIGN_12B_R, Data);
     	HAL_DAC_Start(&hdac1, dac_channel);
-        Respond(_responseChannel, false, "Set DAC_CH%d: %u ms\n", dac_channel ? 0 : 1, Data);
+        Respond(_responseChannel, false, "Set DAC_CH%d: %u ms", dac_channel ? 0 : 1, Data);
     }
     else if (_cmd[0] == 'M')
     {
@@ -170,8 +171,29 @@ void OnAsciiCmd(const char* _cmd, size_t _len, StreamSink &_responseChannel)
         Respond(_responseChannel, false, "Set mux sLinesCode: %d", sLinesCode);
 
     }
-    else if (_cmd[0] == '#')
-    {}
+    else if (_cmd[0] == 'T')
+    {
+    	std::string s(_cmd);
+    	sound_tune_t iTune = TUNE_NONE;
+    	if (s.find("TUNE_CLICK") != std::string::npos){
+    		iTune = TUNE_CLICK;
+    	}
+    	else if (s.find("TUNE_BEEP") != std::string::npos){
+    		iTune = TUNE_BEEP;
+    	}
+    	bsp_soundPlayTune(iTune);
+    	Respond(_responseChannel, false, "Play Sound : iTune = %d", iTune);
+    }
+    else if (_cmd[0] == 'L')
+    {
+        std::string s(_cmd);
+        if (s.find("LOGIC_SET_mV+") != std::string::npos){
+        	int Data;
+        	sscanf(&_cmd[13], "%u", &Data);
+        	bsp_logicSetVoltageLevel(Data);
+        	Respond(_responseChannel, false, "Set LOGIC Voltage: %umV", Data);
+        }
+    }
     else if(_cmd[0] == '$')
     {
         std::string s(_cmd);

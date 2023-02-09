@@ -2,7 +2,7 @@
  * bsp_analog.h
  *
  *  Created on: Jan 30, 2023
- *      Author: PSA
+ *      Author: OldGerman
  */
 
 #ifndef ANALOG_BSP_ANALOG_H_
