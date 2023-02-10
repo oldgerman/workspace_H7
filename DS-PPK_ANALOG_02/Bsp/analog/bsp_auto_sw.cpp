@@ -1,23 +1,58 @@
-/*
- * bsp_auto_sw[bs].cpp
- *
- *  Created on: Jan 31, 2023
- *      Author: OldGerman
- */
+/**
+  ******************************************************************************
+  * @file        bsp_auto_sw.cpp
+  * @author      OldGerman
+  * @created on  Jan 31, 2023
+  * @brief       
+  ******************************************************************************
+  * @attention
+  *
+  * Copyright (C) 2022 OldGerman.
+  *
+  * This program is free software: you can redistribute it and/or modify
+  * it under the terms of the GNU General Public License as published by
+  * the Free Software Foundation, either version 3 of the License, or
+  * (at your option) any later version.
+  *
+  * This program is distributed in the hope that it will be useful,
+  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  * GNU General Public License for more details.
+  *
+  * You should have received a copy of the GNU General Public License
+  * along with this program.  If not, see https://www.gnu.org/licenses/.
+  ******************************************************************************
+  */
 
+/* Includes ------------------------------------------------------------------*/
 #include "bsp_analog.h"
+#include "bsp_timestamp.h"
+#include "bsp_smu.h"
 
-static volatile uint32_t bs = 0;
-static volatile uint32_t swx_old = 0;
-static volatile uint32_t cs = 0;
-
-osThreadId_t autoSwInitTaskHandle;
+/* Private typedef -----------------------------------------------------------*/
+/* Private define ------------------------------------------------------------*/
+/* Private macro -------------------------------------------------------------*/
+/* Exported constants --------------------------------------------------------*/
 const uint32_t autoSwInitTaskStackSize = 256 * 4;
 const osThreadAttr_t autoSwInitTask_attributes = {
     .name = "autoSwInitTask",
     .stack_size = autoSwInitTaskStackSize,
     .priority = (osPriority_t) osPriorityLow,
 };
+
+/* Private constants ---------------------------------------------------------*/
+/* Exported variables --------------------------------------------------------*/
+osThreadId_t autoSwInitTaskHandle;
+
+/* Private variables ---------------------------------------------------------*/
+static volatile uint32_t bs = 0;
+static volatile uint32_t swx_old = 0;
+static volatile uint32_t cs = 0;
+
+/* Private function prototypes -----------------------------------------------*/
+static void threadAutoSwInit(void* argument);
+
+/* Function implementations --------------------------------------------------*/
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
@@ -92,7 +127,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 static void threadAutoSwInit(void* argument)
 {
 	/*先得关闭SMU*/
-	bsp_smu_set_en(0);
+	bsp_smuEnablePowerChips(0);
 	uint8_t ret = 0;
 	for(;;)
 	{
@@ -113,7 +148,7 @@ static void threadAutoSwInit(void* argument)
 			/* 清除所有SW1~SW4中断标志 */
 			__HAL_GPIO_EXTI_CLEAR_FLAG(SW1_Pin | SW2_Pin | SW3_Pin | SW4_Pin);
 			/* 打开SMU，此时立即产生换挡中断 */
-			bsp_smu_set_en(1);
+			bsp_smuEnablePowerChips(1);
 			break;
 		}else
 			osDelay(500);
@@ -121,6 +156,7 @@ static void threadAutoSwInit(void* argument)
 	printf("[autoSwInitTask]: Task deleted");
 	osThreadTerminate(autoSwInitTaskHandle);	//删除 auto sw 初始化任务
 }
+
 void bsp_auto_sw_init()
 {
     autoSwInitTaskHandle = osThreadNew(threadAutoSwInit, nullptr, &autoSwInitTask_attributes);

@@ -1,21 +1,40 @@
-/*
- * bsp_logic.cpp
- *
- *  Created on: Feb 9, 2023
- *      Author: OldGerman
- */
+/**
+  ******************************************************************************
+  * @file        bsp_logic.cpp
+  * @author      OldGerman
+  * @created on  Feb 9, 2023
+  * @brief       
+  ******************************************************************************
+  * @attention
+  *
+  * Copyright (C) 2022 OldGerman.
+  *
+  * This program is free software: you can redistribute it and/or modify
+  * it under the terms of the GNU General Public License as published by
+  * the Free Software Foundation, either version 3 of the License, or
+  * (at your option) any later version.
+  *
+  * This program is distributed in the hope that it will be useful,
+  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  * GNU General Public License for more details.
+  *
+  * You should have received a copy of the GNU General Public License
+  * along with this program.  If not, see https://www.gnu.org/licenses/.
+  ******************************************************************************
+  */
 
+/* Includes ------------------------------------------------------------------*/
 #include "bsp_analog.h"
 #include "bsp_logic.h"
 #include "tim.h"
-#include "bsp.h"	//提供fmap()
+#include "bsp.h"    //fmap()
 #include <stdlib.h> //abs()
 
-static void logicCCRCompensation(uint32_t * ccr);
-
-static float logic_k_ccr = 1, logic_b_ccr = 0;	//用作ccr一次函数补偿
-
-osThreadId_t logicInitTaskHandle;
+/* Private typedef -----------------------------------------------------------*/
+/* Private define ------------------------------------------------------------*/
+/* Private macro -------------------------------------------------------------*/
+/* Exported constants --------------------------------------------------------*/
 const uint32_t logicInitTaskStackSize = 256 * 4;
 const osThreadAttr_t logicInitTask_attributes = {
     .name = "logicInitTask",
@@ -23,12 +42,33 @@ const osThreadAttr_t logicInitTask_attributes = {
     .priority = (osPriority_t) osPriorityLow,
 };
 
+/* Private constants ---------------------------------------------------------*/
+/* Exported variables --------------------------------------------------------*/
+osThreadId_t logicInitTaskHandle;
+
+/* Private variables ---------------------------------------------------------*/
+static void  logicCCRCompensation(uint32_t * ccr);
+static float logic_k_ccr = 1, logic_b_ccr = 0;	//用作ccr的线性插补
+
+/* Private function prototypes -----------------------------------------------*/
+static void threadLogicInit(void* argument);
+
+/* Function implementations --------------------------------------------------*/
+/**
+  * @brief  初始化逻辑通道的任务函数
+  * @param  argument Pointer to a void
+  * @retval None
+  */
 static void threadLogicInit(void* argument)
 {
 	HAL_TIM_Base_Start(&htim15);
+
+	/* 线性校准电平转换器B通道的电压 */
 	bsp_logicVoltageCal();
+
 	/* 设置VCCB电平电压为3.3V */
 	bsp_logicSetVoltageLevel(3300.0f);
+
 	printf("[logicInitTask]: Task deleted");
 	osThreadTerminate(logicInitTaskHandle);	//删除 auto sw 初始化任务
 }
@@ -43,7 +83,7 @@ static void threadLogicInit(void* argument)
 uint32_t bsp_logicSetVoltageLevel(float mV, bool compensation)
 {
 	/**
-	 * y\ =\ \left[\frac{0.5}{40.2}-\frac{x-0.5}{330}\right]330+0.5
+	 * y\ =\ \left[\frac{0.5}{40.2}-\frac{x-0.5}{215}\right]330+0.5
 	 *
 	 * TPS63000
 	 * 		V(FB) = 500mV = 0.5
@@ -98,7 +138,11 @@ uint32_t bsp_logicSetVoltageLevel(float mV, bool compensation)
 	return CCR;
 }
 
-/* 校准逻辑电压调节范围 */
+/**
+  * @brief  线性校准电平转换器B通道的电压调节范围
+  * @param  None
+  * @retval None
+  */
 void bsp_logicVoltageCal()
 {
 	float  ccr_h, ccr_l;					//CCR寄存器高，低
@@ -106,7 +150,7 @@ void bsp_logicVoltageCal()
 	const float v_eh = 5.0, v_el = 2.0;    //期望电压高，低，单位V
 
 	float vlogic_old = adc2_values.float_el.val_vlogic;
-	float vlogic_new = vlogic_old;
+	float vlogic_new;
 
 	ccr_l = bsp_logicSetVoltageLevel(v_el * 1000, false);
 	do{
@@ -145,7 +189,11 @@ void bsp_logicVoltageCal()
 	logic_b_ccr = b_ccr;
 }
 
-/* 修正ccr */
+/**
+  * @brief  使用校准函数修正CCR寄存器的值
+  * @param  uint32 pointer
+  * @retval None
+  */
 static void logicCCRCompensation(uint32_t * ccr)
 {
 	float ccr_x = *ccr;
@@ -158,6 +206,11 @@ static void logicCCRCompensation(uint32_t * ccr)
 	}
 }
 
+/**
+  * @brief  初始化逻辑通道
+  * @param  None
+  * @retval None
+  */
 void bsp_logicInit()
 {
     logicInitTaskHandle = osThreadNew(threadLogicInit, nullptr, &logicInitTask_attributes);

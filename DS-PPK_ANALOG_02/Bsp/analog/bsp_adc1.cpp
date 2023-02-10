@@ -9,6 +9,7 @@
 #include "adc.h"
 #include "lptim.h"
 #include "bsp_lptim_pwm.h"
+#include "bsp_timestamp.h"
 
 const uint8_t adc1_chx_num_regular = 6;		//adc1规则通道数
 const uint8_t adc1_chx_num_inject = 0;		//adc1注入通道数
@@ -90,7 +91,7 @@ void bsp_adc1GetValues()
 //	adc1_value = (adc1_value - 32767) / 32767 * vref; // 单位V, IA_SE_OUT
 	adc1_value = adc1_value / 65535 * vref;
 	float mA = 0;
-	float mv_drop_sample_res = (adc1_value - adc2_values.float_el.val_vref_ia) * 1000.0f / gain;
+	float mv_drop_sample_res = (adc1_value - adc2_values.float_el.val_vref_ia) * 1000.0f / ina_gain;
 	float res_sample = 0;
 
 	uint32_t bs = 0;

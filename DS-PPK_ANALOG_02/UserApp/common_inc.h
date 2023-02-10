@@ -1,22 +1,37 @@
 /**
   ******************************************************************************
-  * @file           : COMMON_INC_H.h
-  * @brief          :
+  * @file        common_inc_h
+  * @author      OldGerman
+  * @created on  Jan 7, 2023
+  * @brief
   ******************************************************************************
-  * @Created on		: Jan 7, 2023
-  * @Author 		: OldGerman
-  * @attention		:
+  * @attention
+  *
+  * Copyright (C) 2022 OldGerman.
+  *
+  * This program is free software: you can redistribute it and/or modify
+  * it under the terms of the GNU General Public License as published by
+  * the Free Software Foundation, either version 3 of the License, or
+  * (at your option) any later version.
+  *
+  * This program is distributed in the hope that it will be useful,
+  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  * GNU General Public License for more details.
+  *
+  * You should have received a copy of the GNU General Public License
+  * along with this program.  If not, see https://www.gnu.org/licenses/.
   ******************************************************************************
   */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __COMMON_INC_H
-#define __COMMON_INC_H
+#ifndef COMMON_INC_H_
+#define COMMON_INC_H_
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-/* USER CODE BEGIN C SCOPE ---------------------------------------------------*/
+
 /* Includes ------------------------------------------------------------------*/
 #include "FreeRTOS.h"
 #include "task.h"
@@ -26,34 +41,17 @@ extern "C" {
 #include "freertos_inc.h"
 
 /* Exported types ------------------------------------------------------------*/
-
-/* Exported constants --------------------------------------------------------*/
-
+/* Exported define -----------------------------------------------------------*/
+#define PROJECT_FW_VERSION 1.0
 /* Exported macro ------------------------------------------------------------*/
-
-/* Exported functions prototypes ---------------------------------------------*/
+/* Exported constants --------------------------------------------------------*/
+/* Exported variables --------------------------------------------------------*/
+/* Exported functions --------------------------------------------------------*/
 void Main(void);
 
-/* Private defines -----------------------------------------------------------*/
-#define PROJECT_FW_VERSION 1.0
-
-/* USER CODE END C SCOPE -----------------------------------------------------*/
 #ifdef __cplusplus
 }
-/* USER CODE BEGIN C++ SCOPE -------------------------------------------------*/
-/* Includes ------------------------------------------------------------------*/
 #include "communication.hpp"
-
-/* Exported types ------------------------------------------------------------*/
-
-/* Exported constants --------------------------------------------------------*/
-
-/* Exported macro ------------------------------------------------------------*/
-
-/* Exported functions prototypes ---------------------------------------------*/
-
-/* Private defines -----------------------------------------------------------*/
-
-/* USER CODE END C++ SCOPE ---------------------------------------------------*/
 #endif
-#endif	/* __COMMON_INC_H */
+
+#endif /* COMMON_INC_H_ */

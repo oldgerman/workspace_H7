@@ -1,17 +1,52 @@
-/*
- * bsp_lptim_pwm.c
- *
- *  Created on: Aug 30, 2022
- *      Author: OldGerman
- */
+/**
+  ******************************************************************************
+  * @file        bsp_lptim_pwm.c
+  * @author      OldGerman
+  * @created on  Aug 30, 2022
+  * @brief       
+  ******************************************************************************
+  * @attention
+  *
+  * Copyright (C) 2022 OldGerman.
+  *
+  * This program is free software: you can redistribute it and/or modify
+  * it under the terms of the GNU General Public License as published by
+  * the Free Software Foundation, either version 3 of the License, or
+  * (at your option) any later version.
+  *
+  * This program is distributed in the hope that it will be useful,
+  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  * GNU General Public License for more details.
+  *
+  * You should have received a copy of the GNU General Public License
+  * along with this program.  If not, see https://www.gnu.org/licenses/.
+  ******************************************************************************
+  * @application note
+  *
+  * 需要事先在CubeMX中选择一个LPTIM（支持LPTIM1~5）、勾选Waveform Generation，输出极性为LOW
+  * 并在CubeMX时钟树中配置该LPTIM的时钟源，其他参数默认，无需勾选LPTIM的NVIC中断
+  ******************************************************************************
+  */
+
+/* Includes ------------------------------------------------------------------*/
+/* Private typedef -----------------------------------------------------------*/
+/* Private define ------------------------------------------------------------*/
+/* Private macro -------------------------------------------------------------*/
+/* Exported constants --------------------------------------------------------*/
+/* Private constants ---------------------------------------------------------*/
+/* Exported variables --------------------------------------------------------*/
+/* Private variables ---------------------------------------------------------*/
+/* Private function prototypes -----------------------------------------------*/
+/* Function implementations --------------------------------------------------*/
 #include "bsp_config.h"
 #ifdef EN_BSP_LPTIM_PWM
 #include "bsp.h"
 /**
  * @brief  开启或关闭tim pwm的通道
- * @param  htim:				htim句柄指针
- * @param  Channel:				tim的通道
- * @param  enable:				true:打开对应通道的pwm; false:关闭对应通道的pwm
+ * @param  htim      htim句柄指针
+ * @param  Channel   tim的通道
+ * @param  enable    true:打开对应通道的pwm; false:关闭对应通道的pwm
  * @retval HAL Status
  */
 HAL_StatusTypeDef bsp_LPTIMx_PWM_En(LPTIM_HandleTypeDef *hlptim, bool enable){

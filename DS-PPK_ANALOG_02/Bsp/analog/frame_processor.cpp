@@ -1,51 +1,42 @@
 /**
   ******************************************************************************
-  * @file           : frame_processor.cpp
+  * @file        frame_processor.cpp
+  * @author      OldGerman
+  * @created on  Feb 7, 2023
+  * @brief       
   ******************************************************************************
-  * @Created on		: Feb 7, 2023
-  * @Author 		: OldGerman
-  * @attention		:
+  * @attention
+  *
+  * Copyright (C) 2022 OldGerman.
+  *
+  * This program is free software: you can redistribute it and/or modify
+  * it under the terms of the GNU General Public License as published by
+  * the Free Software Foundation, either version 3 of the License, or
+  * (at your option) any later version.
+  *
+  * This program is distributed in the hope that it will be useful,
+  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  * GNU General Public License for more details.
+  *
+  * You should have received a copy of the GNU General Public License
+  * along with this program.  If not, see https://www.gnu.org/licenses/.
   ******************************************************************************
   */
 
 /* Includes ------------------------------------------------------------------*/
+#include "frame_processor.h"
 #include "common_inc.h"
 #include "bsp_analog.h"
-/* Private define ------------------------------------------------------------*/
-/* Private macros ------------------------------------------------------------*/
+#include "bsp_timestamp.h"
+
 /* Private typedef -----------------------------------------------------------*/
-/* Global constant data ------------------------------------------------------*/
-/* Global variables ----------------------------------------------------------*/
-
-/* 合成数据帧格式 */
-typedef union{
-
-		struct {
-			uint32_t adc1		:12;
-			uint32_t swx		:4;
-			uint32_t adc3		:8;
-			uint32_t logic		:8;
-		}format_A;
-
-		struct {
-			uint32_t adc		:14;
-			uint32_t range		:3;
-			uint32_t unused 	:1;
-			uint32_t counter	:6;
-			uint32_t logic		:8;
-		}format_nRF;
-
-		uint32_t ctrl;
-}frame_t;
-
-ALIGN_32BYTES(__attribute__((section (".RAM_D2_Array"))) frame_t frame[adc1_adc3_buffer_size / 2]);
-
-osSemaphoreId sem_adc_dma;
-osThreadId_t frameProcessorTaskHandle;
-
+/* Private define ------------------------------------------------------------*/
+/* Private macro -------------------------------------------------------------*/
+/* Exported constants --------------------------------------------------------*/
 const uint32_t frameProcessorTaskStackSize = 512 * 4;
 
-/* USER CODE END Variables */
+/* Private constants ---------------------------------------------------------*/
 /* Definitions for defaultTask */
 const osThreadAttr_t frameProcessorTask_attributes = {
     .name = "frameProcessorTask",
@@ -53,12 +44,26 @@ const osThreadAttr_t frameProcessorTask_attributes = {
     .priority = (osPriority_t) osPriorityNormal,
 };
 
-/* Private constant data -----------------------------------------------------*/
+/* Exported variables --------------------------------------------------------*/
+ALIGN_32BYTES(__attribute__((section (".RAM_D2_Array"))) frame_format_t frame[adc1_adc3_buffer_size / 2]);
+
+osSemaphoreId_t sem_adc_dma;
+osThreadId_t frameProcessorTaskHandle;
+
+bool frame_processor_debug_print = false;
+
 /* Private variables ---------------------------------------------------------*/
 /* Private function prototypes -----------------------------------------------*/
-/* Private user code ---------------------------------------------------------*/
+static void frameProcessorTask(void* argument);
+
 /* Function implementations --------------------------------------------------*/
-void frameProcessorTask(void* argument){
+/**
+  * @brief  帧处理器任务函数
+  * @param  argument Pointer to a void
+  * @retval None
+  */
+static void frameProcessorTask(void* argument)
+{
 	uint32_t bs;					//当前使用的缓冲区
 	uint32_t cs;					//当前auto_sw 缓冲区的游标
 	auto_sw_range_t sw_range;
@@ -105,7 +110,8 @@ void frameProcessorTask(void* argument){
     	    		adc_data_proc_end = sw_time - adc_buf_begin_time;
 
     			for(uint32_t j = adc_data_proc_begin; j < adc_data_proc_end; j++){
-    				frame[j].format_A.adc1 = adc1_data[j +  bs * adc1_adc3_buffer_size / 2] >> 4;	//16bit adc数据需要除以 16 才是 12bit
+    				frame[j].format_A.adc1 = adc1_data[j +  bs * adc1_adc3_buffer_size / 2] >> 4; //16bit adc1 数据需要除以 16 才是 12bit
+    				frame[j].format_A.adc3 = adc3_data[j +  bs * adc1_adc3_buffer_size / 2] >> 8; //16bit adc3 数据需要除以 256 才是 8bit
     				frame[j].format_A.swx = sw_range.swx;	//使用前一次处理的 sw_range
     			}
     			//更新处理的adc缓冲区数据开始的下标
@@ -122,7 +128,8 @@ void frameProcessorTask(void* argument){
     	if(adc_data_proc_end < adc1_adc3_buffer_size / 2)
     	{
 			for(uint32_t j = adc_data_proc_end; j < adc1_adc3_buffer_size / 2; j++){
-				frame[j].format_A.adc1 = adc1_data[j +  bs * adc1_adc3_buffer_size / 2] >> 4;	//16bit adc数据需要除以 16 才是 12bit
+				frame[j].format_A.adc1 = adc1_data[j +  bs * adc1_adc3_buffer_size / 2] >> 4; //16bit adc1 数据需要除以 16 才是 12bit
+				frame[j].format_A.adc3 = adc3_data[j +  bs * adc1_adc3_buffer_size / 2] >> 8; //16bit adc3 数据需要除以 256 才是 8bit
 				frame[j].format_A.swx = sw_range.swx;	//使用前一次处理的 sw_range
 			}
     	}
@@ -130,51 +137,63 @@ void frameProcessorTask(void* argument){
     	// 归零档位缓冲区游标
     	timestamp.auto_sw[bs].cs = 0;
 
-#if 0
-    	//从帧数据计算电流
-    	//每次任务调度时打印100个数据，每个数据下标间隔 10
-    	//每秒打印10K个点
+    	// Debug阶段打印数据
+        if(frame_processor_debug_print)
+        {
+			//从帧数据计算电流
+			//每次任务调度时打印100个数据，每个数据下标间隔 10
+			//每秒打印10K个点
 
-    	const uint16_t i_steps = 100;
-    	const uint16_t frame_steps = adc1_adc3_buffer_size / 2 / i_steps;
-    	for(int i = 0; i < i_steps; i++) {
-			float adc1_value = frame[i*frame_steps].format_A.adc1;
+			const uint16_t i_steps = 100;
+			const uint16_t frame_steps = adc1_adc3_buffer_size / 2 / i_steps;
+			for(int i = 0; i < i_steps; i++) {
 
-			adc1_value = adc1_value / 4095 * vref; // 单位V, IA_SE_OUT
-			float mA = 0;
-			float mv_drop_sample_res = (adc1_value - adc2_values.float_el.val_vref_ia) * 1000.0f / gain;
-			float res_sample = 0;
+				/* 从adc1数据值和档位计算电流 */
+				float adc1_value = frame[i*frame_steps].format_A.adc1;
+				adc1_value = adc1_value / 4095.0f * vref; // 单位V, IA_SE_OUT
+				float mA = 0;
+				float mv_drop_sample_res = (adc1_value - adc2_values.float_el.val_vref_ia) * 1000.0f / ina_gain;
+				float res_sample = 0;
 
-			switch (frame[i*frame_steps].format_A.swx) {
-				case 0b00000000:	//0
-					res_sample = res_val_sample.rs_0uA_100uA;
-					break;
-				case 0b00000001:	//1
-					res_sample = res_val_sample.rs_100uA_1mA;
-					break;
-				case 0b00000011:	//3
-					res_sample = res_val_sample.rs_1mA_10mA;
-					break;
-				case 0b00000111:	//7
-					res_sample = res_val_sample.rs_10mA_100mA;
-					break;
-				case 0b00001111:	//15
-					res_sample = res_val_sample.rs_100mA_2A;
-					break;
-				default:
-					break;
+				switch (frame[i*frame_steps].format_A.swx) {
+					case 0b00000000:	//0
+						res_sample = res_val_sample.rs_0uA_100uA;
+						break;
+					case 0b00000001:	//1
+						res_sample = res_val_sample.rs_100uA_1mA;
+						break;
+					case 0b00000011:	//3
+						res_sample = res_val_sample.rs_1mA_10mA;
+						break;
+					case 0b00000111:	//7
+						res_sample = res_val_sample.rs_10mA_100mA;
+						break;
+					case 0b00001111:	//15
+						res_sample = res_val_sample.rs_100mA_2A;
+						break;
+					default:
+						break;
+				}
+				mA = mv_drop_sample_res / res_sample;
+//				printf("mA: %.6f\r\n", mA);
+
+				/* 从adc3数据值计算电压 */
+				float mV = (frame[i*frame_steps].format_A.adc3 - 127.0f) / 127.0f * vref * 2.0f; // 单位V, VDOUT
+//				printf("[VDOUT] %.6f\r\n", adc3_value);
+
+				printf("mA mV: %.4f, %.3f\r\n", mA, mV);
 			}
-			mA = mv_drop_sample_res / res_sample;
-
-			printf("mA: %.6f\r\n", mA);
-		}
-
-#endif
-//       	printf("[adc1_data 01] %.u, %u\r\n", adc1_data[0 +  bs * adc1_adc3_buffer_size / 2 ], adc1_data[499 +  bs * adc1_adc3_buffer_size / 2]);
-
+        }
+    	/* Debug */
+//    	printf("[adc1_data 01] %.u, %u\r\n", adc1_data[0 +  bs * adc1_adc3_buffer_size / 2 ], adc1_data[499 +  bs * adc1_adc3_buffer_size / 2]);
     }
 };
 
+/**
+  * @brief  初始化帧处理器
+  * @param  None
+  * @retval None
+  */
 void frame_processor_init()
 {
 	osSemaphoreDef(sem_adc_dma);

@@ -1,11 +1,26 @@
 ﻿/**
   ******************************************************************************
-  * @file           : main.cpp
-  * @brief          :
+  * @file        main.cpp
+  * @author      OldGerman
+  * @created on  Jan 7, 2023
+  * @brief
   ******************************************************************************
-  * @Created on		: Jan 7, 2023
-  * @Author 		: OldGerman
-  * @attention		:
+  * @attention
+  *
+  * Copyright (C) 2022 OldGerman.
+  *
+  * This program is free software: you can redistribute it and/or modify
+  * it under the terms of the GNU General Public License as published by
+  * the Free Software Foundation, either version 3 of the License, or
+  * (at your option) any later version.
+  *
+  * This program is distributed in the hope that it will be useful,
+  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  * GNU General Public License for more details.
+  *
+  * You should have received a copy of the GNU General Public License
+  * along with this program.  If not, see https://www.gnu.org/licenses/.
   ******************************************************************************
   */
 
@@ -20,16 +35,26 @@
 #include "arm_math.h"
 #include "frame_processor.h"
 #include "bsp_logic.h"
-/* Private define ------------------------------------------------------------*/
-/* Private macros ------------------------------------------------------------*/
+#include "bsp_auto_sw.h"
+#include "bsp_smu.h"
+
 /* Private typedef -----------------------------------------------------------*/
-/* Global constant data ------------------------------------------------------*/
+/* Private define ------------------------------------------------------------*/
+/* Private macro -------------------------------------------------------------*/
+/* Exported constants --------------------------------------------------------*/
 const uint32_t ledTaskStackSize = 256 * 4;
-/* Global variables ----------------------------------------------------------*/
-/* Private constant data -----------------------------------------------------*/
+const osThreadAttr_t ledTask_attributes = {
+    .name = "ledTask",
+    .stack_size = ledTaskStackSize,
+    .priority = (osPriority_t) osPriorityNormal,
+};
+
+/* Private constants ---------------------------------------------------------*/
+/* Exported variables --------------------------------------------------------*/
+osThreadId_t ledTaskHandle;
+
 /* Private variables ---------------------------------------------------------*/
 /* Private function prototypes -----------------------------------------------*/
-/* Private user code ---------------------------------------------------------*/
 /* Function implementations --------------------------------------------------*/
 
 void i2c_scaner(I2C_HandleTypeDef *hi2c, uint8_t i2cBusNum) {
@@ -49,15 +74,12 @@ void i2c_scaner(I2C_HandleTypeDef *hi2c, uint8_t i2cBusNum) {
 	}
 }
 
-
 /* Thread definitions */
-osThreadId_t ledTaskHandle;
-void ThreadLedUpdate(void* argument){
+void threadLedUpdate(void* argument){
 	TickType_t xLastWakeTime;
 	const TickType_t xFrequency = 1000;
 	/* 获取当前的系统时间 */
 	xLastWakeTime = xTaskGetTickCount();
-	charging_driver_probe();
 	for(;;){
 		/* 翻转开发板引脚 */
 //		HAL_GPIO_TogglePin(VOUT_EN_GPIO_Port, VOUT_EN_Pin);
@@ -77,43 +99,51 @@ void ThreadLedUpdate(void* argument){
 		charging_hw_update();
 
 		bsp_adc2GetValues();
-		bsp_adc3GetValues();
+//		bsp_adc3GetValues();
+
+		static uint32_t adc_callback_cnt_old = 0;
+		printf("[adc_callback_cnt] %.lu times 1s\r\n", adc_callback_cnt - adc_callback_cnt_old);
+		adc_callback_cnt_old = adc_callback_cnt;
 
 		vTaskDelayUntil(&xLastWakeTime, xFrequency);
 	}
 }
 
-void Main(){
-	// 创建并释放FRToSI2C2的信号量
+void ledUpdateInit()
+{
+	ledTaskHandle = osThreadNew(threadLedUpdate, nullptr, &ledTask_attributes);
+}
+
+void Main()
+{
+	/* 初始化具有互斥锁的I2C对象 */
 	FRToSI2C2.FRToSInit();
 
-    // Init all communication staff, include USB-CDC/VCP/UART/CAN etc.
+    /* 初始化一些通信，USB-CDC/VCP/WIFI等 */
     InitCommunication();
 
-    const osThreadAttr_t ledTask_attributes = {
-        .name = "ledTask",
-        .stack_size = ledTaskStackSize,
-        .priority = (osPriority_t) osPriorityNormal,
-    };
-    ledTaskHandle = osThreadNew(ThreadLedUpdate, nullptr, &ledTask_attributes);
+    /* 初始化LED时间片任务 */
+    ledUpdateInit();
 
+    /* 初始化电源管理芯片 */
+	charging_driver_probe();
+
+	/* 初始化电量计芯片 */
     cw_bat_init();
 
-    /* INA_VREF = 0V */
-	HAL_DAC_SetValue(&hdac1, DAC_CHANNEL_1, DAC_ALIGN_12B_R, 0);
-	HAL_DAC_Start(&hdac1, DAC_CHANNEL_1);
 
-    /* VLDO 输出5.00V */
-	HAL_DAC_SetValue(&hdac1, DAC_CHANNEL_2, DAC_ALIGN_12B_R, 751);
-	HAL_DAC_Start(&hdac1, DAC_CHANNEL_2);
-
-	bsp_adc2Init();
-
+	/* 初始化协议帧处理器，务必放在ADC之前 */
 	frame_processor_init();
-	bsp_auto_sw_init();
 
+    /* 初始化测量电路的外设、外围电路 */
+    bsp_smuEnablePowerChips(true);                                /* 打开测量电路的电源 */
+	HAL_DAC_SetValue(&hdac1, DAC_CHANNEL_1, DAC_ALIGN_12B_R, 0);   /* 设置仪表放大器的VREF引脚电压为0V */
+	HAL_DAC_Start(&hdac1, DAC_CHANNEL_1);
+	HAL_DAC_SetValue(&hdac1, DAC_CHANNEL_2, DAC_ALIGN_12B_R, 2007); /* VLDO 输出3.30V */
+	HAL_DAC_Start(&hdac1, DAC_CHANNEL_2);
+	bsp_adc2Init();
 	bsp_adc1Init();
 	bsp_adc3Init();
-
+	bsp_auto_sw_init();
 	bsp_logicInit();
 }

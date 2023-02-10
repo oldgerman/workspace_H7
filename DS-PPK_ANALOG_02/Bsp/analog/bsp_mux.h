@@ -1,8 +1,8 @@
 /**
   ******************************************************************************
-  * @file        bsp_logic.h
+  * @file        bsp_mux.h
   * @author      OldGerman
-  * @created on  Feb 9, 2023
+  * @created on  Jan 31, 2023
   * @brief       
   ******************************************************************************
   * @attention
@@ -25,8 +25,8 @@
   */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef BSP_LOGIC_H_
-#define BSP_LOGIC_H_
+#ifndef BSP_MUX_H_
+#define BSP_MUX_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -34,25 +34,28 @@ extern "C" {
 
 /* Includes ------------------------------------------------------------------*/
 /* Exported types ------------------------------------------------------------*/
+typedef enum {
+	/* FUN			  		CHx */
+	MUX_FUN_CAL_RES_500mR 	= 6,
+	MUX_FUN_CAL_RES_50R 	= 1,
+	MUX_FUN_CAL_RES_500R 	= 0,
+	MUX_FUN_CAL_RES_5KR 	= 3,
+	MUX_FUN_CAL_RES_50KR 	= 4,
+	MUX_FUN_CAL_RES_500KR 	= 7,
+	MUX_FUN_DPDT_7222_S 	= 2,
+	MUX_FUN_NC 				= 5,
+}mux_fun_t;
+
 /* Exported define -----------------------------------------------------------*/
-#define LOGIC_FB_R1_KR   330.0f  // 330K
-#define LOGIC_FB_R2_KR   40.2f   // 40.2K
-#define LOGIC_FB_R3_KR   215.0f  // 215K
-#define LOGIC_FB_VFB_mV  500.0f  // 500mV
-
-#define LOGIC_LEVEL_HIGH_MAX_mV 5000.0f // 逻辑电平高上限 5V TTL, CMOS
-#define LOGIC_LEVEL_HIGH_MIN_mV 1800.0f // 逻辑电平高下限 1.8V CMOS
-
 /* Exported macro ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
 /* Exported variables --------------------------------------------------------*/
 /* Exported functions --------------------------------------------------------*/
-void bsp_logicInit();
-void bsp_logicVoltageCal();
-uint32_t bsp_logicSetVoltageLevel(float mV, bool compensation = true);
+void bsp_muxFunSet(mux_fun_t sLinesCode);
+void bsp_muxFunTest();
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* BSP_LOGIC_H_ */
+#endif /* BSP_MUX_H_ */

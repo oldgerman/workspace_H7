@@ -1,20 +1,59 @@
-/*
- * bsp_functions.c
- *
- *  Created on: Sep 6, 2022
- *      Author: OldGerman
- */
+/**
+  ******************************************************************************
+  * @file        bsp_functions.c
+  * @author      OldGerman
+  * @created on  Sep 6, 2022
+  * @brief       
+  ******************************************************************************
+  * @attention
+  *
+  * Copyright (C) 2022 OldGerman.
+  *
+  * This program is free software: you can redistribute it and/or modify
+  * it under the terms of the GNU General Public License as published by
+  * the Free Software Foundation, either version 3 of the License, or
+  * (at your option) any later version.
+  *
+  * This program is distributed in the hope that it will be useful,
+  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  * GNU General Public License for more details.
+  *
+  * You should have received a copy of the GNU General Public License
+  * along with this program.  If not, see https://www.gnu.org/licenses/.
+  ******************************************************************************
+  */
 
+/* Includes ------------------------------------------------------------------*/
 #include "bsp.h"
 #include "bsp_functions.h"
 
-
-//返回2的N次幂
+/* Private typedef -----------------------------------------------------------*/
+/* Private define ------------------------------------------------------------*/
+/* Private macro -------------------------------------------------------------*/
+/* Exported constants --------------------------------------------------------*/
+/* Private constants ---------------------------------------------------------*/
+/* Exported variables --------------------------------------------------------*/
+/* Private variables ---------------------------------------------------------*/
+/* Private function prototypes -----------------------------------------------*/
+/* Function implementations --------------------------------------------------*/
+/**
+  * @brief  计算2的N次幂，N最多计算到31
+  * @param  Nth uint8_t 幂次数
+  * @retval uint32_t 计算结果
+  */
 uint32_t twoNthPower(uint8_t Nth){
-	return 1 << Nth;
+	if(Nth < 32){
+		return 1 << Nth;
+	}else
+		return 0xffffffff;
 }
 
-//返回某个数（2 N次幂）的N
+/**
+  * @brief  返回某个数（2 N次幂）的N
+  * @param  num 被计算数
+  * @retval uint8_t 计算的幂次
+  */
 uint8_t twoNthPowerOfNth(uint32_t num){
 	uint8_t Nth = 0;
 	for(; Nth < 32; Nth++){

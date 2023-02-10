@@ -16,15 +16,10 @@
 extern "C" {
 #endif
 
-//以下对HAL的__weak回调函数重写
-/*非阻塞模式下的回调函数：
- * 也就是说只有调用FRToI2C的非阻塞API才会调用这些回调函数，使用阻塞API是不会有这些回调函数的
-HAL_I2C_ErrorCallback();
-HAL_I2C_MasterTxCpltCallback()
-HAL_I2C_MasterRxCpltCallback()；
-HAL_I2C_MemTxCpltCallback()；
-HAL_I2C_MemRxCpltCallback()；
- */
+/**
+  * @brief 以下对HAL I2C的非阻塞模式下的__weak回调函数重写：
+  *        只有调用FRToI2C的非阻塞API才会调用这些回调函数，使用阻塞API是不会有这些回调函数的
+  */
 
 void HAL_I2C_ErrorCallback(I2C_HandleTypeDef *hi2c);
 void HAL_I2C_AbortCpltCallback(I2C_HandleTypeDef *hi2c);

@@ -1,11 +1,57 @@
+/**
+  ******************************************************************************
+  * @file        ascii_protocol.cpp
+  * @modify      OldGerman
+  * @created on  Jan 29, 2023
+  * @brief
+  ******************************************************************************
+  * @attention
+  *
+  * Copyright (c) 2016-2018 ODrive Robotics
+  *
+  * This program is free software: you can redistribute it and/or modify
+  * Permission is hereby granted, free of charge, to any person obtaining
+  * a copy of this software and associated documentation files
+  * (the "Software"), to deal in the Software without restriction,
+  * including without limitation the rights to use, copy, modify, merge,
+  * publish, distribute, sublicense, and/or sell copies of the Software,
+  * and to permit persons to whom the Software is furnished to do so,
+  * subject to the following conditions:
+  *
+  * The above copyright notice and this permission notice shall be
+  * included in all copies or substantial portions of the Software.
+  *
+  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+  * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+  * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+  * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+  * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+  * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+  */
+
+/* Includes ------------------------------------------------------------------*/
 #include "common_inc.h"
 #include "bq25601.h"
 #include "cw2015_battery.h"
 #include "bsp_analog.h"
+#include "bsp_mux.h"
+#include "bsp_smu.h"
 #include "dac.h"
 #include "bsp_sound.h"
 #include "bsp_logic.h"
+#include "frame_processor.h"
 #include <string>
+
+/* Private typedef -----------------------------------------------------------*/
+/* Private define ------------------------------------------------------------*/
+/* Private macro -------------------------------------------------------------*/
+/* Exported constants --------------------------------------------------------*/
+/* Private constants ---------------------------------------------------------*/
+/* Exported variables --------------------------------------------------------*/
+/* Private variables ---------------------------------------------------------*/
+/* Private function prototypes -----------------------------------------------*/
+/* Function implementations --------------------------------------------------*/
 using namespace std;
 
 void RespondIsrStackUsageInWords(StreamSink &output);
@@ -62,19 +108,19 @@ void OnAsciiCmd(const char* _cmd, size_t _len, StreamSink &_responseChannel)
     {
         std::string s(_cmd);
         if (s.find("TURN_ON_SMU") != std::string::npos){
-        	bsp_smu_set_en(true);
+        	bsp_smuEnablePowerChips(true);
             Respond(_responseChannel, false, "Turn on SMU");
         }
         else if (s.find("TURN_OFF_SMU") != std::string::npos){
-        	bsp_smu_set_en(false);
+        	bsp_smuEnablePowerChips(false);
             Respond(_responseChannel, false, "Turn off SMU");
         }
         else if (s.find("TURN_ON_VDOUT") != std::string::npos){
-        	bsp_vdout_fet_en(true);
+        	bsp_smuEnableVoutMosfet(true);
             Respond(_responseChannel, false, "Turn on VDOUT-FET");
         }
         else if (s.find("TURN_OFF_VDOUT") != std::string::npos){
-        	bsp_vdout_fet_en(false);
+        	bsp_smuEnableVoutMosfet(false);
             Respond(_responseChannel, false, "Turn off VDOUT-FET");
         }
 
@@ -107,6 +153,12 @@ void OnAsciiCmd(const char* _cmd, size_t _len, StreamSink &_responseChannel)
 					res_val_sample.rs_1mA_10mA,
 					res_val_sample.rs_10mA_100mA,
 					res_val_sample.rs_100mA_2A);
+        }
+        else if (s.find("FRAME_PRINT=") != std::string::npos){
+            int Data;
+            sscanf(&_cmd[14], "%u", &Data);
+            frame_processor_debug_print = (bool)Data;
+            Respond(_responseChannel, false, "Set frame_processor_debug_print = %u", frame_processor_debug_print);
         }
     }
     else if (_cmd[0] == 'D')
@@ -167,8 +219,8 @@ void OnAsciiCmd(const char* _cmd, size_t _len, StreamSink &_responseChannel)
          else {
         	 sLinesCode = MUX_FUN_NC;
          }
-    	mux_FunSet(sLinesCode);
-        Respond(_responseChannel, false, "Set mux sLinesCode: %d", sLinesCode);
+         bsp_muxFunSet(sLinesCode);
+         Respond(_responseChannel, false, "Set mux sLinesCode: %d", sLinesCode);
 
     }
     else if (_cmd[0] == 'T')
@@ -189,7 +241,13 @@ void OnAsciiCmd(const char* _cmd, size_t _len, StreamSink &_responseChannel)
         std::string s(_cmd);
         if (s.find("LOGIC_SET_mV+") != std::string::npos){
         	int Data;
+#if 1
+            float value;
+            argNum = sscanf(&_cmd[13], "%f", &value);
+            Data = value * 1000;
+#else
         	sscanf(&_cmd[13], "%u", &Data);
+#endif
         	bsp_logicSetVoltageLevel(Data);
         	Respond(_responseChannel, false, "Set LOGIC Voltage: %umV", Data);
         }

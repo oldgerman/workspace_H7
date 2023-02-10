@@ -1,13 +1,43 @@
-/*
- * bsp_mux.cpp
- *
- *  Created on: Jan 31, 2023
- *      Author: OldGerman
- */
+/**
+  ******************************************************************************
+  * @file        bsp_mux.cpp
+  * @author      OldGerman
+  * @created on  Jan 31, 2023
+  * @brief       
+  ******************************************************************************
+  * @attention
+  *
+  * Copyright (C) 2022 OldGerman.
+  *
+  * This program is free software: you can redistribute it and/or modify
+  * it under the terms of the GNU General Public License as published by
+  * the Free Software Foundation, either version 3 of the License, or
+  * (at your option) any later version.
+  *
+  * This program is distributed in the hope that it will be useful,
+  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  * GNU General Public License for more details.
+  *
+  * You should have received a copy of the GNU General Public License
+  * along with this program.  If not, see https://www.gnu.org/licenses/.
+  ******************************************************************************
+  */
 
-#include "bsp_analog.h"
+/* Includes ------------------------------------------------------------------*/
+#include "bsp_mux.h"
+#include "common_inc.h"
 
-void mux_FunSet(mux_fun_t sLinesCode)
+/* Private typedef -----------------------------------------------------------*/
+/* Private define ------------------------------------------------------------*/
+/* Private macro -------------------------------------------------------------*/
+/* Exported constants --------------------------------------------------------*/
+/* Private constants ---------------------------------------------------------*/
+/* Exported variables --------------------------------------------------------*/
+/* Private variables ---------------------------------------------------------*/
+/* Private function prototypes -----------------------------------------------*/
+/* Function implementations --------------------------------------------------*/
+void bsp_muxFunSet(mux_fun_t sLinesCode)
 {
 	/**
 	 * CBA	CHx
@@ -27,7 +57,7 @@ void mux_FunSet(mux_fun_t sLinesCode)
 	}
 }
 
-void mux_FunTest()
+void bsp_muxFunTest()
 {
 	static uint8_t cnt_mux = 0;
 	static mux_fun_t sLinesCode = MUX_FUN_NC;
@@ -59,7 +89,7 @@ void mux_FunTest()
 		default:
 			break;
 	}
-	mux_FunSet(sLinesCode);
+	bsp_muxFunSet(sLinesCode);
 	++cnt_mux;
 	cnt_mux = cnt_mux % 8;
 }

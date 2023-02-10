@@ -10,6 +10,7 @@
 #include "adc.h"
 #include "lptim.h"
 #include "bsp_lptim_pwm.h"
+#include "bsp_timestamp.h"
 
 const uint8_t adc3_chx_num_regular = 6;		//adc3规则通道数
 const uint8_t adc3_chx_num_inject = 0;		//adc3注入通道数
@@ -33,7 +34,6 @@ volatile uint32_t adc_callback_cnt = 0;
   * 将ADC1 和ADC3 的DMA缓冲区都设置为 2000 点，这样每秒传输完成和半传输完成中断的次数加起来就是 100次
   */
 
-const uint16_t adc3_data_num = adc1_adc3_buffer_size;	// 2K点缓冲区
 /* 方便Cache类的API操作，做32字节对齐 */
 ALIGN_32BYTES(__attribute__((section (".RAM_D2_Array"))) uint16_t adc3_data[adc3_data_num]);
 
@@ -176,9 +176,5 @@ void bsp_adc3GetValues()
 #endif
 	adc3_value = (adc3_value - 32767) / 32767 * vref * 2; // 单位V, VDOUT
 	printf("[VDOUT] %.6f\r\n", adc3_value);
-
-	static uint32_t adc_callback_cnt_old = 0;
-	printf("[adc_callback_cnt] %.lu times 1s\r\n", adc_callback_cnt - adc_callback_cnt_old);
-	adc_callback_cnt_old = adc_callback_cnt;
 }
 
