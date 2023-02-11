@@ -120,6 +120,7 @@ int main(void)
   MX_TIM2_Init();
   MX_TIM15_Init();
   MX_TIM17_Init();
+  MX_TIM7_Init();
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */
@@ -233,7 +234,17 @@ void PeriphCommonClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
-static uint8_t tim17_transmissionReceived = 0;
+volatile uint8_t tim17_transmissionReceived = 0;
+volatile uint32_t ulHighFrequencyTimerTicks = 0UL;  /* FreeRTOS variables for statistical CPU utilization */
+
+void configureTimerForRunTimeStats(void) {
+	ulHighFrequencyTimerTicks = 0UL;
+}
+
+unsigned long getRunTimeCounterValue(void) {
+	return ulHighFrequencyTimerTicks;
+}
+
 /* USER CODE END 4 */
 
 /* MPU Configuration */
@@ -329,14 +340,15 @@ void MPU_Config(void)
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
   /* USER CODE BEGIN Callback 0 */
-
+	if(htim==&htim7) {
+		ulHighFrequencyTimerTicks++;
+	}
   /* USER CODE END Callback 0 */
   if (htim->Instance == TIM6) {
     HAL_IncTick();
   }
   /* USER CODE BEGIN Callback 1 */
-	if(htim==&htim17) // check source
-	{
+	if(htim==&htim17) {
 		tim17_transmissionReceived = !tim17_transmissionReceived;
 	}
   /* USER CODE END Callback 1 */

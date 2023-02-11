@@ -107,13 +107,16 @@ static void frameProcessorTask(void* argument)
 			   的值总是上一次缓冲区的最后一个换挡时间戳对应的量程  */
     		if(sw_time > adc_buf_proc_time){
     	   		/* 由于ADC 采样率和时间戳定时器的 CNT寄存器自增频率一样，所以时间戳相减就等于计算这一段ADC缓冲区的下标 */
-    	    		adc_data_proc_end = sw_time - adc_buf_begin_time;
-
-    			for(uint32_t j = adc_data_proc_begin; j < adc_data_proc_end; j++){
-    				frame[j].format_A.adc1 = adc1_data[j +  bs * adc1_adc3_buffer_size / 2] >> 4; //16bit adc1 数据需要除以 16 才是 12bit
-    				frame[j].format_A.adc3 = adc3_data[j +  bs * adc1_adc3_buffer_size / 2] >> 8; //16bit adc3 数据需要除以 256 才是 8bit
-    				frame[j].format_A.swx = sw_range.swx;	//使用前一次处理的 sw_range
-    			}
+    	    	adc_data_proc_end = sw_time - adc_buf_begin_time;
+    	    	/* 检查adc_data_proc_end 范围，防止越界访问 */
+    	        if(adc_data_proc_end < adc1_adc3_buffer_size / 2) {
+    	        	/* 合成数据帧 */
+					for(uint32_t j = adc_data_proc_begin; j < adc_data_proc_end; j++){
+						frame[j].format_A.adc1 = adc1_data[j +  bs * adc1_adc3_buffer_size / 2] >> 4; //16bit adc1 数据需要除以 16 才是 12bit
+						frame[j].format_A.adc3 = adc3_data[j +  bs * adc1_adc3_buffer_size / 2] >> 8; //16bit adc3 数据需要除以 256 才是 8bit
+						frame[j].format_A.swx = sw_range.swx;	//使用前一次处理的 sw_range
+					}
+    	        }
     			//更新处理的adc缓冲区数据开始的下标
     			adc_data_proc_begin = adc_data_proc_end;
     		}
@@ -127,6 +130,7 @@ static void frameProcessorTask(void* argument)
     	// 处理未处理完的缓冲区数据
     	if(adc_data_proc_end < adc1_adc3_buffer_size / 2)
     	{
+        	/* 合成数据帧 */
 			for(uint32_t j = adc_data_proc_end; j < adc1_adc3_buffer_size / 2; j++){
 				frame[j].format_A.adc1 = adc1_data[j +  bs * adc1_adc3_buffer_size / 2] >> 4; //16bit adc1 数据需要除以 16 才是 12bit
 				frame[j].format_A.adc3 = adc3_data[j +  bs * adc1_adc3_buffer_size / 2] >> 8; //16bit adc3 数据需要除以 256 才是 8bit

@@ -37,7 +37,7 @@
 #include "bsp_logic.h"
 #include "bsp_auto_sw.h"
 #include "bsp_smu.h"
-
+#include "tim.h"
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
@@ -146,4 +146,7 @@ void Main()
 	bsp_adc3Init();
 	bsp_auto_sw_init();
 	bsp_logicInit();
+
+	/* 打开统计CPU利用率的定时器 */
+	HAL_TIM_Base_Start_IT(&htim7);
 }

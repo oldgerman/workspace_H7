@@ -265,6 +265,24 @@ void OnAsciiCmd(const char* _cmd, size_t _len, StreamSink &_responseChannel)
         	RespondTaskStackUsageInWords(_responseChannel, usbIrqTaskHandle, 	UsbIrqTaskStackSize / 4);
         	RespondTaskStackUsageInWords(_responseChannel, ledTaskHandle, 		ledTaskStackSize / 4);
         }
+        else if (s.find("CPU_INFO") != std::string::npos)
+        {
+        	static uint8_t CPU_RunInfo[500];
+
+        	memset(CPU_RunInfo,0,500); //信息缓冲区清零
+        	vTaskList((char *)&CPU_RunInfo); //获取任务运行时间信息
+        	printf("---------------------------------------------\r\n");
+        	printf("任务名 任务状态 优先级 剩余栈 任务序号\r\n");
+        	printf("%s", CPU_RunInfo);
+        	printf("---------------------------------------------\r\n");
+
+        	memset(CPU_RunInfo,0,500);
+        	vTaskGetRunTimeStats((char *)&CPU_RunInfo);
+        	printf("任务名 运行计数 使用率\r\n");
+        	printf("%s", CPU_RunInfo);
+        	printf("---------------------------------------------\r\n\n");
+        }
+
     }
 
     /*---------------------------- ↑ Add Your CMDs Here ↑ -----------------------------*/

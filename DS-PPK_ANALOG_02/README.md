@@ -96,3 +96,105 @@ stm32 h7 的定时器分为 16bit 或 32bit，若使用 16bit 定时器，那么
 使用线性校准修正 pwm dac 控制DCDC的输出电压
 
 ![线性校准修正pwm_dac控制DCDC的输出电压](Images/线性校准修正pwm_dac控制DCDC的输出电压.png)
+
+## 测试：数字滤波器
+
+快速换挡时可以偶尔可见很明显的尖峰，哪怕打印频率只有10KHz
+
+![](Images/快速换挡时的尖峰.png)
+
+使用 DSP 库的 FIR 低通滤波器 进行实时滤波
+
+待实现
+
+## 测试：CPU 占用率
+
+> 发送 $CPU_INFO 即可
+
+### 帧处理器只处理数据，每秒不打印10K次
+
+H750在睡大觉
+
+```c
+[11:56:43.048] ---------------------------------------------
+[11:56:43.048] 任务名 运行计数 使用率
+[11:56:43.048] UsbServerTask                  	9		<1%
+[11:56:43.048] IDLE                           	1275023		98%
+[11:56:43.048] cwBatTask                      	596		<1%
+[11:56:43.048] commTask                       	0		<1%
+[11:56:43.048] ledTask                        	1944		<1%
+[11:56:43.049] frameProcessorTask             	19455		1%
+[11:56:43.049] usbIrqTask                     	0		<1%
+[11:56:43.049] Tmr Svc                        	0		<1%
+```
+
+### 帧处理器处理数据，并且每秒打印10K次
+
+运行几分肿后统计如下：CPU利用率一下就飙升上去了，所以需要做用大缓冲区通信，一次发个2~4KB，降低通信次数
+
+```c
+[12:11:50.104] 任务名 运行计数 使用率
+[12:11:50.104] UsbServerTask                  	10		<1%
+[12:11:50.104] IDLE                           	6108501		72%
+[12:11:50.104] cwBatTask                      	1126		<1%
+[12:11:50.104] commTask                       	1		<1%
+[12:11:50.104] ledTask                        	12692		<1%
+[12:11:50.104] frameProcessorTask             	2273472		27%
+[12:11:50.104] usbIrqTask                     	0		<1%
+[12:11:50.105] Tmr Svc                        	0		<1%
+[12:11:50.105] ---------------------------------------------
+```
+
+待补充
+
+## BUG
+
+> 参考：[实战--根据hard fault打印的PC和LR寄存器信息分析代码异常地址](https://blog.csdn.net/fhqlongteng/article/details/112954059)
+
+断电后上电第一次debug时进入hardfault，程序发生异常的点是PC=0x080忘了， 返回寄存器LR= 0x080忘了，打开CubeIDE的故障分析器，分别双击PC和LR的地址，可定位到一下运行位置：
+
+pc指针在
+
+```c
+static void frameProcessorTask(void* argument)
+{
+  ...
+  for (;;)
+  {
+    ...
+    /* 合成数据帧 */
+    for(uint32_t j = adc_data_proc_begin; j < adc_data_proc_end; j++){
+      ...//进hardfault中断前最后一次运行的地方
+    }
+...
+```
+
+lr在 return pdPASS，未发现会引起错误的信息
+
+```c
+BaseType_t xQueueSemaphoreTake( QueueHandle_t xQueue, TickType_t xTicksToWait )
+{
+  ...
+			/* Is there data in the queue now?  To be running the calling task
+			must be the highest priority task wanting to access the queue. */
+			if( uxSemaphoreCount > ( UBaseType_t ) 0 )
+			{
+                ...
+				taskEXIT_CRITICAL();
+				return pdPASS;				// lr
+			}
+  ...
+```
+
+解决方法，frameProcessorTask 中合成数据帧之前加入大小检查：
+
+```c
+/* 检查 adc_data_proc_end 范围，防止越界访问 */
+if(adc_data_proc_end < adc1_adc3_buffer_size / 2) {
+  /* 合成数据帧 */
+  for(uint32_t j = adc_data_proc_begin; j < adc_data_proc_end; j++){
+  ...	
+  }
+}
+```
+

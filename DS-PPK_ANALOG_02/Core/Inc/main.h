@@ -95,6 +95,7 @@ void Error_Handler(void);
 #define MUX_C_GPIO_Port GPIOE
 #define VOUT_EN_Pin GPIO_PIN_1
 #define VOUT_EN_GPIO_Port GPIOE
+
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */
