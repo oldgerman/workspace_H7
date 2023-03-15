@@ -47,17 +47,23 @@ armfly 论坛
 
   > 注意H7的SDMMC外设内嵌 IDMA，无需配置通用DMA
   
-- hhdjz13813 对工业级SD卡的评测
+- hhdjz13813
 
   > [读取TF卡S.M.A.R.T.信息第二季 12款工业级TF卡评测](https://www.mydigit.cn/thread-349896-1-1.html)
   >
   > [分享一下收集的十多款TF卡的跑分数据以及读取TF卡S.M.A.R.T.信息的方法](https://www.mydigit.cn/thread-335366-1-1.html)
 
-- farseerfc：
+- farseerfc
 
   > [上篇：柱面-磁头-扇区寻址的一些旧事](https://farseerfc.me/zhs/history-of-chs-addressing.html)
   >
   > [下篇：SSD 就是大U盘？聊聊闪存类存储的转换层](https://farseerfc.me/zhs/flash-storage-ftl-layer.html)
+
+- 一位不愿意透漏姓氏的底层搬砖人员
+
+  > [FAT32 文件系统在磁盘上的结构](https://blog.csdn.net/weixin_38878510/article/details/109345127)
+  >
+  > [FAT 文件系统代码分析--文件系统挂载篇](https://blog.csdn.net/weixin_38878510/article/details/109830103)
 
 ## CubeMX的配置要点
 
@@ -141,9 +147,13 @@ CODE_PAGE默认是Latin，可修改为简体中文，可以使能长文件名支
 
 ![](Images/CubeMX_FATFS开启互斥锁.png)
 
-对整个工程搜索USE_MUTEX，仅在 `Third_Party\FatFs\src\option\syscall.c`内重定向fatfs相关函数中用其预处理 CMSIS OS 互斥锁API：并且根据上图CubeMX，支持 CMSIS-RTOS V2的
+对整个工程搜索USE_MUTEX，仅在 `Middlewares\Third_Party\FatFs\src\option\syscall.c`内相关函数中用其预处理 CMSIS OS 互斥锁API：并且根据上图CubeMX，支持 CMSIS-RTOS V2的
 
 ![](Images/CubeMX_FATFS开启互斥锁的应用API.png)
+
+关于这个文件内函数的作用，在[UM1721](https://www.st.com/resource/zh/user_manual/um1721-developing-applications-on-stm32cube-with-fatfs-stmicroelectronics.pdf)的可重入性小节中有介绍：
+
+![](Images/UM1721：FATFS可重入性.png)
 
 裸机环境下，ST的 [STM32 – Creating a File System on a SD card](https://www.youtube.com/watch?v=I9KDN1o6924) 教程里，加大系统堆栈为 0x400 和 0x800
 
