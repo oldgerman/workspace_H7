@@ -2,7 +2,7 @@
 
 ## 关于
 
-本工程实现与 [pc-nrfconnect-ppk](https://github.com/NordicSemiconductor/pc-nrfconnect-ppk) 的USB通信协议，支持基础命令和100Ksps数据传输
+本工程实现与 [pc-nrfconnect-ppk](https://github.com/NordicSemiconductor/pc-nrfconnect-ppk) 的USB通信协议，支持部分基础命令，支持采样数据以 100Ksps 32bit协议帧 传输
 
 ## 支持的命令
 
@@ -20,7 +20,7 @@
 
 逻辑通道3和4采样50KHz正弦波和10KHz占空比20%方波
 
-![逻辑通道3和4_采样50KHz正弦波和10KHz占空比20%方波](Images/逻辑通道3和4_采样50KHz正弦波和10KHz占空比20%方波.png)
+![逻辑通道3和4_采样50KHz正弦波和10KHz占空比20方波](Images/逻辑通道3和4_采样50KHz正弦波和10KHz占空比20方波.png)
 
 逻辑通道4采样1Hz F411开发板LED引脚信号，并以100KHz采样被测开发板电流
 
