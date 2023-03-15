@@ -2,9 +2,16 @@
 
 ## 关于
 
-在H750VBT6_ST_USB_CDC基础上 添加安富莱V7教程 第88章的 的相关例程： **V7-025_FatFS文件系统例子（SD卡 V1.2）**  代码 中的示例程序 `demo_sd_fatfs.c`文件到 `H750VBT6_chapter_88\UserApp` 路径下，少许修改后进行测试
+在某个H750VBT6_ST_USB_CDC工程（带有fibre通信框架并处理好print线程安全）的基础上，添加安富莱V7教程 《第88章 STM32H7 的 SDMMC总线应用之 SD 卡移植 FatFs 文件系统》 的相关例程： **V7-025_FatFS文件系统例子（SD卡 V1.2）**  代码 中的示例程序 `demo_sd_fatfs.c`文件到 `H750VBT6_chapter_88\UserApp` 路径下，少许修改后进行测试
 
 ## 参考资料
+
+ChaN老师的博客
+
+- [FatFs - Generic FAT Filesystem Module](http://elm-chan.org/fsw/ff/00index_e.html)（此页面相当于FatFs官方文档）
+
+  > FatFs has being developped as a personal project of the author, ChaN （FatFs 是作为作者 ChaN 的个人项目开发的）
+  > 此页面 Resources 部分有 *Getting Started: [FatFs Application Note](http://elm-chan.org/fsw/ff/doc/appnote.html)*
 
 ST官方
 
@@ -75,7 +82,7 @@ MPU_InitStruct.IsBufferable = MPU_ACCESS_BUFFERABLE;
 
 如何在 NOT_SHAREABLE + CACHEABLE  + BUFFERABLE的情况下正常使用 FatFS这个问题比较复杂当前不准备解决
 
-FatFS的相关变量会默认使用 AXI SRAM 512KB 的内存区，务必在 MPU 配置内 关禁用此区的  SHARE、BUFFER、CACHE
+FatFS的相关变量会默认使用 AXI SRAM 512KB 的内存区，务必在 MPU 配置内禁用此区的  SHARE、BUFFER、CACHE
 
 ![](Images/CubeMX_MPU_AXI_SRAM配置.png)
 
@@ -110,7 +117,19 @@ CODE_PAGE默认是Latin，可修改为简体中文，可以使能长文件名支
 
 ![](Images/CubeMX_FATFS配置.png)
 
+默认不支持exFAT，会无法识别到有效的分区，可以在 CubeMX 中 FATFS使能FS_EXFAT以支持 64G及以上 SD卡格式化的 exFAT：
+
+![](Images/CubeMX_FATFS使能FS_EXFAT配置.png)
+
 ### FreeRTOS
+
+启用互斥锁（可选，如果存在多个任务访问FatFs读写就需要，本工程由于只有一个任务访问SD卡就不需要）
+
+![](Images/CubeMX_FATFS开启互斥锁.png)
+
+对整个工程搜索USE_MUTEX，仅在 `Third_Party\FatFs\src\option\syscall.c`内重定向fatfs相关函数中用其预处理 CMSIS OS 互斥锁API：并且根据上图CubeMX，支持 CMSIS-RTOS V2的
+
+![](Images/CubeMX_FATFS开启互斥锁的应用API.png)
 
 裸机环境下，ST的 [STM32 – Creating a File System on a SD card](https://www.youtube.com/watch?v=I9KDN1o6924) 教程里，加大系统堆栈为 0x400 和 0x800
 
@@ -162,9 +181,15 @@ void OnAsciiCmd(const char* _cmd, size_t _len, StreamSink &_responseChannel)
 }
 ```
 
-## 考古
+## CubeMX配置FATFS的RTOS多任务的支持问题
 
-此头文件位于`V7-025_FatFS文件系统例子（SD卡 V1.2）\Libraries\FatFs\src\drivers`，抬头版权声明如下，是 ST 的 MCD 团队在 2017年写的代码：
+### 先说结论
+
+当前我使用CubeMX v6.6 + **STM32CubeH7 V1.11.0 / 04-Nov-2022**   的包，ST 的团队已经处理好了FATFS + IDMA + CMSIS OS + 多任务互斥访问 FatFs API，完全可用CubeMX自动生成的代码
+
+### 考古
+
+安富莱 2018年的 **V7-025_FatFS文件系统例子（SD卡 V1.2）**中的  sd_diskio_dma_template.h 头文件位于`V7-025_FatFS文件系统例子（SD卡 V1.2）\Libraries\FatFs\src\drivers`，抬头版权声明如下，是 ST 的 MCD 团队在 2017年写的代码：
 
 ```c
   /******************************************************************************
@@ -191,7 +216,9 @@ void OnAsciiCmd(const char* _cmd, size_t _len, StreamSink &_responseChannel)
 
 ![](Images/sd_diskio_dma.c的SD_read部分源码.png)
 
-现在是 2023年！我使用 CubeIDE 1.11.2版本，其内嵌的 CubeMX 6.6 版本使用 STM32CubeH7 1.11 的包，在 CubeMX内配置好后一键生成的代码文件路径 `H750VBT6_chapter_88\FATFS\` 有以下文件：
+### 现在是 2023年！
+
+本工程我使用 CubeIDE 1.11.2版本，其内嵌的 CubeMX 6.6 版本使用 STM32CubeH7 V1.11.0 的包，在 CubeMX内配置好后一键生成的代码文件路径 `H750VBT6_chapter_88\FATFS\` 有以下文件：
 
 ```
   FATFS
@@ -208,11 +235,11 @@ void OnAsciiCmd(const char* _cmd, size_t _len, StreamSink &_responseChannel)
 		`-- sd_diskio.h
 ```
 
-其中 `sd_diskio.c`的抬头版权的声明是 2023年，该文件操作SD卡的API写法和CMSIS OS紧密结合，并且调用了DMA API，推测 ST 的团队已经处理好了FATFS + IDMA + CMSIS OS + 多任务的问题
+其中 `sd_diskio.c`的抬头版权的声明是 2023年，该文件操作SD卡的API写法和CMSIS OS紧密结合，并且调用了DMA API，再加上上文中 CubeMX 内配置 FatFs 可开启 支持CMSIS RTOS v2 的互斥锁，推测 **ST 的团队已经处理好了FATFS + IDMA + CMSIS OS + 多任务互斥访问 FatFs API**
 
 ![](Images/CubeMX自动生成的FATFS文件夹下的sd_disk.c文件的SD_read部分源码.png)
 
-结论：看安富莱的教请程务必注意考古！
+看安富莱的教程，请务必注意考古！
 
 ## 测试：都是在Debug模式编译测试的
 
@@ -290,6 +317,27 @@ SDMMC 时钟源200MHz，分频 4，SDMMC 时钟50MHz
 ## 测试：闪迪 64G Ulra
 
 exFAT 报错无法被 H7 发现 有效的分区，使用 DiskGenius格式化为FAT32后识别：
+
+![将闪迪64G_Ultra格式化为FAT32](Images/将闪迪64G_Ultra格式化为FAT32.png)
+
+原因在CubeMX 配置我没有开启 exFAT支持：导致生成的的 ffconf.h 路径: FATFS/Target/ffconf.h 中 _FS_EXFAT 未使能
+
+```c
+#define _FS_EXFAT	0
+/* This option switches support of exFAT file system. (0:Disable or 1:Enable)
+/  When enable exFAT, also LFN needs to be enabled. (_USE_LFN >= 1)
+/  Note that enabling exFAT discards C89 compatibility. */
+```
+
+ff.c 中有大量依赖 _FS_EXFAT 预处理的代码：
+
+![](Images/ff.c中某个预处理器的_FS_EXFAT.png)
+
+可以在 CubeMX 中 FATFS使能FS_EXFAT：
+
+![](Images/CubeMX_FATFS使能FS_EXFAT配置.png)
+
+exFAT： 是微软为取代FAT32 而创建的新档案系统。 FAT32 和 exFAT 的主要差别在于exFAT 支持单个大于 4GB 文件
 
 ### 1:
 

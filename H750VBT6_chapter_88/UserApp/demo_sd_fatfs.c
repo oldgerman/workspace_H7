@@ -38,21 +38,29 @@
 
 /* Private macro -------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
-extern SD_HandleTypeDef hsd1;
+/* HAL库 SD_HandleTypeDef 句柄*/
+extern SD_HandleTypeDef hsd1; // 仅用于在 ViewRootDir() 中获取卡速度信息
 
 /* Private constants ---------------------------------------------------------*/
 /* Exported variables --------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
+/* FATFS文件系统对象 */
 FATFS fs;
+/* 文件对象 */
 FIL file;
-
-ALIGN_32BYTES(char FsReadBuf[1024]);
-ALIGN_32BYTES(char FsWriteBuf[1024]) = {"FatFS Write Demo \r\n www.armfly.com \r\n"};
-ALIGN_32BYTES(uint8_t g_TestBuf[BUF_SIZE]);
-
+/* 文件夹对象 */
 DIR DirInf;
+/* 文件信息对象 */
 FILINFO FileInf;
-char DiskPath[4]; /* SD卡逻辑驱动路径，比盘符0，就是"0:/" */
+/* SD卡逻辑驱动路径，比盘符0，就是"0:/" */
+char DiskPath[4];
+
+/* FatFs的读取临时缓冲区 */
+ALIGN_32BYTES(char FsReadBuf[1024]);
+/* FatFs的写入临时缓冲区 */
+ALIGN_32BYTES(char FsWriteBuf[1024]) = {"FatFS Write Demo \r\n www.armfly.com \r\n"};
+/* 测试的读写临时缓冲区 */
+ALIGN_32BYTES(uint8_t g_TestBuf[BUF_SIZE]);
 
 /* Private function prototypes -----------------------------------------------*/
 static void DispMenu(void);
@@ -266,7 +274,8 @@ static void CreateNewFile(void)
 
 	/* 打开文件 */
 	sprintf(path, "%sarmfly.txt", DiskPath);
-	result = f_open(&file, path, FA_CREATE_ALWAYS | FA_WRITE);
+	result = f_open(&file, path,
+			FA_CREATE_ALWAYS | FA_WRITE); //以创建+写入的方式访问打开的文件，若不存在此文件就创建，若存在就不再次创建
 	if (result == FR_OK)
 	{
 		printf("armfly.txt 文件打开成功\r\n");
@@ -277,7 +286,11 @@ static void CreateNewFile(void)
 	}
 
 	/* 写一串数据 */
-	result = f_write(&file, FsWriteBuf, strlen(FsWriteBuf), &bw);
+	result = f_write(&file,
+			FsWriteBuf,
+			strlen(FsWriteBuf),
+			&bw);
+
 	if (result == FR_OK)
 	{
 		printf("armfly.txt 文件写入成功\r\n");
