@@ -143,13 +143,15 @@ CODE_PAGE默认是Latin，可修改为简体中文，可以使能长文件名支
 
 ### FreeRTOS
 
-启用互斥锁（可选，如果存在多个任务访问FatFs读写就需要，本工程由于只有一个任务访问SD卡就不需要）
+启用互斥锁（可选，如果存在多个优先级不同的任务使用FatFs就需要，本工程只有一个任务访问SD卡就不需要）
 
 ![](Images/CubeMX_FATFS开启互斥锁.png)
 
 对整个工程搜索USE_MUTEX，仅在 `Middlewares\Third_Party\FatFs\src\option\syscall.c`内相关函数中用其预处理 CMSIS OS 互斥锁API：并且根据上图CubeMX，支持 CMSIS-RTOS V2的
 
 ![](Images/CubeMX_FATFS开启互斥锁的应用API.png)
+
+可以看出默认使用二值信号量，开启USE_MUTEX后改用互斥锁，互斥锁相比信号量的区别在 安富莱V5 FreeRTOS教程的 23.1.2 优先级翻转问题中有讲解
 
 关于这个文件内函数的作用，在[UM1721](https://www.st.com/resource/zh/user_manual/um1721-developing-applications-on-stm32cube-with-fatfs-stmicroelectronics.pdf)的可重入性小节中有介绍：
 
