@@ -65,12 +65,12 @@ typedef struct
 	/* 双缓冲区：记录时间戳 */
 	uint32_t dma_adc1[2];		//在ADC1 DMA半传输和传输完成中断回调函数中记录
 	uint32_t dma_logic[2];		//在LOGIC GPIO DMA半传输和传输完成中断回调函数中记录
-
-	/* 单个缓冲：记录时间戳 */
-	uint32_t trig_adc1;			//在ADC1 模拟看门狗中断回调函数中记录
-	uint32_t trig_adc3;			//在ADC3 模拟看门狗中断回调函数中记录
-	uint32_t trig_logic;		//在LOGIC GPIO上升或下降沿的外部中断回调函数中记录
 }timestamp_t;
+
+/* 单个缓冲：记录时间戳 */
+//	uint32_t trig_adc1;			//在ADC1 模拟看门狗中断回调函数中记录
+//	uint32_t trig_adc3;			//在ADC3 模拟看门狗中断回调函数中记录
+//	uint32_t trig_logic;		//在LOGIC GPIO上升或下降沿的外部中断回调函数中记录
 
 /* Exported define -----------------------------------------------------------*/
 /* Exported macro ------------------------------------------------------------*/
