@@ -1,0 +1,8 @@
+使用 HelloWord-Dynamic-fw 项目内使用的版本
+https://github.com/peng-zhihui/HelloWord-Keyboard/blob/7539b2bae5dafa276aec5ef0e9ee46453c959546/2.Firmware/HelloWord-Dynamic-fw/BSP/fibre
+https://github.com/peng-zhihui/HelloWord-Keyboard/blob/7539b2bae5dafa276aec5ef0e9ee46453c959546/2.Firmware/HelloWord-Dynamic-fw/BSP/fibre
+https://github.com/peng-zhihui/HelloWord-Keyboard/blob/7539b2bae5dafa276aec5ef0e9ee46453c959546/2.Firmware/HelloWord-Dynamic-fw/BSP/fibre
+
+经过考古，此版本约是4年前的ODrive固件所用的版本，与目前ODrive仓库中使用的fibre库的API有很大的区别
+
+由 OldGerman 于 2023/01/08 最后一次编辑
