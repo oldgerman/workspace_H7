@@ -339,6 +339,8 @@ ff.c 中有大量依赖 _FS_EXFAT 预处理的代码：
 
 exFAT： 是微软为取代FAT32 而创建的新档案系统。 FAT32 和 exFAT 的主要差别在于exFAT 支持单个大于 4GB 文件
 
+ChaN 老师对于 FatFs 支持 exFAT 机制的解释 [exFAT Filesystem](http://elm-chan.org/fsw/ff/doc/appnote.html#exfat)
+
 ### 1:
 
 上位机使用 UTF8 编码：打印SD卡文件名出现乱码
