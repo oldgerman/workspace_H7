@@ -6,6 +6,8 @@
 
 FATFS版本：R0.12c
 
+本工程使用三星64G evo 红卡 和闪迪64G ultra测试，使用DiskGenius格式化两款sd卡为FAT32 + 簇大小32KB（默认值），簇大小多大的问题
+
 ## 参考资料
 
 ChaN老师
@@ -30,6 +32,18 @@ NXP
 - [Freescale MSD FATFS API Reference Manual](https://www.nxp.com/docs/en/reference-manual/MSDFATFSAPIRM.pdf)
 
 armfly 论坛
+
+- [ChaN老师建议大家格式化SD卡不要用电脑自带的工具，请使用专用软件否则数据对齐被破坏](https://www.armbbs.cn/forum.php?mod=viewthread&tid=19155)
+
+  > [推荐使用SD卡联盟的 SD Card Formatter工具格式化](https://www.sdcard.org/downloads/formatter/)
+
+- [格式化SD时，簇大小的分配，簇越大速度越快，但较浪费](https://www.armbbs.cn/forum.php?mod=viewthread&tid=13819&highlight=%B8%F1%CA%BD%BB%AFSD%CA%B1%A3%AC%B4%D8%B4%F3%D0%A1%B5%C4%B7%D6)
+
+  > 硬汉哥测试：将4G的卡，簇大小选择为32KB进行格式化，实际用STM32F103+FlashFS速度居然飙到3.6MB/S---5.1MB/S，测试时这两个速度交替出现，FlashFS的缓冲开到32KB
+  >
+  > 问题：FatFs缓冲开到等于簇大小有什么优势？
+  >
+  > > 根据本文 **三星 64G EVO (读不进行校验)** 的小节，缓冲区等于SD卡簇大小32KB时，吞吐量相比16KB有显著提升，将缓冲区提升到 64KB 时提升没有 16KB 提升到 32KB 的提升明显，FatFs最大multi block 传输只支持128个 block，即 64KB缓冲区。我认为考虑到缓冲区与读写速度之比，对于簇大小32KB的SD卡应优先选择 32KB，若项目代码开发完后还有多余的 SRAM 空间，可以增大到最大的 64KB缓冲区
 
 - [求一个STM32H7 SDMMC1+FATFS + FreeRTOS 的工程 基于cubemx导出的](https://www.armbbs.cn/forum.php?mod=viewthread&tid=98643)
 
