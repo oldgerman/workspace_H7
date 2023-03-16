@@ -191,8 +191,11 @@ MPU_InitStruct.IsBufferable = MPU_ACCESS_NOT_BUFFERABLE;
 禁用向用户任务发送读写状态消息
 
 ```c
+/*
+...
 #define RW_ERROR_MSG       (uint32_t) 3
 #define RW_ABORT_MSG       (uint32_t) 4
+*/
 ```
 
 禁用在任务里初始化SD卡，默认在main函数内初始化
