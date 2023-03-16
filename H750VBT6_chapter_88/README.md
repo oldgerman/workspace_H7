@@ -4,14 +4,18 @@
 
 在某个H750VBT6_ST_USB_CDC工程（带有fibre通信框架并处理好print线程安全）的基础上，添加安富莱V7教程 《第88章 STM32H7 的 SDMMC总线应用之 SD 卡移植 FatFs 文件系统》 的相关例程： **V7-025_FatFS文件系统例子（SD卡 V1.2）**  代码 中的示例程序 `demo_sd_fatfs.c`文件到 `H750VBT6_chapter_88\UserApp` 路径下，少许修改后进行测试
 
+FATFS版本：R0.12c
+
 ## 参考资料
 
-ChaN老师的博客
+ChaN老师
 
 - [FatFs - Generic FAT Filesystem Module](http://elm-chan.org/fsw/ff/00index_e.html)（此页面相当于FatFs官方文档）
 
   > FatFs has being developped as a personal project of the author, ChaN （FatFs 是作为作者 ChaN 的个人项目开发的）
   > 此页面 Resources 部分有 *Getting Started: [FatFs Application Note](http://elm-chan.org/fsw/ff/doc/appnote.html)*
+  
+- [FatFs 用户论坛](http://elm-chan.org/fsw/ff/bd/)
 
 ST官方
 
@@ -20,6 +24,10 @@ ST官方
 - [UM1721 Rev3：Developing applications on STM32Cube™ with FatFs](https://www.st.com/resource/en/user_manual/um1721-developing-applications-on-stm32cube-with-fatfs-stmicroelectronics.pdf)
 - [YouTube：STM32H7 OLT - 48. Peripheral SDMMC interface](https://www.youtube.com/watch?v=nGH7pV6gww0)
 - [YouTube：STM32 – Creating a File System on a SD card](https://www.youtube.com/watch?v=I9KDN1o6924)
+
+NXP
+
+- [Freescale MSD FATFS API Reference Manual](https://www.nxp.com/docs/en/reference-manual/MSDFATFSAPIRM.pdf)
 
 armfly 论坛
 
@@ -59,6 +67,10 @@ armfly 论坛
   >
   > [下篇：SSD 就是大U盘？聊聊闪存类存储的转换层](https://farseerfc.me/zhs/flash-storage-ftl-layer.html)
 
+- [xsx FAT分析系列12篇文章](https://www.zhihu.com/people/xsx-78-93/posts)
+
+  > [FAT文件在磁盘的存储结构](https://zhuanlan.zhihu.com/p/603722395)
+  
 - 一位不愿意透漏姓氏的底层搬砖人员
 
   > [FAT32 文件系统在磁盘上的结构](https://blog.csdn.net/weixin_38878510/article/details/109345127)
@@ -89,39 +101,6 @@ SDMMC1,2 共用 两个可选择的时钟源，不能超过200MHz
 ![](Images/CubeMX_时钟树_SDMMC配置为200MHz.png)
 
 ![](Images/CubeMX_SDMMC时钟分频.png)
-
-### MPU
-
-默认 MPU 对 AXI SRAM 的配置如下：
-
-```
-MPU_InitStruct.IsShareable = MPU_ACCESS_NOT_SHAREABLE;
-MPU_InitStruct.IsCacheable = MPU_ACCESS_CACHEABLE;
-MPU_InitStruct.IsBufferable = MPU_ACCESS_BUFFERABLE;
-```
-
-如何在 NOT_SHAREABLE + CACHEABLE  + BUFFERABLE的情况下正常使用 FatFS这个问题比较复杂当前不准备解决
-
-FatFS的相关变量会默认使用 AXI SRAM 512KB 的内存区，务必在 MPU 配置内禁用此区的  SHARE、BUFFER、CACHE
-
-![](Images/CubeMX_MPU_AXI_SRAM配置.png)
-
-确保自动生成的 main.c 中 MPU的对于此区的配置如下：
-
-```c
-MPU_InitStruct.IsShareable = MPU_ACCESS_NOT_SHAREABLE;
-MPU_InitStruct.IsCacheable = MPU_ACCESS_NOT_CACHEABLE;
-MPU_InitStruct.IsBufferable = MPU_ACCESS_NOT_BUFFERABLE;
-```
-
-否则，测试时 f_mount() 正常不报错，但  f_opendir()等函数全报错： `FR_NO_FILESYSTEM：没有有效的FAT卷`
-
-```bash
-[21:20:11.003] 【1 - ViewRootDir】
-[21:20:11.003] UHS-I SD Card <50MB/S for SDR50, DDR50 Cards, MAX Clock < 50MHz OR 100MHz
-[21:20:11.003] UHS-I SD Card <104MB/S for SDR104, MAX Clock < 108MHz, Spec version 3.01
-[21:20:11.003] 打开根目录失败  (FR_NO_FILESYSTEM：没有有效的FAT卷)
-```
 
 ### NVIC
 
@@ -164,6 +143,165 @@ CODE_PAGE默认是Latin，可修改为简体中文，可以使能长文件名支
 但我目前的工程FatFs相关的是在FreeRTOS的任务里跑的，因此不需要加大系统栈，而是加大任务栈 TOTAL_HEAP_SIZE，随便给个32KB好了：
 
 ![](Images/CubeMX_FreeRTOS配置.png)
+
+### MPU
+
+本工程代码默认使用 AXI SRAM 512KB 的内存区，修改前 MPU 对 AXI SRAM 的配置如下：
+
+```
+MPU_InitStruct.IsShareable = MPU_ACCESS_NOT_SHAREABLE;
+MPU_InitStruct.IsCacheable = MPU_ACCESS_CACHEABLE;
+MPU_InitStruct.IsBufferable = MPU_ACCESS_BUFFERABLE;
+```
+
+这种使能Cache的情况下正常使用 FatFS 比较复杂，以后单独开一个工程测试
+
+本工程使用 sd_dsikio.c 的默认配置不支持 cache，那么务必在 MPU 配置内禁用此区的  SHARE、BUFFER、CACHE
+
+![](Images/CubeMX_MPU_AXI_SRAM配置.png)
+
+确保自动生成的 main.c 中 MPU的对于此区的配置如下：
+
+```c
+MPU_InitStruct.IsShareable = MPU_ACCESS_NOT_SHAREABLE;
+MPU_InitStruct.IsCacheable = MPU_ACCESS_NOT_CACHEABLE;
+MPU_InitStruct.IsBufferable = MPU_ACCESS_NOT_BUFFERABLE;
+```
+
+否则，测试时 f_mount() 正常不报错，但  f_opendir()等函数全报错： `FR_NO_FILESYSTEM：没有有效的FAT卷`
+
+```bash
+[21:20:11.003] 【1 - ViewRootDir】
+[21:20:11.003] UHS-I SD Card <50MB/S for SDR50, DDR50 Cards, MAX Clock < 50MHz OR 100MHz
+[21:20:11.003] UHS-I SD Card <104MB/S for SDR104, MAX Clock < 108MHz, Spec version 3.01
+[21:20:11.003] 打开根目录失败  (FR_NO_FILESYSTEM：没有有效的FAT卷)
+```
+
+### 开启FreeRTOS下自动生成的 sd_dsikio.c 的默认配置
+
+ sd_dsikio.c 有以下可选配置被注释掉，本工程不取消默认禁用的任何一个配置项，使用默认的配置
+
+基于 sd_diskio_dma_rtos_template_bspv1.c v2.1.4 生成，支持 FreeRTOS
+
+```c
+/* Note: code generation based on sd_diskio_dma_rtos_template_bspv1.c v2.1.4
+   as FreeRTOS is enabled. */
+```
+
+禁用向用户任务发送读写状态消息
+
+```c
+#define RW_ERROR_MSG       (uint32_t) 3
+#define RW_ABORT_MSG       (uint32_t) 4
+```
+
+禁用在任务里初始化SD卡，默认在main函数内初始化
+
+```c
+/* #define DISABLE_SD_INIT */
+```
+
+禁用 IDMA CACHE ，所以用户不能使能程序默认RAM的cache
+
+```c
+/* #define ENABLE_SD_DMA_CACHE_MAINTENANCE  1 */
+```
+
+禁用 4 字节对齐的暂存缓冲区，所以用户传输数据时的内存地址务必要4字节对齐
+
+```c
+/* #define ENABLE_SCRATCH_BUFFER */
+```
+
+**CubeMX自动生成的 STM32H7 + FatFs，IDMA是单缓冲还是双缓冲？**
+
+跟踪 sd_dsikio.c 的写函数调用`HAL_SD_WriteBlocks_DMA()`内让人感兴趣的代码如下
+
+```c
+HAL_StatusTypeDef HAL_SD_WriteBlocks_DMA(SD_HandleTypeDef *hsd, const uint8_t *pData, uint32_t BlockAdd,
+                                         uint32_t NumberOfBlocks)
+{
+...
+    (void)SDMMC_ConfigData(hsd->Instance, &config);
+    __SDMMC_CMDTRANS_ENABLE(hsd->Instance);
+    
+    /* Write Blocks in Polling mode */
+    if (NumberOfBlocks > 1U)
+    {
+      hsd->Context = (SD_CONTEXT_WRITE_MULTIPLE_BLOCK | SD_CONTEXT_DMA); // 批量block dma传输
+
+      /* Write Multi Block command */
+      errorstate = SDMMC_CmdWriteMultiBlock(hsd->Instance, add);
+    }
+    else
+    {
+      hsd->Context = (SD_CONTEXT_WRITE_SINGLE_BLOCK | SD_CONTEXT_DMA); // 单个block dma传输
+
+      /* Write Single Block command */
+      errorstate = SDMMC_CmdWriteSingleBlock(hsd->Instance, add);
+    }
+    ...
+}
+```
+
+HAL_SD_WriteBlocks_DMA() 的代码代码符合 AN5200：图25 或 图 25的红框内部分，但IDMA究竟是单缓冲还是双缓冲？
+
+| ![](Images/AN5200：图24.DMA单缓冲区模式下的读写数据.png) | ![](Images/AN5200：图25.DMA双缓冲区模式下的读写数据.png) |
+| -------------------------------------------------------- | -------------------------------------------------------- |
+
+在 stm32h7xx_hal_sd.c 的 HAL_SD_IRQHandler() 中有以下感兴趣的代码：
+
+```c
+void HAL_SD_IRQHandler(SD_HandleTypeDef *hsd) 
+{
+...
+  else if (__HAL_SD_GET_FLAG(hsd, SDMMC_FLAG_IDMABTC) != RESET)
+  {
+    __HAL_SD_CLEAR_FLAG(hsd, SDMMC_FLAG_IDMABTC);
+    if (READ_BIT(hsd->Instance->IDMACTRL, SDMMC_IDMA_IDMABACT) == 0U)
+    {
+      /* Current buffer is buffer0, Transfer complete for buffer1 */
+      if ((context & SD_CONTEXT_WRITE_MULTIPLE_BLOCK) != 0U)
+      {
+#if defined (USE_HAL_SD_REGISTER_CALLBACKS) && (USE_HAL_SD_REGISTER_CALLBACKS == 1U)
+        hsd->Write_DMADblBuf1CpltCallback(hsd);
+#else
+        HAL_SDEx_Write_DMADoubleBuf1CpltCallback(hsd);
+#endif /* USE_HAL_SD_REGISTER_CALLBACKS */
+      }
+      else /* SD_CONTEXT_READ_MULTIPLE_BLOCK */
+      {
+#if defined (USE_HAL_SD_REGISTER_CALLBACKS) && (USE_HAL_SD_REGISTER_CALLBACKS == 1U)
+        hsd->Read_DMADblBuf1CpltCallback(hsd);
+#else
+        HAL_SDEx_Read_DMADoubleBuf1CpltCallback(hsd);
+#endif /* USE_HAL_SD_REGISTER_CALLBACKS */
+      }
+    }
+    else /* SD_DMA_BUFFER1 */
+    {
+      /* Current buffer is buffer1, Transfer complete for buffer0 */
+      if ((context & SD_CONTEXT_WRITE_MULTIPLE_BLOCK) != 0U)
+...
+    }
+  }
+...
+}
+```
+
+以上代码判断 buffer 0 和 buffer 1 执行 IDMA回调函数，对应AN5200 图 26. IDMA 双缓冲区模式示例
+
+![](Images/AN5200_图26.IDMA双缓冲区模式示例.png)
+
+我在后文不同IO/SIZE下读写测试时，在HAL_SD_IRQHandler() 处理 IDMA双缓冲区的代码内打断点，发现不会运行到里面，只会运行到第二个 else if 里
+
+![](Images/FatFs读写测试默认执行HAL_SD_IRQHandler内的代码块.png)
+
+AN5200 的第4小节：如何使用文件系统 FATFS 通过SDMMC主机接口读取/写入：
+
+> **使用文件系统 FATFS** 可在轮询、中断和DMA模式下从SD卡传输数据。以下示例（位于 STM32Cube_FW_H7_V1.2.0 中）描述了如何在 **STM32H743I-EVAL** 板上使用**SDMMC在DMA单缓冲区模式下** 创建、写入和读取文本文档。
+
+最后，我没有在网上找到 任何 H7 + Fatfs + IDMA 双缓冲的相关示例代码，所以 Fatfs 使用的一定是 IDMA 单缓冲模式
 
 ## 对`demo_sd_fatfs.c`的修改
 
