@@ -51,12 +51,12 @@ typedef enum{
 
 /* Private macro -------------------------------------------------------------*/
 /* 将缓冲区编译到指定RAM的宏 */
-#ifndef  RAM_REGION_NO_CACHE
-#define RAM_REGION_NO_CACHE	    // 待定
-//#define  RAM_REGION_NO_CACHE	__attribute__((section(".RAM_D2_Array")))	// 放在.RAM_D2，默认4字节对齐
+#ifndef  RAM_D2
+//#define RAM_D2	    // 待定
+#define  RAM_D2	__attribute__((section(".RAM_D2_Array")))	// 放在.RAM_D2，默认4字节对齐
 #endif
-#ifndef RAM_REGION_NO_CACHE
-#error "macro 'RAM_REGION_NO_CACHE' not defined"
+#ifndef RAM_D2
+#error "macro 'RAM_D2' not defined"
 #endif
 
 /* Exported constants --------------------------------------------------------*/
@@ -84,12 +84,55 @@ char DiskPath[4];
   *   SDMMC_CmdWriteSingleBlock() 和 SDMMC_CmdReadSingleBlock()，而不是使用批量块
   *   读写函数 SDMMC_CmdReadMultiBlock() 和 SDMMC_CmdWriteMultiBlock()
   */
+
+
+
+
+
+
+
+
 /* FatFs的读取临时缓冲区 */
-RAM_REGION_NO_CACHE ALIGN_32BYTES(char FsReadBuf[1024]);
+RAM_D2 ALIGN_32BYTES(char FsReadBuf[1024]);
 /* FatFs的写入临时缓冲区 */
-RAM_REGION_NO_CACHE ALIGN_32BYTES(char FsWriteBuf[1024]) = {"FatFS Write Demo \r\n www.armfly.com \r\n"};
+RAM_D2 ALIGN_32BYTES(char FsWriteBuf[1024]) = {"FatFS Write Demo \r\n www.armfly.com \r\n"};
 /* 测试的读写临时缓冲区 */
-RAM_REGION_NO_CACHE ALIGN_32BYTES(uint8_t g_TestBuf[BUF_SIZE]);
+RAM_D2 ALIGN_32BYTES(uint8_t g_TestBuf[BUF_SIZE]);
+
+RAM_D2 ALIGN_32BYTES(uint8_t  ALIGN_32_1);
+RAM_D2 ALIGN_32BYTES(uint8_t  ALIGN_32_2);
+RAM_D2 ALIGN_32BYTES(uint16_t ALIGN_32_3);
+RAM_D2 ALIGN_32BYTES(uint8_t  ALIGN_32_4);
+RAM_D2 ALIGN_32BYTES(uint16_t ALIGN_32_5);
+RAM_D2 ALIGN_32BYTES(uint32_t ALIGN_32_6);
+RAM_D2 ALIGN_32BYTES(uint8_t  ALIGN_32_7);
+RAM_D2 ALIGN_32BYTES(uint8_t  ALIGN_32_8);
+RAM_D2 ALIGN_32BYTES(uint16_t ALIGN_32_9);
+RAM_D2 ALIGN_32BYTES(uint8_t  ALIGN_32_10);
+RAM_D2 ALIGN_32BYTES(uint16_t ALIGN_32_11);
+RAM_D2 ALIGN_32BYTES(uint32_t ALIGN_32_12);
+
+RAM_D2 uint8_t  g_1;
+RAM_D2 uint8_t  g_2;
+RAM_D2 uint16_t g_3;
+RAM_D2 uint8_t  g_4;
+RAM_D2 uint16_t g_5;
+RAM_D2 uint32_t g_6;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 /* Private function prototypes -----------------------------------------------*/
 static void DispMenu(void);
@@ -138,6 +181,11 @@ static const char * FR_Table[]=
 void DemoFatFS(uint8_t cmd)
 {
 	printf("\r\n");
+	printf("%d\r\n",
+			ALIGN_32_1 + ALIGN_32_2 + ALIGN_32_3 + ALIGN_32_4 +
+			g_1 + g_2 + g_3 + g_4);
+
+
 	switch (cmd)
 	{
 	    case '0':

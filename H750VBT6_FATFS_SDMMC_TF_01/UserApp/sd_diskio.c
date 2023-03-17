@@ -281,6 +281,7 @@ DRESULT SD_read(BYTE lun, BYTE *buff, DWORD sector, UINT count)
   }
 
 #if defined(ENABLE_SCRATCH_BUFFER)
+/* buff是32字节对齐 */
   if (!((uint32_t)buff & 0x1f))
   //                     ^~~~   从0x3修改为0x1f
   {
@@ -333,6 +334,8 @@ DRESULT SD_read(BYTE lun, BYTE *buff, DWORD sector, UINT count)
 
 #if defined(ENABLE_SCRATCH_BUFFER)
     }
+
+/* buff不是32字节对齐 */
     else
     {
       /* Slow path, fetch each sector a part and memcpy to destination buffer */
