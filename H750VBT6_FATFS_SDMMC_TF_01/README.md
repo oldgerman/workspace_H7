@@ -29,7 +29,7 @@
 
 ![开D-cache的第一次2号测试命令，SD_read是0x1f，SD_write是0x3](Images/开D-cache的第一次2号测试命令，SD_read是0x1f，SD_write是0x3.png)
 
-这么改的原因来自这篇文章：[STM32+SDIO+FreeRTOS+FATFS在带有DMA和CACHE的平台的调试注意要点](https://blog.csdn.net/Fairchild_1947/article/details/122271451) 的分析，简述就是 FATFS 类型的 fs 变量成员 win[512] 编译后在SRAM的地址不是32字节对齐的，SD_read()中对D-Cache使用（CMSIS数据高速缓存维护API）需要被操作的地址是32字节对齐，但该函数内语句`if (!((uint32_t)buff & 0x3))`{...} 中的`!((uint32_t)buff & 0x3)`为 1时，只能说明32bit 地址值 buff **至少4字节对齐**，将0x3修改为 0x1f后，才可判断地址值 buff **至少32字节对齐**
+这么改的原因来自这篇文章：[STM32+SDIO+FreeRTOS+FATFS在带有DMA和CACHE的平台的调试注意要点](https://blog.csdn.net/Fairchild_1947/article/details/122271451) 的分析，简述就是 FATFS 类型的 fs 变量成员 win[512] 编译后在SRAM的地址不是32字节对齐的，SD_read()中对D-Cache使用 SCB_InvalidateDCache_by_Addr（CMSIS数据高速缓存维护API）需要被操作的地址是32字节对齐，但该函数内语句`if (!((uint32_t)buff & 0x3))`{...} 中的`!((uint32_t)buff & 0x3)`为 1时，只能说明32bit 地址值 buff **至少4字节对齐**，将0x3修改为 0x1f 后，才可判断地址值 buff **至少32字节对齐**，SD_read()内与本段描述有关的代码如下：
 
 ```c
 DRESULT SD_read(BYTE lun, BYTE *buff, DWORD sector, UINT count)
@@ -131,7 +131,7 @@ DRESULT SD_read(BYTE lun, BYTE *buff, DWORD sector, UINT count)
 > 对于 & 0xf 判断 4字节对齐，规律依据是 32字节对齐地址的最后 的 5 个bit 必定是 0
 > 对于 & 0x3 判断 4字节对齐，规律依据是 4字节对齐地址的最后 的 2 个bit 必定是 0
 
-所以，& 0x3 会发生对4字节对齐地址执行需要参数是32字节对齐的SCB_InvalidateDCache_by_Addr()，那么根源性问题就是SCB_InvalidateDCache_by_Addr() 参数是 FATFS结构体变量fs的成员win[512]的4字节对齐地址，导致错位产生乱码：
+所以产生乱码的问题根源是SCB_InvalidateDCache_by_Addr() 参数为 FATFS结构体变量fs的成员win[512]的4字节对齐地址，导致错位：
 
 ![](Images/FATFS对象成员win的地址不满足32字节对齐.png)
 
