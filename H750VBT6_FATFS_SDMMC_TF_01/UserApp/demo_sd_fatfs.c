@@ -20,6 +20,13 @@
 *
 *	Copyright (C), 2018-2030, 安富莱电子 www.armfly.com
 *
+*	@modfiy:
+*      日期         修改人       说明
+*      2023-03-17   OldGerman    整理注释格式
+*                                消除本文件的编译警告
+*                                对接fibre框架处理的USB命令解析
+*                                支持不同IO/SIZE读写测速，范围 1~ 128 Block，以markdown表格语法打印结果
+*
 *********************************************************************************************************
 */
 /* Includes ------------------------------------------------------------------*/
@@ -31,12 +38,27 @@
 #include "sdmmc.h"
 
 /* Private typedef -----------------------------------------------------------*/
+/* 用于读写测速时是否校验文件 */
+typedef enum{
+	file_verify_false = 0,
+	file_verify_true = 1,
+}file_verify_t;
+
 /* Private define ------------------------------------------------------------*/
 /* 用于测试读写速度 */
 #define TEST_FILE_LEN			(8*1024*1024) 	/* 用于测试的文件长度: 8192KB */
-#define BUF_SIZE				(256*1024)		/* 每次读写SD卡的最大数据长度: 32KB*/
+#define BUF_SIZE				(64*1024)		/* 每次读写SD卡的最大数据长度: 64KB*/
 
 /* Private macro -------------------------------------------------------------*/
+/* 将缓冲区编译到指定RAM的宏 */
+#ifndef  RAM_REGION_NO_CACHE
+#define RAM_REGION_NO_CACHE	    // 待定
+//#define  RAM_REGION_NO_CACHE	__attribute__((section(".RAM_D2_Array")))	// 放在.RAM_D2，默认4字节对齐
+#endif
+#ifndef RAM_REGION_NO_CACHE
+#error "macro 'RAM_REGION_NO_CACHE' not defined"
+#endif
+
 /* Exported constants --------------------------------------------------------*/
 /* HAL库 SD_HandleTypeDef 句柄*/
 extern SD_HandleTypeDef hsd1; // 仅用于在 ViewRootDir() 中获取卡速度信息
@@ -55,12 +77,19 @@ FILINFO FileInf;
 /* SD卡逻辑驱动路径，比盘符0，就是"0:/" */
 char DiskPath[4];
 
+/** @attention
+  * 一定要将以下读写缓冲区配置为32字节对齐
+  *   非32字节对齐会导致 sd_diskio.c 中的读写函数高频使用 memcpy 将缓冲区的分块复制
+  *   到 512Byte 大小的 Scratch Buffer ，导致IDMA传输使用效率极低的单个块读写函数
+  *   SDMMC_CmdWriteSingleBlock() 和 SDMMC_CmdReadSingleBlock()，而不是使用批量块
+  *   读写函数 SDMMC_CmdReadMultiBlock() 和 SDMMC_CmdWriteMultiBlock()
+  */
 /* FatFs的读取临时缓冲区 */
-ALIGN_32BYTES(char FsReadBuf[1024]);
+RAM_REGION_NO_CACHE ALIGN_32BYTES(char FsReadBuf[1024]);
 /* FatFs的写入临时缓冲区 */
-ALIGN_32BYTES(char FsWriteBuf[1024]) = {"FatFS Write Demo \r\n www.armfly.com \r\n"};
+RAM_REGION_NO_CACHE ALIGN_32BYTES(char FsWriteBuf[1024]) = {"FatFS Write Demo \r\n www.armfly.com \r\n"};
 /* 测试的读写临时缓冲区 */
-ALIGN_32BYTES(uint8_t g_TestBuf[BUF_SIZE]);
+RAM_REGION_NO_CACHE ALIGN_32BYTES(uint8_t g_TestBuf[BUF_SIZE]);
 
 /* Private function prototypes -----------------------------------------------*/
 static void DispMenu(void);
@@ -69,7 +98,7 @@ static void CreateNewFile(void);
 static void ReadFileData(void);
 static void CreateDir(void);
 static void DeleteDirFile(void);
-static void WriteFileTest(void);
+static void WriteFileTest(file_verify_t file_verify);
 
 /* Function implementations --------------------------------------------------*/
 
@@ -141,9 +170,13 @@ void DemoFatFS(uint8_t cmd)
 
 		case '6':
 			printf("【6 - TestSpeed】\r\n");
-			WriteFileTest();	/* 速度测试 */
+			WriteFileTest(file_verify_false);	/* 读写文件速度测试，不校验文件 */
 			break;
 
+		case '7':
+			printf("【7 - TestSpeed】\r\n");
+			WriteFileTest(file_verify_true);	/* 读写文件速度测试，并校验文件 */
+			break;
 		default:
 			break;
 	}
@@ -166,7 +199,8 @@ static void DispMenu(void)
 	printf("3 - 读armfly.txt文件的内容\r\n");
 	printf("4 - 创建目录\r\n");
 	printf("5 - 删除文件和目录\r\n");
-	printf("6 - 读写文件速度测试\r\n");
+	printf("6 - 读写文件速度测试，不校验文件\r\n");
+	printf("7 - 读写文件速度测试，并校验文件\r\n");
 }
 
 /*
@@ -289,7 +323,7 @@ static void CreateNewFile(void)
 	result = f_write(&file,
 			FsWriteBuf,
 			strlen(FsWriteBuf),
-			&bw);
+			(UINT* )&bw);
 
 	if (result == FR_OK)
 	{
@@ -339,7 +373,7 @@ static void ReadFileData(void)
 	}
 
 	/* 读取文件 */
-	result = f_read(&file, FsReadBuf, sizeof(FsReadBuf), &bw);
+	result = f_read(&file, FsReadBuf, sizeof(FsReadBuf), (UINT* )&bw);
 	if (bw > 0)
 	{
 		FsReadBuf[bw] = 0;
@@ -535,7 +569,7 @@ static void DeleteDirFile(void)
 	}
 
 	/* 删除文件 speed1.txt */
-	for (i = 0; i < 20; i++)
+	for (i = 0; i < 10; i++)
 	{
 		sprintf(path, "%sSpeed%02d.txt", DiskPath, i);/* 每写1次，序号递增 */	
 		result = f_unlink(path);
@@ -565,20 +599,25 @@ static void DeleteDirFile(void)
 *	返 回 值: 无
 *********************************************************************************************************
 */
-static void WriteFileTest()
+static void WriteFileTest(file_verify_t file_verify)
 {
-	uint32_t buf_size = 0;
+	uint8_t s_ucTestSn = 0;
 
+	printf("| IO SIZE | 写速度 | 写耗时 | 读速度 | 读耗时 | 测试文件名称 | 测试文件大小 | 校验文件数据 |\r\n");
+	printf("| ------- | ------ | ------ | ------ | ------ | ------------ | ------------ | ------------ |\r\n");
 	/* 依次读写测试 1、2、4、8、16、32、64、128个 Block( 1 Block = 512byte) */
-	for(uint16_t nth = 0; nth < 8; nth++) {
+	for(uint16_t nth = 0; nth < 8; nth++)
+	{
+		uint32_t buf_size = 0;
 		buf_size = 512 << nth;
-		if(buf_size == 512) {
-		   printf("IO SIZE: 512byte\r\n");
-		}
-		else {
-			printf("IO SIZE: %ldKB\r\n", (buf_size /1024));
-		}
-		printf("TEST FILE LEN: %ldKB\r\n", (TEST_FILE_LEN /1024));
+
+       /**
+         * 校验文件标记
+         * -1： N/A    (未开启校验)
+         *  0： ERROR  (校验出错)
+         *  1:  OK     (无错误)
+         */
+		int8_t flag_file_verify = -1;
 
 		FRESULT result;
 		char path[64];
@@ -586,7 +625,6 @@ static void WriteFileTest()
 		uint32_t i,k;
 		uint32_t runtime1,runtime2,timelen;
 		uint8_t err = 0;
-		static uint8_t s_ucTestSn = 0;
 
 		/* 检查buf_size大小 */
 		if(buf_size > BUF_SIZE){
@@ -602,31 +640,36 @@ static void WriteFileTest()
 		result = f_mount(&fs, DiskPath, 0);			/* Mount a logical drive */
 		if (result != FR_OK)
 		{
-			printf("挂载文件系统失败 (%s)\r\n", FR_Table[result]);
+			printf("挂载文件系统失败 (%s), 终止测试\r\n", FR_Table[result]);
+			/* 卸载文件系统 */
+			f_mount(NULL, DiskPath, 0);
+			return;
 		}
 	
 		/* 打开文件 */
 		sprintf(path, "%sSpeed%02d.txt", DiskPath, s_ucTestSn++); /* 每写1次，序号递增 */
 		result = f_open(&file, path, FA_CREATE_ALWAYS | FA_WRITE);
 	
-		/* 写一串数据 */
-		printf("开始写文件%s %dKB ...\r\n", path, TEST_FILE_LEN / 1024);
+		/* printf IO SIZE */
+		if(buf_size == 512) {
+		   printf("| 512B ");
+		}
+		else {
+			printf("| %ldKB ", (buf_size /1024));
+		}
+
+
 
 		runtime1 = bsp_GetRunTime();	/* 读取系统运行时间 */
+
+		/* 开始写文件测试 */
 		for (i = 0; i < TEST_FILE_LEN / buf_size; i++)
 		{
-			result = f_write(&file, g_TestBuf, buf_size, &bw);
-			if (result == FR_OK)
-			{
-				if (((i + 1) % 8) == 0)
-				{
-					printf(".");
-				}
-			}
-			else
+			result = f_write(&file, g_TestBuf, buf_size, (UINT* )&bw);
+			if (result != FR_OK)
 			{
 				err = 1;
-				printf("%s文件写失败\r\n", path);
+				printf("\r\n %s文件写失败\r\n", path);
 				break;
 			}
 		}
@@ -635,10 +678,10 @@ static void WriteFileTest()
 		if (err == 0)
 		{
 			timelen = (runtime2 - runtime1);
-			printf("\r\n  写耗时 : %dms   平均写速度 : %dB/S (%dKB/S)\r\n",
-				timelen,
-				(TEST_FILE_LEN * 1000) / timelen,
-				((TEST_FILE_LEN / 1024) * 1000) / timelen);
+			/* printf 写速度 | 写耗时 */
+			printf("| %ldKB/S | %ldms ",
+				((TEST_FILE_LEN / 1024) * 1000) / timelen,
+				timelen);
 		}
 	
 		f_close(&file);		/* 关闭文件*/
@@ -648,43 +691,41 @@ static void WriteFileTest()
 		result = f_open(&file, path, FA_OPEN_EXISTING | FA_READ);
 		if (result !=  FR_OK)
 		{
-			printf("没有找到文件: %s\r\n", path);
+			printf("\r\n 没有找到文件: %s\r\n", path);
 			return;
 		}
-	
-		printf("开始读文件 %dKB ...\r\n", TEST_FILE_LEN / 1024);
 
 		runtime1 = bsp_GetRunTime();	/* 读取系统运行时间 */
 		for (i = 0; i < TEST_FILE_LEN / buf_size; i++)
 		{
-			result = f_read(&file, g_TestBuf, buf_size, &bw);
+			result = f_read(&file, g_TestBuf, buf_size, (UINT* )&bw);
 			if (result == FR_OK)
 			{
-				if (((i + 1) % 8) == 0)
+				/* 校验文件 */
+				if(file_verify)
 				{
-					printf(".");
-				}
-#if 0
-				/* 比较写入的数据是否正确，此语句会导致读卡速度结果降低到 3.5MBytes/S */
-				for (k = 0; k < buf_size; k++)
-				{
-					if (g_TestBuf[k] != (k / 512) + '0')
+					flag_file_verify = 1;
+					/* 比较写入的数据是否正确，此语句会导致读卡速度结果降低到 3.5MBytes/S */
+					for (k = 0; k < buf_size; k++)
 					{
-						err = 1;
-						printf("Speed1.txt 文件读成功，但是数据出错\r\n");
+						if (g_TestBuf[k] != (k / 512) + '0')
+						{
+							err = 1;
+//							printf("\r\n 文件读成功，但是数据出错\r\n");
+							flag_file_verify = 0;
+							break;
+						}
+					}
+					if (err == 1)
+					{
 						break;
 					}
 				}
-				if (err == 1)
-				{
-					break;
-				}
-#endif
 			}
 			else
 			{
 				err = 1;
-				printf("Speed1.txt 文件读失败\r\n");
+				printf("\r\n Speed1.txt 文件读失败\r\n");
 				break;
 			}
 		}
@@ -694,16 +735,25 @@ static void WriteFileTest()
 		if (err == 0)
 		{
 			timelen = (runtime2 - runtime1);
-			printf("\r\n  读耗时 : %dms   平均读速度 : %dB/S (%dKB/S)\r\n", timelen,
-				(TEST_FILE_LEN * 1000) / timelen, ((TEST_FILE_LEN / 1024) * 1000) / timelen);
+			/*printf 读速度 | 读耗时 */
+			printf("| %ldKB/S | %ldms ",
+				 ((TEST_FILE_LEN / 1024) * 1000) / timelen,
+				 timelen);
 		}
-	
+
+		/* printf 测试文件名称 | 测试文件大小| 校验文件数据  */
+		printf("| %s | %dKB | %s |\r\n", path, (TEST_FILE_LEN /1024),
+				(flag_file_verify == -1) ? ("N/A")   :
+				(flag_file_verify ==  0) ? ("ERROR") :
+			    ("OK"));
+
 		/* 关闭文件*/
 		f_close(&file);
 
 		/* 卸载文件系统 */
 		f_mount(NULL, DiskPath, 0);
 	}
+	printf("\r\n 测试完毕\r\n");
 }
 
 /***************************** 安富莱电子 www.armfly.com (END OF FILE) *********************************/

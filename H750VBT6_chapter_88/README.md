@@ -4,9 +4,11 @@
 
 在某个H750VBT6_ST_USB_CDC工程（带有fibre通信框架并处理好print线程安全）的基础上，添加安富莱V7教程 《第88章 STM32H7 的 SDMMC总线应用之 SD 卡移植 FatFs 文件系统》 的相关例程： **V7-025_FatFS文件系统例子（SD卡 V1.2）**  代码 中的示例程序 `demo_sd_fatfs.c`文件到 `H750VBT6_chapter_88\UserApp` 路径下，少许修改后进行测试
 
-FATFS版本：R0.12c
-
-本工程使用三星64G evo 红卡 和闪迪64G ultra测试，使用DiskGenius格式化两款sd卡为FAT32 + 簇大小32KB（默认值）
+- 开发环境：STM32CubeIDE v1.11.2 + STM32CubeMX v6.6
+- 包版本：STM32CubeH7 V1.11.0 / 04-Nov-2022
+- FATFS版本：R0.12c
+- SD卡：使用三星64G evo 红卡 和闪迪64G ultra测试，使用DiskGenius格式化两款sd卡为FAT32 + 簇大小32KB（默认值）
+- 编译器：本工程的所有测试都是在 OPtimization Level -O0，Debug level -g3 下进行
 
 ## 参考资料
 
@@ -332,7 +334,27 @@ AN5200 的第4小节：如何使用文件系统 FATFS 通过SDMMC主机接口读
 
 > 该文件的将HAL库API封装为SD卡初始化、读写、状态查询等的API，但注意这些都不带RTOS下的处理，因为本工程跑FreeRTOS，将SD卡的示例程序丢在 USB 通信任务 调用的 OnAsciiCmd() 函数内执行，所以不使用这个文件
 
-cmd变量改为 DemoFatFS() 的参数，并删除开头的一截代码，仅保留 switch 段
+WriteFileTest()添加可选校验文件的参数：
+
+```c
+static void WriteFileTest(file_verify_t file_verify);
+```
+
+WriteFileTest()打印的结果修改为 markdown 优雅の表格语法：
+
+```c
+static void WriteFileTest(file_verify_t file_verify)
+{
+	uint32_t buf_size = 0;
+	printf("| IO SIZE | 写速度 | 写耗时 | 读速度 | 读耗时 | 测试文件名称 | 测试文件大小 | 校验文件数据 |\r\n");
+	printf("| ------- | ------ | ------ | ------ | ------ | ------------ | ------------ | ------------ |\r\n");
+	/* 依次读写测试 1、2、4、8、16、32、64、128个 Block( 1 Block = 512byte) */
+	for(uint16_t nth = 0; nth < 8; nth++) 
+        ...
+}
+```
+
+局部变量cmd变量改为 DemoFatFS() 的参数，并删除开头的一截代码，仅保留 switch 段，修改第6号测试，添加第7号测试：
 
 ```c
 void DemoFatFS(uint8_t cmd)
@@ -342,11 +364,26 @@ void DemoFatFS(uint8_t cmd)
 	{
 	    case '0':
 	    	DispMenu();
+        ...
+        case '6':
+			printf("【6 - TestSpeed】\r\n");
+			WriteFileTest(file_verify_false);	/* 读写文件速度测试，不校验文件 */
+			break;
+
+		case '7':
+			printf("【7 - TestSpeed】\r\n");
+			WriteFileTest(file_verify_true);	/* 读写文件速度测试，并校验文件 */
+			break;
+		default:
+			break;
+	}
 ...
 }
 ```
 
-新建 demo_sd_fatfs.h，将 void DemoFatFS(uint8_t cmd); 在此文件声明
+DispMenu()修改修改第6号测试，添加第7号测试(略)
+
+新建 demo_sd_fatfs.h，将 void DemoFatFS(uint8_t cmd); 在此文件声明(略)
 
 ascii_protocol.cpp 包含 demo_sd_fatfs.h，在OnAsciiCmd() 函数最后调用 DemoFatFS()：
 
@@ -366,7 +403,7 @@ void OnAsciiCmd(const char* _cmd, size_t _len, StreamSink &_responseChannel)
 
 ### 先说结论
 
-当前我使用CubeMX v6.6 + **STM32CubeH7 V1.11.0 / 04-Nov-2022**   的包，ST 的团队已经处理好了FATFS + IDMA + CMSIS OS + 多任务互斥访问 FatFs API，完全可用CubeMX自动生成的代码
+当前我使用CubeMX v6.6 + **STM32CubeH7 V1.11.0 / 04-Nov-2022**   的包，ST 的团队已经处理好了FATFS + IDMA + CMSIS OS + 多任务互斥访问 FatFs API 的99%，还有1%的BUG没有解决，不开D-Cache可以用CubeMX自动生成的代码，开Cache会因为这1%的BUG导致不能用，请参考[STM32+SDIO+FATFS在带有DMA和CACHE的平台的调试注意要点](https://blog.csdn.net/fairchild_1947/article/details/122268377) 中的方法修改这个BUG
 
 ### 考古
 
@@ -422,448 +459,7 @@ void OnAsciiCmd(const char* _cmd, size_t _len, StreamSink &_responseChannel)
 
 看安富莱的教程，请务必注意考古！
 
-## 测试：都是在Debug模式编译测试的
-
-## 测试：三星_64G_EVO
-
-格式化为FAT32
-
-### 0: 打印菜单
-
-```bash
-[23:45:01.265] ------------------------------------------------
-[23:45:01.265] 请选择操作命令:
-[23:45:01.265] 1 - 显示根目录下的文件列表
-[23:45:01.265] 2 - 创建一个新文件armfly.txt
-[23:45:01.265] 3 - 读armfly.txt文件的内容
-[23:45:01.265] 4 - 创建目录
-[23:45:01.265] 5 - 删除文件和目录
-[23:45:01.265] 6 - 读写文件速度测试
-```
-
-### 1: 显示根目录下的文件列表
-
-```bash
-[23:44:32.231] 【1 - ViewRootDir】
-[23:44:32.231] UHS-I SD Card <50MB/S for SDR50, DDR50 Cards, MAX Clock < 50MHz OR 100MHz
-[23:44:32.231] UHS-I SD Card <104MB/S for SDR104, MAX Clock < 108MHz, Spec version 3.01
-[23:44:32.232] 属性        |  文件大小 | 短文件名 | 长文件名
-[23:44:32.233] (0x22)目录            0  System Volume Information
-[23:44:32.233] (0x32)文件       503277  20230215-1637_STLINK-V3MINIE-Box-V1.gcode
-[23:44:32.233] (0x32)文件      1065228  20230301-2306_STLINK_V3MINIE_CASE_TOP+BACK.gcode
-[23:44:32.233] (0x32)文件      2097152  Speed00.txt
-[23:44:32.249] (0x32)文件        29782  beifen_config
-[23:44:32.257] (0x32)文件        34463  config
-[23:44:32.265] (0x32)文件       389776  FIRMWARE.CUR
-[23:44:32.272] (0x16)目录            0  Gcode
-[23:44:32.281] (0x16)目录            0  webif
-```
-
-### 2~5: 正常。略
-
-### 6: 读写文件速度测试
-
-> 注意上了 FatFs文件系统，如果不上估计更快
-
-SDMMC 时钟源25MHz，分频 0，SDMMC 时钟25MHz
-
-```c
-[21:36:10.255] 【6 - TestSpeed】
-[21:36:10.268] 开始写文件Speed00.txt 2048KB ...
-[21:36:10.679] ........
-[21:36:10.680]   写耗时 : 410ms   平均写速度
-[21:36:10.679]  : 5115004B/S (4995KB/S)
-[21:36:10.687] 开始读文件 2048KB ...
-[21:36:10.797] [led_task] sysTick : 314002 ms
-[21:36:11.095] ........
-[21:36:11.095]   读耗时 : 408ms   平均读速度
-[21:36:11.095]  : 5140078B/S (5019KB/S)
-```
-
-SDMMC 时钟源200MHz，分频 4，SDMMC 时钟50MHz
-
-```c
-[23:42:34.576] 【6 - TestSpeed】
-[23:42:34.597] 开始写文件Speed00.txt 2048KB ...
-[23:42:34.830] [led_task] sysTick : 5002 ms
-[23:42:35.044] ........
-[23:42:35.044]   写耗时 : 445ms   平均写速度
-[23:42:35.044]  : 4712701B/S (4602KB/S)
-[23:42:35.052] 开始读文件 2048KB ...
-[23:42:35.426] ........
-[23:42:35.426]   读耗时 : 374ms   平均读速度
-[23:42:35.426]  : 5607358B/S (5475KB/S)
-```
-
-## 测试：闪迪 64G Ulra
-
-exFAT 报错无法被 H7 发现 有效的分区，使用 DiskGenius格式化为FAT32后识别：
-
-![](Images/将闪迪64G_Ultra从exFAT格式化为FAT32.png)
-
-原因在CubeMX 配置我没有开启 exFAT支持：导致生成的的 ffconf.h 路径: FATFS/Target/ffconf.h 中 _FS_EXFAT 未使能
-
-```c
-#define _FS_EXFAT	0
-/* This option switches support of exFAT file system. (0:Disable or 1:Enable)
-/  When enable exFAT, also LFN needs to be enabled. (_USE_LFN >= 1)
-/  Note that enabling exFAT discards C89 compatibility. */
-```
-
-ff.c 中有大量依赖 _FS_EXFAT 预处理的代码：
-
-![](Images/ff.c中某个预处理器的_FS_EXFAT.png)
-
-可以在 CubeMX 中 FATFS使能FS_EXFAT：
-
-![](Images/CubeMX_FATFS使能FS_EXFAT配置.png)
-
-exFAT： 是微软为取代FAT32 而创建的新档案系统。 FAT32 和 exFAT 的主要差别在于exFAT 支持单个大于 4GB 文件
-
-ChaN 老师对于 FatFs 支持 exFAT 机制的解释 [exFAT Filesystem](http://elm-chan.org/fsw/ff/doc/appnote.html#exfat)
-
-### 1:
-
-上位机使用 UTF8 编码：打印SD卡文件名出现乱码
-
-```bash
-[23:58:35.327] 【1 - ViewRootDir】
-[23:58:35.327] Normal Speed Card <12.5MB/S, MAX Clock < 25MHz, Spec Version 1.01
-[23:58:35.414] 属性        |  文件大小 | 短文件名 | 长文件名
-[23:58:35.414] (0x22)目录            0  System Volume Information
-[23:58:35.414] (0x32)文件       392184  FIRMWARE.CUR
-[23:58:35.415] (0x32)文件            3  fp-info-cache
-[23:58:35.415] (0x32)文件        33792  G031G8U6_BOOTLDR.bin
-[23:58:35.415] (0x32)文件           62  �½��ı��ĵ�.txt
-[23:58:35.415] (0x33)文件           65  DETAILS.TXT
-[23:58:35.416] (0x32)文件          371  ���������ļ���.md
-[23:58:35.416] (0x32)文件       238480  config.rar
-[23:58:35.417] (0x32)文件        17608  config_jeep
-[23:58:35.787] [led_task] sysTick : 5002 ms
-[23:58:36.786] [led_task] sysTick : 6002 ms
-[23:59:04.785] [led_task] sysTick : 7002 ms
-[23:59:04.785] [led_task] sysTick : 34002 ms
-[23:59:05.785] [led_task] sysTick : 35002 ms
-```
-
-上位机使用 GBK编码：打印SD卡文件名正常
-
-```bash
-[23:59:06.150] 銆� - ViewRootDir銆�
-[23:59:06.150] UHS-I SD Card <50MB/S for SDR50, DDR50 Cards, MAX Clock < 50MHz OR 100MHz
-[23:59:06.151] UHS-I SD Card <104MB/S for SDR104, MAX Clock < 108MHz, Spec version 3.01
-[23:59:06.151] 灞炴��       |  鏂囦欢澶у皬 | 鐭枃浠跺悕 | 闀挎枃浠跺悕
-[23:59:06.152] (0x22)鐩綍            0  System Volume Information
-[23:59:06.152] (0x32)鏂囦欢       392184  FIRMWARE.CUR
-[23:59:06.152] (0x32)鏂囦欢            3  fp-info-cache
-[23:59:06.152] (0x32)鏂囦欢        33792  G031G8U6_BOOTLDR.bin
-[23:59:06.152] (0x32)鏂囦欢           62  新建文本文档.txt
-[23:59:06.152] (0x33)鏂囦欢           65  DETAILS.TXT
-[23:59:06.153] (0x32)鏂囦欢          371  测试中文文件名.md
-[23:59:06.153] (0x32)鏂囦欢       238480  config.rar
-[23:59:06.154] (0x32)鏂囦欢        17608  config_jeep
-[23:59:06.785] [led_task] sysTick : 36002 ms
-[23:59:07.785] [led_task] sysTick : 37002 ms
-```
-
-由此推测CubeMX CODE_PAGE 配置为简体中文以GBK编码解析字符串，而c源码文件又是UTF8编码的，我的win10系统的编码是 GBK，那么在电脑端操作SD卡新建中文文件名是GBK编码的，win10可以将操作系统的编码改为 UTF8，但是是Beta功能，我以前试过会导致电脑的很多已安装的程序出现莫名奇妙的问题又改回GBK了，这个问题可以将工程源码文件的编码方式改为GBK解决，这样USB串口打印的字符串就从 UTF8 变为 GBK，和SD卡文件名的编方式一样了，推荐使用[基于python开发的编码转换工具](https://github.com/clorymmk/CodeTransmit)转换源码的编码
-
-### 2~5: 正常。略
-
-### 6:
-
-```c
-[00:11:03.831] 【6 - TestSpeed】
-[00:11:03.835] 开始写文件Speed01.txt 2048KB ...
-[00:11:04.121] ........
-[00:11:04.121]   写耗时 : 286ms   平均写速度
-[00:11:04.121]  : 7332699B/S (7160KB/S)
-[00:11:04.126] 开始读文件 2048KB ...
-[00:11:04.486] ........
-[00:11:04.486]   读耗时 : 359ms   平均读速度
-[00:11:04.486]  : 5841649B/S (5704KB/S)
-```
-
-## 测试：SD卡的ATTO性能：
-
-这个肯定是USB3.0读卡器在 UHS-I 1.8V下跑的，比H7 在 3.3V下 HS跑的快很多
-
-| 三星64G_EVO                                                  | 闪迪64G_Ultra                                                |
-| ------------------------------------------------------------ | ------------------------------------------------------------ |
-| ![我的三星64G_EVO_ATTO测试](Images/我的三星64G_EVO_ATTO测试.png) | ![我的闪迪_64G_Ultra_ATTO测试](Images/我的闪迪_64G_Ultra_ATTO测试.png) |
-
-## 测试：不同 IO/SIZE 的读写性能
-
-ATTO使用不同的IO/SIZE读写256MB的文件，测试次数为4次
-
-做到类似ATTO的测试， 那么需要修改 WriteFileTest() 
-
-WriteFileTest 函数通过 `for (i = 0; i < TEST_FILE_LEN / BUF_SIZE; i++)` 来计算读写次数，由于H7的AXI SRAM在本工程中还有 接近 500KB可用，g_TestBuf是 读写共用的 IO/SIZE 缓冲区，使用静态内存分配 32KB 在 AXI SRAM
-
-```
-#define BUF_SIZE				(32*1024)		/* 每次读写SD卡的最大数据长度: 32KB*/
-ALIGN_32BYTES(uint8_t g_TestBuf[BUF_SIZE]);
-```
-
-将 BUF_SIZE  增大到 256KB，这应该是可在 H750VB 上测试的最大 IO/SIZE，相应地测试文件的尺寸也增大为8MB，512byte到256KB的IO/SIZE都读写8MB大小的文件测速，避免文件大小过小导致测速不准确
-
-### 三星 64G EVO
-
-```assembly
-【6 - TestSpeed】
-IO SIZE: 512byte
-TEST FILE LEN: 8192KB
-开始写文件Speed00.txt 8192KB ...
-  写耗时 : 18512ms   平均写速度 : 221134B/S (442KB/S)
-开始读文件 8192KB ...
-  读耗时 : 6234ms   平均读速度 : 656663B/S (1314KB/S)
-IO SIZE: 1KB
-TEST FILE LEN: 8192KB
-开始写文件Speed01.txt 8192KB ...
-  写耗时 : 15676ms   平均写速度 : 261140B/S (522KB/S)
-开始读文件 8192KB ...
-  读耗时 : 4874ms   平均读速度 : 839893B/S (1680KB/S)
-IO SIZE: 2KB
-TEST FILE LEN: 8192KB
-开始写文件Speed02.txt 8192KB ...
-  写耗时 : 4377ms   平均写速度 : 935261B/S (1871KB/S)
-开始读文件 8192KB ...
-  读耗时 : 3173ms   平均读速度 : 1290148B/S (2581KB/S)
-IO SIZE: 4KB
-TEST FILE LEN: 8192KB
-开始写文件Speed03.txt 8192KB ...
-  写耗时 : 2274ms   平均写速度 : 1800193B/S (3602KB/S)
-开始读文件 8192KB ...
-  读耗时 : 2371ms   平均读速度 : 1726546B/S (3455KB/S)
-IO SIZE: 8KB
-TEST FILE LEN: 8192KB
-开始写文件Speed04.txt 8192KB ...
-  写耗时 : 1391ms   平均写速度 : 2942948B/S (5889KB/S)
-开始读文件 8192KB ...
-  读耗时 : 2049ms   平均读速度 : 1997872B/S (3998KB/S)
-IO SIZE: 16KB
-TEST FILE LEN: 8192KB
-开始写文件Speed05.txt 8192KB ...
-  写耗时 : 1027ms   平均写速度 : 3986018B/S (7976KB/S)
-开始读文件 8192KB ...
-  读耗时 : 1868ms   平均读速度 : 2191456B/S (4385KB/S)
-IO SIZE: 32KB
-TEST FILE LEN: 8192KB
-开始写文件Speed06.txt 8192KB ...
-  写耗时 : 998ms   平均写速度 : 4101844B/S (8208KB/S)
-开始读文件 8192KB ...
-  读耗时 : 1720ms   平均读速度 : 2380023B/S (4762KB/S)
-IO SIZE: 64KB
-TEST FILE LEN: 8192KB
-开始写文件Speed07.txt 8192KB ...
-  写耗时 : 998ms   平均写速度 : 4101844B/S (8208KB/S)
-开始读文件 8192KB ...
-  读耗时 : 1726ms   平均读速度 : 2371750B/S (4746KB/S)
-IO SIZE: 128KB
-TEST FILE LEN: 8192KB
-开始写文件Speed08.txt 8192KB ...
-  写耗时 : 979ms   平均写速度 : 4181451B/S (8367KB/S)
-开始读文件 8192KB ...
-Speed1.txt 文件读成功，但是数据出错
-IO SIZE: 256KB
-TEST FILE LEN: 8192KB
-开始写文件Speed09.txt 8192KB ...
-  写耗时 : 992ms   平均写速度 : 4126653B/S (8258KB/S)
-开始读文件 8192KB ...
-Speed1.txt 文件读成功，但是数据出错
-```
-
-### 闪迪64G Ultra
-
-```assembly
-【6 - TestSpeed】
-IO SIZE: 512byte
-TEST FILE LEN: 8192KB
-开始写文件Speed00.txt 8192KB ...
-  写耗时 : 24770ms   平均写速度 : 165266B/S (330KB/S)
-开始读文件 8192KB ...
-  读耗时 : 6577ms   平均读速度 : 622417B/S (1245KB/S)
-IO SIZE: 1KB
-TEST FILE LEN: 8192KB
-开始写文件Speed01.txt 8192KB ...
-  写耗时 : 13409ms   平均写速度 : 305290B/S (610KB/S)
-开始读文件 8192KB ...
-  读耗时 : 4083ms   平均读速度 : 1002606B/S (2006KB/S)
-IO SIZE: 2KB
-TEST FILE LEN: 8192KB
-开始写文件Speed02.txt 8192KB ...
-  写耗时 : 6878ms   平均写速度 : 595178B/S (1191KB/S)
-开始读文件 8192KB ...
-  读耗时 : 2823ms   平均读速度 : 1450102B/S (2901KB/S)
-IO SIZE: 4KB
-TEST FILE LEN: 8192KB
-开始写文件Speed03.txt 8192KB ...
-  写耗时 : 3676ms   平均写速度 : 1113612B/S (2228KB/S)
-开始读文件 8192KB ...
-  读耗时 : 2193ms   平均读速度 : 1866685B/S (3735KB/S)
-IO SIZE: 8KB
-TEST FILE LEN: 8192KB
-开始写文件Speed04.txt 8192KB ...
-  写耗时 : 1900ms   平均写速度 : 2154547B/S (4311KB/S)
-开始读文件 8192KB ...
-  读耗时 : 1833ms   平均读速度 : 2233300B/S (4469KB/S)
-IO SIZE: 16KB
-TEST FILE LEN: 8192KB
-开始写文件Speed05.txt 8192KB ...
-  写耗时 : 955ms   平均写速度 : 4286534B/S (8578KB/S)
-开始读文件 8192KB ...
-  读耗时 : 1703ms   平均读速度 : 2403781B/S (4810KB/S)
-IO SIZE: 32KB
-TEST FILE LEN: 8192KB
-开始写文件Speed06.txt 8192KB ...
-  写耗时 : 933ms   平均写速度 : 4387610B/S (8780KB/S)
-开始读文件 8192KB ...
-  读耗时 : 1645ms   平均读速度 : 2488535B/S (4979KB/S)
-IO SIZE: 64KB
-TEST FILE LEN: 8192KB
-开始写文件Speed07.txt 8192KB ...
-  写耗时 : 1091ms   平均写速度 : 3752191B/S (7508KB/S)
-开始读文件 8192KB ...
-  读耗时 : 1642ms   平均读速度 : 2493082B/S (4989KB/S)
-IO SIZE: 128KB
-TEST FILE LEN: 8192KB
-开始写文件Speed08.txt 8192KB ...
-  写耗时 : 862ms   平均写速度 : 4749003B/S (9503KB/S)
-开始读文件 8192KB ...
-Speed1.txt 文件读成功，但是数据出错
-IO SIZE: 256KB
-TEST FILE LEN: 8192KB
-开始写文件Speed09.txt 8192KB ...
-  写耗时 : 859ms   平均写速度 : 4765588B/S (9536KB/S)
-开始读文件 8192KB ...
-Speed1.txt 文件读成功，但是数据出错
-
-```
-
-### BUG?
-
-IO/SIZE 为 128KB 和 256KB时，读取数据出错，原因是 128KB 就有 256 个 Block，超过了FatFS 最大128个 BLOCK大小
-
-例如 `diskio.c` 的 `disk_read()` 的参数 count ，要求 Number of sectors to read (1..128)
-
-```c
-/**
-  * @brief  Reads Sector(s)
-  * @param  pdrv: Physical drive number (0..)
-  * @param  *buff: Data buffer to store read data
-  * @param  sector: Sector address (LBA)
-  * @param  count: Number of sectors to read (1..128)
-  * @retval DRESULT: Operation result
-  */
-DRESULT disk_read (
-	BYTE pdrv,		/* Physical drive nmuber to identify the drive */
-	BYTE *buff,		/* Data buffer to store read data */
-	DWORD sector,	        /* Sector address in LBA */
-	UINT count		/* Number of sectors to read */
-)
-```
-
-例如 `sd_diskio.c` 的 `SD_read()` ，被是FatFs调用的函数，其参数 count ，要求也是 Number of sectors to read (1..128)
-
-```c
-/* USER CODE BEGIN beforeReadSection */
-/* can be used to modify previous code / undefine following code / add new code */
-/* USER CODE END beforeReadSection */
-/**
-  * @brief  Reads Sector(s)
-  * @param  lun : not used
-  * @param  *buff: Data buffer to store read data
-  * @param  sector: Sector address (LBA)
-  * @param  count: Number of sectors to read (1..128)
-  * @retval DRESULT: Operation result
-  */
-
-DRESULT SD_read(BYTE lun, BYTE *buff, DWORD sector, UINT count)
-```
-
-### 读速度慢
-
-随着每次block增大，写速度会从 400KB/s 增加到 9MB/s 左右，但是读取速度从 1MB 增加到 5000KB/s左右就不提升了，原因是WriteFileTest()内读取阶段加入了比较数据是否正确的代码段限制了读取速度：
-
-```c
-		for (i = 0; i < TEST_FILE_LEN / buf_size; i++)
-		{
-...
-				/* 比较写入的数据是否正确，此语句会导致读卡速度结果降低到 3.5MBytes/S */
-				for (k = 0; k < buf_size; k++)
-				{
-					if (g_TestBuf[k] != (k / 512) + '0')
-					{
-						err = 1;
-						printf("Speed1.txt 文件读成功，但是数据出错\r\n");
-						break;
-					}
-				}
-            	 if (err == 1)
-				{
-					break;
-				}
-...
-		}
-```
-
-将此部分注释掉，测速如下：
-
-### 三星 64G EVO (读不进行校验)
-
-```assembly
-【6 - TestSpeed】
-IO SIZE: 512byte
-TEST FILE LEN: 8192KB
-开始写文件Speed00.txt 8192KB ...
-  写耗时 : 19582ms   平均写速度 : 209051B/S (418KB/S)
-开始读文件 8192KB ...
-  读耗时 : 5340ms   平均读速度 : 766599B/S (1534KB/S)
-IO SIZE: 1KB
-TEST FILE LEN: 8192KB
-开始写文件Speed01.txt 8192KB ...
-  写耗时 : 10931ms   平均写速度 : 374498B/S (749KB/S)
-开始读文件 8192KB ...
-  读耗时 : 4713ms   平均读速度 : 868584B/S (1738KB/S)
-IO SIZE: 2KB
-TEST FILE LEN: 8192KB
-开始写文件Speed02.txt 8192KB ...
-  写耗时 : 4341ms   平均写速度 : 943017B/S (1887KB/S)
-开始读文件 8192KB ...
-  读耗时 : 3522ms   平均读速度 : 1162305B/S (2325KB/S)
-IO SIZE: 4KB
-TEST FILE LEN: 8192KB
-开始写文件Speed03.txt 8192KB ...
-  写耗时 : 2266ms   平均写速度 : 1806549B/S (3615KB/S)
-开始读文件 8192KB ...
-  读耗时 : 2225ms   平均读速度 : 1839838B/S (3681KB/S)
-IO SIZE: 8KB
-TEST FILE LEN: 8192KB
-开始写文件Speed04.txt 8192KB ...
-  写耗时 : 1378ms   平均写速度 : 2970711B/S (5944KB/S)
-开始读文件 8192KB ...
-  读耗时 : 1428ms   平均读速度 : 2866695B/S (5736KB/S)
-IO SIZE: 16KB
-TEST FILE LEN: 8192KB
-开始写文件Speed05.txt 8192KB ...
-  写耗时 : 1601ms   平均写速度 : 2556927B/S (5116KB/S)
-开始读文件 8192KB ...
-  读耗时 : 1291ms   平均读速度 : 3170906B/S (6345KB/S)
-IO SIZE: 32KB
-TEST FILE LEN: 8192KB
-开始写文件Speed06.txt 8192KB ...
-  写耗时 : 1117ms   平均写速度 : 3664852B/S (7333KB/S)
-开始读文件 8192KB ...
-  读耗时 : 936ms   平均读速度 : 4373547B/S (8752KB/S)
-IO SIZE: 64KB
-TEST FILE LEN: 8192KB
-开始写文件Speed07.txt 8192KB ...
-  写耗时 : 996ms   平均写速度 : 4110081B/S (8224KB/S)
-开始读文件 8192KB ...
-  读耗时 : 879ms   平均读速度 : 4657156B/S (9319KB/S)
-```
-
-## 簇大小
+## SD卡格式化的簇大小
 
 本工程使用三星64G evo 红卡 和闪迪64G ultra测试，使用DiskGenius格式化两款sd卡为FAT32 + 簇大小32KB（默认值），但格式化时可选簇大小有很多：
 
@@ -953,7 +549,343 @@ TEST FILE LEN: 8192KB
 
 [格式化SD时，簇大小的分配，簇越大速度越快，但较浪费](https://www.armbbs.cn/forum.php?mod=viewthread&tid=13819&highlight=%B8%F1%CA%BD%BB%AFSD%CA%B1%A3%AC%B4%D8%B4%F3%D0%A1%B5%C4%B7%D6)
 
-另外在参考资料小节中的 ”问题：FatFs缓冲开到等于簇大小有什么优势？" 中有个人的非专业分析 
+另外在参考资料小节中的 ”问题：FatFs缓冲开到等于簇大小有什么优势？" 中有分析 
 
+## 测试：使用armfly 原始 demo_sd_fatfs.c 的默认配置
 
+### 默认配置
+
+( IO/SIZE 是  32KB， 测试文件大小 2MB )
+
+```c
+/* 用于测试读写速度 */
+#define TEST_FILE_LEN			(2*1024*1024)	/* 用于测试的文件长度 */
+#define BUF_SIZE				(32*1024)		/* 每次读写SD卡的最大数据长度 */
+
+...
+ALIGN_32BYTES(char FsReadBuf[1024]);
+ALIGN_32BYTES(char FsWriteBuf[1024]) = {"FatFS Write Demo \r\n www.armfly.com \r\n"};
+ALIGN_32BYTES(uint8_t g_TestBuf[BUF_SIZE]);
+```
+
+### 三星_64G_EVO
+
+格式化为FAT32
+
+**0: 打印菜单**
+
+```bash
+[23:45:01.265] ------------------------------------------------
+[23:45:01.265] 请选择操作命令:
+[23:45:01.265] 1 - 显示根目录下的文件列表
+[23:45:01.265] 2 - 创建一个新文件armfly.txt
+[23:45:01.265] 3 - 读armfly.txt文件的内容
+[23:45:01.265] 4 - 创建目录
+[23:45:01.265] 5 - 删除文件和目录
+[23:45:01.265] 6 - 读写文件速度测试
+```
+
+**1: 显示根目录下的文件列表**
+
+```bash
+[23:44:32.231] 【1 - ViewRootDir】
+[23:44:32.231] UHS-I SD Card <50MB/S for SDR50, DDR50 Cards, MAX Clock < 50MHz OR 100MHz
+[23:44:32.231] UHS-I SD Card <104MB/S for SDR104, MAX Clock < 108MHz, Spec version 3.01
+[23:44:32.232] 属性        |  文件大小 | 短文件名 | 长文件名
+[23:44:32.233] (0x22)目录            0  System Volume Information
+[23:44:32.233] (0x32)文件       503277  20230215-1637_STLINK-V3MINIE-Box-V1.gcode
+[23:44:32.233] (0x32)文件      1065228  20230301-2306_STLINK_V3MINIE_CASE_TOP+BACK.gcode
+[23:44:32.233] (0x32)文件      2097152  Speed00.txt
+[23:44:32.249] (0x32)文件        29782  beifen_config
+[23:44:32.257] (0x32)文件        34463  config
+[23:44:32.265] (0x32)文件       389776  FIRMWARE.CUR
+[23:44:32.272] (0x16)目录            0  Gcode
+[23:44:32.281] (0x16)目录            0  webif
+```
+
+**2~5:**
+
+正常，略
+
+**6: 读写文件速度测试**
+
+> 注意上了 FatFs文件系统，如果不上估计更快
+
+SDMMC 时钟源25MHz，分频 0，SDMMC 时钟25MHz
+
+```c
+[21:36:10.255] 【6 - TestSpeed】
+[21:36:10.268] 开始写文件Speed00.txt 2048KB ...
+[21:36:10.679] ........
+[21:36:10.680]   写耗时 : 410ms   平均写速度
+[21:36:10.679]  : 5115004B/S (4995KB/S)
+[21:36:10.687] 开始读文件 2048KB ...
+[21:36:10.797] [led_task] sysTick : 314002 ms
+[21:36:11.095] ........
+[21:36:11.095]   读耗时 : 408ms   平均读速度
+[21:36:11.095]  : 5140078B/S (5019KB/S)
+```
+
+SDMMC 时钟源200MHz，分频 4，SDMMC 时钟50MHz
+
+```c
+[23:42:34.576] 【6 - TestSpeed】
+[23:42:34.597] 开始写文件Speed00.txt 2048KB ...
+[23:42:34.830] [led_task] sysTick : 5002 ms
+[23:42:35.044] ........
+[23:42:35.044]   写耗时 : 445ms   平均写速度
+[23:42:35.044]  : 4712701B/S (4602KB/S)
+[23:42:35.052] 开始读文件 2048KB ...
+[23:42:35.426] ........
+[23:42:35.426]   读耗时 : 374ms   平均读速度
+[23:42:35.426]  : 5607358B/S (5475KB/S)
+```
+
+**读速度慢**
+
+原因是WriteFileTest()内读取阶段加入了比较数据是否正确的代码段限制了读取速度：
+
+```c
+		for (i = 0; i < TEST_FILE_LEN / buf_size; i++)
+		{
+...
+				/* 比较写入的数据是否正确，此语句会导致读卡速度结果降低到 3.5MBytes/S */
+				for (k = 0; k < buf_size; k++)
+				{
+					if (g_TestBuf[k] != (k / 512) + '0')
+					{
+						err = 1;
+						printf("Speed1.txt 文件读成功，但是数据出错\r\n");
+						break;
+					}
+				}
+            	 if (err == 1)
+				{
+					break;
+				}
+...
+        }
+```
+
+将此部分注释掉，测速如下：
+
+```assembly
+IO SIZE: 32KB
+TEST FILE LEN: 8192KB
+开始写文件Speed06.txt 8192KB ...
+  写耗时 : 1117ms   平均写速度 : 3664852B/S (7333KB/S)
+开始读文件 8192KB ...
+  读耗时 : 936ms   平均读速度 : 4373547B/S (8752KB/S)
+```
+
+### 闪迪 64G Ulra
+
+**格式问题**
+
+exFAT 报错无法被 H7 发现 有效的分区，使用 DiskGenius格式化为FAT32后识别：
+
+![](Images/将闪迪64G_Ultra从exFAT格式化为FAT32.png)
+
+原因在CubeMX 配置我没有开启 exFAT支持：导致生成的的 ffconf.h 路径: FATFS/Target/ffconf.h 中 _FS_EXFAT 未使能
+
+```c
+#define _FS_EXFAT	0
+/* This option switches support of exFAT file system. (0:Disable or 1:Enable)
+/  When enable exFAT, also LFN needs to be enabled. (_USE_LFN >= 1)
+/  Note that enabling exFAT discards C89 compatibility. */
+```
+
+ff.c 中有大量依赖 _FS_EXFAT 预处理的代码：
+
+![](Images/ff.c中某个预处理器的_FS_EXFAT.png)
+
+可以在 CubeMX 中 FATFS使能FS_EXFAT：
+
+![](Images/CubeMX_FATFS使能FS_EXFAT配置.png)
+
+exFAT： 是微软为取代FAT32 而创建的新档案系统。 FAT32 和 exFAT 的主要差别在于exFAT 支持单个大于 4GB 文件
+
+ChaN 老师对于 FatFs 支持 exFAT 机制的解释 [exFAT Filesystem](http://elm-chan.org/fsw/ff/doc/appnote.html#exfat)
+
+**1:显示根目录下的文件列表**
+
+上位机使用 UTF8 编码：打印SD卡文件名出现乱码
+
+```bash
+[23:58:35.327] 【1 - ViewRootDir】
+[23:58:35.327] Normal Speed Card <12.5MB/S, MAX Clock < 25MHz, Spec Version 1.01
+[23:58:35.414] 属性        |  文件大小 | 短文件名 | 长文件名
+[23:58:35.414] (0x22)目录            0  System Volume Information
+[23:58:35.414] (0x32)文件       392184  FIRMWARE.CUR
+[23:58:35.415] (0x32)文件            3  fp-info-cache
+[23:58:35.415] (0x32)文件        33792  G031G8U6_BOOTLDR.bin
+[23:58:35.415] (0x32)文件           62  �½��ı��ĵ�.txt
+[23:58:35.415] (0x33)文件           65  DETAILS.TXT
+[23:58:35.416] (0x32)文件          371  ���������ļ���.md
+[23:58:35.416] (0x32)文件       238480  config.rar
+[23:58:35.417] (0x32)文件        17608  config_jeep
+[23:58:35.787] [led_task] sysTick : 5002 ms
+[23:58:36.786] [led_task] sysTick : 6002 ms
+[23:59:04.785] [led_task] sysTick : 7002 ms
+[23:59:04.785] [led_task] sysTick : 34002 ms
+[23:59:05.785] [led_task] sysTick : 35002 ms
+```
+
+上位机使用 GBK编码：打印SD卡文件名正常
+
+```bash
+[23:59:06.150] 銆� - ViewRootDir銆�
+[23:59:06.150] UHS-I SD Card <50MB/S for SDR50, DDR50 Cards, MAX Clock < 50MHz OR 100MHz
+[23:59:06.151] UHS-I SD Card <104MB/S for SDR104, MAX Clock < 108MHz, Spec version 3.01
+[23:59:06.151] 灞炴��       |  鏂囦欢澶у皬 | 鐭枃浠跺悕 | 闀挎枃浠跺悕
+[23:59:06.152] (0x22)鐩綍            0  System Volume Information
+[23:59:06.152] (0x32)鏂囦欢       392184  FIRMWARE.CUR
+[23:59:06.152] (0x32)鏂囦欢            3  fp-info-cache
+[23:59:06.152] (0x32)鏂囦欢        33792  G031G8U6_BOOTLDR.bin
+[23:59:06.152] (0x32)鏂囦欢           62  新建文本文档.txt
+[23:59:06.152] (0x33)鏂囦欢           65  DETAILS.TXT
+[23:59:06.153] (0x32)鏂囦欢          371  测试中文文件名.md
+[23:59:06.153] (0x32)鏂囦欢       238480  config.rar
+[23:59:06.154] (0x32)鏂囦欢        17608  config_jeep
+[23:59:06.785] [led_task] sysTick : 36002 ms
+[23:59:07.785] [led_task] sysTick : 37002 ms
+```
+
+由此推测CubeMX CODE_PAGE 配置为简体中文以GBK编码解析字符串，而c源码文件又是UTF8编码的，我的win10系统的编码是 GBK，那么在电脑端操作SD卡新建中文文件名是GBK编码的，win10可以将操作系统的编码改为 UTF8，但是是Beta功能，我以前试过会导致电脑的很多已安装的程序出现莫名奇妙的问题又改回GBK了，这个问题可以将工程源码文件的编码方式改为GBK解决，这样USB串口打印的字符串就从 UTF8 变为 GBK，和SD卡文件名的编方式一样了，推荐使用[基于python开发的编码转换工具](https://github.com/clorymmk/CodeTransmit)转换源码的编码
+
+**2~6: 正常** 
+
+略
+
+## 测试：ATTO Disk Benchmark
+
+这个肯定是USB3.0读卡器在 UHS-I 1.8V下跑的，比H7 在 3.3V下 HS跑的快很多
+
+| 三星64G_EVO                                                  | 闪迪64G_Ultra                                                |
+| ------------------------------------------------------------ | ------------------------------------------------------------ |
+| ![我的三星64G_EVO_ATTO测试](Images/我的三星64G_EVO_ATTO测试.png) | ![我的闪迪_64G_Ultra_ATTO测试](Images/我的闪迪_64G_Ultra_ATTO测试.png) |
+
+## 测试：不同 IO/SIZE 的读写性能
+
+ATTO使用不同的IO/SIZE读写256MB的文件，测试次数为4次
+
+WriteFileTest 函数通过 `for (i = 0; i < TEST_FILE_LEN / BUF_SIZE; i++)` 来计算读写次数，由于H7的AXI SRAM在本工程中还有 接近 500KB可用，g_TestBuf是 读写共用的 IO/SIZE 缓冲区，安富莱测试代码默认使用静态内存分配 32KB 在 AXI SRAM
+
+```c
+#define BUF_SIZE				(32*1024)		/* 每次读写SD卡的最大数据长度: 32KB*/
+ALIGN_32BYTES(uint8_t g_TestBuf[BUF_SIZE]);
+```
+
+在 H750 上做到像桌面端的 ATTO 的测试， 首先要确定可在 H750VB 上测试的最大 IO/SIZE：
+
+例如 `diskio.c` 的 `disk_read()` 的参数 count ，要求 Number of sectors to read (1..128)
+
+```c
+/**
+  * @brief  Reads Sector(s)
+  * @param  pdrv: Physical drive number (0..)
+  * @param  *buff: Data buffer to store read data
+  * @param  sector: Sector address (LBA)
+  * @param  count: Number of sectors to read (1..128)
+  * @retval DRESULT: Operation result
+  */
+DRESULT disk_read (
+	BYTE pdrv,		/* Physical drive nmuber to identify the drive */
+	BYTE *buff,		/* Data buffer to store read data */
+	DWORD sector,	        /* Sector address in LBA */
+	UINT count		/* Number of sectors to read */
+)
+```
+
+例如 `sd_diskio.c` 的 `SD_read()` ，被是FatFs调用的函数，其参数 count ，要求也是 Number of sectors to read (1..128)
+
+```c
+/* USER CODE BEGIN beforeReadSection */
+/* can be used to modify previous code / undefine following code / add new code */
+/* USER CODE END beforeReadSection */
+/**
+  * @brief  Reads Sector(s)
+  * @param  lun : not used
+  * @param  *buff: Data buffer to store read data
+  * @param  sector: Sector address (LBA)
+  * @param  count: Number of sectors to read (1..128)
+  * @retval DRESULT: Operation result
+  */
+
+DRESULT SD_read(BYTE lun, BYTE *buff, DWORD sector, UINT count)
+```
+
+那么可在 H750VB 上测试的最大 IO/SIZE 是FatFs支持的最大值 128个 Block =  128  x 512B = 65536B = 64KB，因此将 BUF_SIZE 如下修改：
+
+```c
+#define BUF_SIZE				(64*1024)		/* 每次读写SD卡的最大数据长度: 64KB*/
+```
+
+然后将 Speedtest.txt 从 2MB 加大到 8MB，避免文件太小导致测速不准确
+
+```c
+#define TEST_FILE_LEN			(8*1024*1024) 	/* 用于测试的文件长度: 8192KB */
+```
+
+最后修改 WriteFileTest() 等函数，这里就不贴上来了，可以直接看源码
+
+### 三星 64G EVO
+
+> 测试5次以上，取相对稳定的结果
+
+关闭读校验
+
+| IO SIZE | 写速度   | 写耗时  | 读速度   | 读耗时 | 测试文件名称 | 测试文件大小 | 校验文件数据 |
+| ------- | -------- | ------- | -------- | ------ | ------------ | ------------ | ------------ |
+| 512B    | 397KB/S  | 20611ms | 1539KB/S | 5322ms | Speed0.txt   | 8192KB       | N/A          |
+| 1KB     | 932KB/S  | 8785ms  | 1599KB/S | 5123ms | Speed1.txt   | 8192KB       | N/A          |
+| 2KB     | 1870KB/S | 4380ms  | 2613KB/S | 3135ms | Speed2.txt   | 8192KB       | N/A          |
+| 4KB     | 3602KB/S | 2274ms  | 4369KB/S | 1875ms | Speed3.txt   | 8192KB       | N/A          |
+| 8KB     | 5997KB/S | 1366ms  | 6127KB/S | 1337ms | Speed4.txt   | 8192KB       | N/A          |
+| 16KB    | 8094KB/S | 1012ms  | 7634KB/S | 1073ms | Speed5.txt   | 8192KB       | N/A          |
+| 32KB    | 8316KB/S | 985ms   | 9437KB/S | 868ms  | Speed6.txt   | 8192KB       | N/A          |
+| 64KB    | 8342KB/S | 982ms   | 9459KB/S | 866ms  | Speed7.txt   | 8192KB       | N/A          |
+
+开启读校验
+
+| IO SIZE | 写速度   | 写耗时  | 读速度   | 读耗时 | 测试文件名称 | 测试文件大小 | 校验文件数据 |
+| ------- | -------- | ------- | -------- | ------ | ------------ | ------------ | ------------ |
+| 512B    | 421KB/S  | 19450ms | 1305KB/S | 6273ms | Speed0.txt   | 8192KB       | OK           |
+| 1KB     | 808KB/S  | 10127ms | 1527KB/S | 5363ms | Speed1.txt   | 8192KB       | OK           |
+| 2KB     | 1505KB/S | 5440ms  | 2529KB/S | 3239ms | Speed2.txt   | 8192KB       | OK           |
+| 4KB     | 2496KB/S | 3281ms  | 3514KB/S | 2331ms | Speed3.txt   | 8192KB       | OK           |
+| 8KB     | 3629KB/S | 2257ms  | 3994KB/S | 2051ms | Speed4.txt   | 8192KB       | OK           |
+| 16KB    | 8055KB/S | 1017ms  | 4401KB/S | 1861ms | Speed5.txt   | 8192KB       | OK           |
+| 32KB    | 8393KB/S | 976ms   | 4697KB/S | 1744ms | Speed6.txt   | 8192KB       | OK           |
+| 64KB    | 8325KB/S | 984ms   | 4667KB/S | 1755ms | Speed7.txt   | 8192KB       | OK           |
+
+### 闪迪64G Ultra
+
+> 测试5次以上，取相对稳定的结果
+
+关闭读校验
+
+| IO SIZE | 写速度   | 写耗时  | 读速度    | 读耗时 | 测试文件名称 | 测试文件大小 | 校验文件数据 |
+| ------- | -------- | ------- | --------- | ------ | ------------ | ------------ | ------------ |
+| 512B    | 331KB/S  | 24732ms | 1437KB/S  | 5699ms | Speed0.txt   | 8192KB       | N/A          |
+| 1KB     | 610KB/S  | 13422ms | 2486KB/S  | 3294ms | Speed1.txt   | 8192KB       | N/A          |
+| 2KB     | 1190KB/S | 6883ms  | 4110KB/S  | 1993ms | Speed2.txt   | 8192KB       | N/A          |
+| 4KB     | 2678KB/S | 3058ms  | 6595KB/S  | 1242ms | Speed3.txt   | 8192KB       | N/A          |
+| 8KB     | 3411KB/S | 2401ms  | 8551KB/S  | 958ms  | Speed4.txt   | 8192KB       | N/A          |
+| 16KB    | 8687KB/S | 943ms   | 9869KB/S  | 830ms  | Speed5.txt   | 8192KB       | N/A          |
+| 32KB    | 9112KB/S | 899ms   | 10625KB/S | 771ms  | Speed6.txt   | 8192KB       | N/A          |
+| 64KB    | 9163KB/S | 894ms   | 10652KB/S | 769ms  | Speed7.txt   | 8192KB       | N/A          |
+
+开启读校验
+
+| IO SIZE | 写速度   | 写耗时  | 读速度   | 读耗时 | 测试文件名称 | 测试文件大小 | 校验文件数据 |
+| ------- | -------- | ------- | -------- | ------ | ------------ | ------------ | ------------ |
+| 512B    | 314KB/S  | 26087ms | 1154KB/S | 7096ms | Speed0.txt   | 8192KB       | OK           |
+| 1KB     | 540KB/S  | 15154ms | 1943KB/S | 4214ms | Speed1.txt   | 8192KB       | OK           |
+| 2KB     | 1035KB/S | 7912ms  | 2978KB/S | 2750ms | Speed2.txt   | 8192KB       | OK           |
+| 4KB     | 1630KB/S | 5024ms  | 3862KB/S | 2121ms | Speed3.txt   | 8192KB       | OK           |
+| 8KB     | 2031KB/S | 4032ms  | 4394KB/S | 1864ms | Speed4.txt   | 8192KB       | OK           |
+| 16KB    | 7543KB/S | 1086ms  | 4727KB/S | 1733ms | Speed5.txt   | 8192KB       | OK           |
+| 32KB    | 8274KB/S | 990ms   | 4914KB/S | 1667ms | Speed6.txt   | 8192KB       | OK           |
+| 64KB    | 9547KB/S | 858ms   | 4914KB/S | 1667ms | Speed7.txt   | 8192KB       | OK           |
 

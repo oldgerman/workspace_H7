@@ -152,6 +152,7 @@ SECTIONS
     __bss_end__ = _ebss;
   } >RAM_D1
 
+  /* 4byte align */
   .RAM_D2_Array (NOLOAD):
   {
     . = ALIGN(4);
