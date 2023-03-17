@@ -6,7 +6,7 @@
 
 ## Cache
 
-### 开Cache的坑
+### 配置の深坑
 
 按照 sd_diskio.c 中介绍的方法，将ENABLE_SD_DMA_CACHE_MAINTENANCE 和 ENABLE_SCRATCH_BUFFER 使能就行：
 
@@ -21,7 +21,11 @@
 | ------------------------------------------------------------ | ------------------------------------------------------------ |
 | ![关D-cache的2](Images/关D-cache的2.png)                     | ![开D-cache的第一次2号测试命令，SD_read和SD_write都是0x3](Images/开D-cache的第一次2号测试命令，SD_read和SD_write都是0x3.png) |
 
-将`SD_read()`中的0x3改为0x1f后，再次配置为开Cache，总算乱码消失+测试SD卡正常：
+将`SD_read()`中的0x3改为0x1f
+
+![仅将SD_read函数的0x3替换为0x1F](Images/仅将SD_read函数的0x3替换为0x1F.png)
+
+再次配置为开Cache，总算乱码消失+测试SD卡正常：
 
 ![开D-cache的第一次2号测试命令，SD_read是0x1f，SD_write是0x3](Images/开D-cache的第一次2号测试命令，SD_read是0x1f，SD_write是0x3.png)
 
@@ -102,12 +106,11 @@ DRESULT SD_read(BYTE lun, BYTE *buff, DWORD sector, UINT count)
 >
 > - 0x1f 二进制： 00011111
 >
-> 例如将4个不足32字节的变量编译为对齐32字节地址
-> 其地址依次为：0x30010800、0x30010820、0x30010840...
-> 减去0x30010800，简化为 0x00、0x20、0x40、0x60、0x80、0xa0、0xc0、0xe0
-> （最大只能到0xe0，0xe0 + 0x20 等于 0x100，尾数回到 0x00 ）
+> 例如将几个不足32字节的变量编译为对齐/不对齐32字节地址
 >
-> ![](Images/不足32字节的变量对齐32字节地址.png)
+> ![](Images/不足32字节的变量对齐32字节地址.png)其地址依次为：0x30010800、0x30010820、0x30010840...
+> 减去0x30010800，简化为 0x00、0x20、0x40、0x60、0x80、0xa0、0xc0、0xe0
+> （最大只能到0xe0，0xe0 + 0x20 等于 0x100，尾数回到 0x00 )
 >
 > 列出下表格：""Δ" 表示 "以16进制数表示的32字节对齐地址的最后2位的"
 >
@@ -141,9 +144,11 @@ DRESULT SD_read(BYTE lun, BYTE *buff, DWORD sector, UINT count)
 > >  f_open() 会返回 FR_NO_FILESYSTEM：没有有效的FAT卷
 > > f_write() 会返回 FR_INVALID_OBJECT：文件或者目录对象无效
 
-### FatFs API报错
+由于需要修改的 sd_diskio.c 的0x3位置是cubemx自动生成会覆盖的地方，为了以后修改cubemx配置重新生成的代码不与修改冲突，可以将 修改后的 sd_diskio.c复制一份到工程内用户创建的文件夹，然后在CubeIDE 的过滤器中屏蔽掉 CubeMX 自动生成的 sd_diskio.c，步骤如下：
 
-> 待补充
+![CubeIDE过滤器排除自动生成的sd_diskio.c](Images/CubeIDE过滤器排除自动生成的sd_diskio.c.png)
+
+![CubeIDE过滤器排除自动生成的sd_diskio.c2](Images/CubeIDE过滤器排除自动生成的sd_diskio.c2.png)
 
 ### 读写速度下降
 

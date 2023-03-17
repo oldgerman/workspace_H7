@@ -84,55 +84,12 @@ char DiskPath[4];
   *   SDMMC_CmdWriteSingleBlock() 和 SDMMC_CmdReadSingleBlock()，而不是使用批量块
   *   读写函数 SDMMC_CmdReadMultiBlock() 和 SDMMC_CmdWriteMultiBlock()
   */
-
-
-
-
-
-
-
-
 /* FatFs的读取临时缓冲区 */
 RAM_D2 ALIGN_32BYTES(char FsReadBuf[1024]);
 /* FatFs的写入临时缓冲区 */
 RAM_D2 ALIGN_32BYTES(char FsWriteBuf[1024]) = {"FatFS Write Demo \r\n www.armfly.com \r\n"};
 /* 测试的读写临时缓冲区 */
 RAM_D2 ALIGN_32BYTES(uint8_t g_TestBuf[BUF_SIZE]);
-
-RAM_D2 ALIGN_32BYTES(uint8_t  ALIGN_32_1);
-RAM_D2 ALIGN_32BYTES(uint8_t  ALIGN_32_2);
-RAM_D2 ALIGN_32BYTES(uint16_t ALIGN_32_3);
-RAM_D2 ALIGN_32BYTES(uint8_t  ALIGN_32_4);
-RAM_D2 ALIGN_32BYTES(uint16_t ALIGN_32_5);
-RAM_D2 ALIGN_32BYTES(uint32_t ALIGN_32_6);
-RAM_D2 ALIGN_32BYTES(uint8_t  ALIGN_32_7);
-RAM_D2 ALIGN_32BYTES(uint8_t  ALIGN_32_8);
-RAM_D2 ALIGN_32BYTES(uint16_t ALIGN_32_9);
-RAM_D2 ALIGN_32BYTES(uint8_t  ALIGN_32_10);
-RAM_D2 ALIGN_32BYTES(uint16_t ALIGN_32_11);
-RAM_D2 ALIGN_32BYTES(uint32_t ALIGN_32_12);
-
-RAM_D2 uint8_t  g_1;
-RAM_D2 uint8_t  g_2;
-RAM_D2 uint16_t g_3;
-RAM_D2 uint8_t  g_4;
-RAM_D2 uint16_t g_5;
-RAM_D2 uint32_t g_6;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 /* Private function prototypes -----------------------------------------------*/
 static void DispMenu(void);
@@ -181,11 +138,6 @@ static const char * FR_Table[]=
 void DemoFatFS(uint8_t cmd)
 {
 	printf("\r\n");
-	printf("%d\r\n",
-			ALIGN_32_1 + ALIGN_32_2 + ALIGN_32_3 + ALIGN_32_4 +
-			g_1 + g_2 + g_3 + g_4);
-
-
 	switch (cmd)
 	{
 	    case '0':
