@@ -14,6 +14,23 @@ DIY的[micespring](https://oshwhub.com/micespring)设计的[STM32H750VB/H7B0VB�
 
 - 涉及直接寄存器操作的尽量改用HAL API（前提是在不严重影响执行速度的情况）
 
+### git 仅 clone 本仓库的某些文件夹
+
+```bash
+git init workspace_H7 && cd workspace_H7
+
+git config core.sparsecheckout true
+
+echo '文件夹路径1' >> .git/info/sparse-checkout
+echo '文件夹路径2' >> .git/info/sparse-checkout
+echo '文件夹路径3' >> .git/info/sparse-checkout
+...
+
+git remote add origin https://github.com/oldgerman/workspace_H7.git
+
+git pull origin master
+```
+
 ### 实际测试
 
 若有时间整理，相应工程的根目录README.md文件中有测试记录

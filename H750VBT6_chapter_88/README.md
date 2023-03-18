@@ -413,7 +413,7 @@ void OnAsciiCmd(const char* _cmd, size_t _len, StreamSink &_responseChannel)
 
 ### 先说结论
 
-当前我使用CubeMX v6.6 + **STM32CubeH7 V1.11.0 / 04-Nov-2022**   的包，ST 的团队已经处理好了FATFS + IDMA + CMSIS OS + 多任务互斥访问 FatFs API 的99%，还有1%的BUG没有解决，不开D-Cache可以用CubeMX自动生成的代码，开Cache会因为这1%的BUG导致不能用，请参考[STM32+SDIO+FATFS在带有DMA和CACHE的平台的调试注意要点](https://blog.csdn.net/fairchild_1947/article/details/122268377) 中的方法修改这个BUG
+当前我使用CubeMX v6.6 + **STM32CubeH7 V1.11.0 / 04-Nov-2022**   的包，ST 的团队已经处理好了FATFS + IDMA + CMSIS OS + 多任务互斥访问 FatFs API 的99%，还有1%的BUG没有解决，不开Cache可以用CubeMX自动生成的代码，开Cache会因为这1%的BUG导致不能用，请参考[H750VBT6_FATFS_SDMMC_TF_01](https://github.com/oldgerman/workspace_H7/tree/master/H750VBT6_FATFS_SDMMC_TF_01)中的方法修改这个BUG
 
 ### 考古
 
