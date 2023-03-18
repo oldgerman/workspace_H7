@@ -2,11 +2,11 @@
 
 ## 关于 
 
-在 H750VBT6_chapter_88 基础上修改，使能cache，评测fatfs+sdio方案做 DS-PPK 采样数据的 实时储存的可行性
+在 H750VBT6_chapter_88 基础上修改，使能cache配置
 
-## 打开 Cache
+## 配置 Cache 的深坑
 
-### 配置の深坑
+### 修改ST固件库的BUG
 
 按照 sd_diskio.c 中介绍的方法，将ENABLE_SD_DMA_CACHE_MAINTENANCE 和 ENABLE_SCRATCH_BUFFER 使能就行：
 
@@ -102,18 +102,41 @@ DRESULT SD_read(BYTE lun, BYTE *buff, DWORD sector, UINT count)
 }
 ```
 
-所以产生乱码的问题根源是SCB_InvalidateDCache_by_Addr() 参数为 FATFS结构体变量fs的成员win[512]的4字节对齐地址，导致错位：
+产生乱码的问题根源是 全局变量 FATFS fs 的的成员win[512]是4字节对齐地址 ？如下图
 
 ![](Images/FATFS对象成员win的地址不满足32字节对齐.png)
 
-注意，只能将SD_read()中的0x3改为0x1f，不要将 SD_write()中的0x3改为0x1f 
+很可惜并不是，真正的原因是 全局变量 FATFS fs 的成员 win[512] 的元素地址不是32字节对齐，这个元素的地址又传给了 SD_read() 的 buff 参数，在后文有分析
 
-> 按道理应该要修改的，但是0x3才正常真是奇了怪了：
->
+另外从 STM32CubeH7 V1.11.0 / 04-Nov-2022 包自动生成的 sd_diskio.c 的 SD_write() 括号位置有 BUG，需要如下修改：
+
+```c
+//不知道这个错误又会坑多少人。。。
+DRESULT SD_write(BYTE lun, const BYTE *buff, DWORD sector, UINT count)
+{
+...
+  if (!((uint32_t)buff & 0x3))
+  {
+      ...
+#if defined(ENABLE_SCRATCH_BUFFER)
+  }       // <-----在此处添加括号！！
+  else {
+      ...
+    }
+
+//  }     // <-----错误的括号位置！！
+#endif
+
+  return res;
+}
+```
+
+将SD_read()中的0x3改为0x1f，那么理应 SD_write()中的0x3也需要改为0x1f ，但实测后，SD_write这个是 0x3 才正常，0x1f 反而报错，这我也不明白，先写在这里好了：
+
 > 测试：将SD_read()也修改为0x1f
 >
-> >  f_open() 会返回 FR_NO_FILESYSTEM：没有有效的FAT卷
-> > f_write() 会返回 FR_INVALID_OBJECT：文件或者目录对象无效
+> - f_open() 会返回 FR_NO_FILESYSTEM：没有有效的FAT卷
+> - f_write() 会返回 FR_INVALID_OBJECT：文件或者目录对象无效
 
 由于需要修改的 sd_diskio.c 的0x3位置是cubemx自动生成会覆盖的地方，为了以后修改cubemx配置重新生成的代码不与修改冲突，可以将 修改后的 sd_diskio.c复制一份到工程内用户创建的文件夹，然后在CubeIDE 的过滤器中屏蔽掉 CubeMX 自动生成的 sd_diskio.c，步骤如下：
 
@@ -121,7 +144,7 @@ DRESULT SD_read(BYTE lun, BYTE *buff, DWORD sector, UINT count)
 
 ![CubeIDE过滤器排除自动生成的sd_diskio.c2](Images/CubeIDE过滤器排除自动生成的sd_diskio.c2.png)
 
-**为啥 0x1f  可以判断地址是否4字节对齐?**
+### 为啥 0x1f  可以判断地址是否4字节对齐?
 
 - 0x1f 二进制： 00011111
 
@@ -150,32 +173,255 @@ DRESULT SD_read(BYTE lun, BYTE *buff, DWORD sector, UINT count)
 - 对于 & 0xf 判断 4字节对齐，规律依据是 32字节对齐地址的最后 的 5 个bit 必定是 0
 - 对于 & 0x3 判断 4字节对齐，规律依据是 4字节对齐地址的最后 的 2 个bit 必定是 0
 
-### 读写速度下降
+### 全局变量 FATFS fs 的成员 win[512] 的元素地址不是32字节对齐
 
-以下是使用三星64G EVO测试 6号和7号命令的结果
+> 比如1号命令期间 进入 SD_read 非 32字节对齐 处理的代码块是 8次，在断点处暂停看到的 buff 值都是 0x24001d18 ， 该地址不是32字节对齐的，该地址是 fs 的 第 56号 元素的地址 字符值为 “RRaA”，是FA32 FS 扇区签名信息 （ FS information sector signature (0x52 0x52 0x61 0x41 = "`RRaA`")）
+>
+> ![](Images/fs的第56个元素的位置值为RRaA触发SD+read的非32字节对齐代码1.png)
+>
+> ![](Images/fs的第56个元素的位置值为RRaA触发SD+read的非32字节对齐代码2.png)
+>
+> 在读写函数中 fs.buf[56] 被高频使用，那么 sd_diskio.c 内的读写函数就会高频使用 memcpy 复制到临时32字节对齐缓冲区 scratch[512]，延长了读写时间
+
+FIL file 中也有一个 buf[512]，这个会不会也导致非32字节对齐？
+
+> 测试1~7号命令时发现触发 SD_read() 的非32字节对齐的断点只会是 fs->win[...]，没有出现 fp->buf[...] ，也就是说
+>
+> **对于本工程的测试代码，全局 FIL 变量 file 的成员 buf[512] 中出现的扇区号的地址总是32字节对齐的**
+>
+> 扇区是物理磁盘的最小单位，对于我使用的SD卡，是512字节，FAT32一个簇一般包含 1、2、4、8、16、32、64 和 128 个扇区，簇的大小取决于格式化SD卡时用户的指定大小，我使用的SD簇大小是32KB，一个簇包含 64 个 512B 大小的扇区
+
+备注：
+
+> 在 ff.c 中搜索 disk_read，有以下 10 行代码：
+>
+> ```c
+> if (disk_read(fs->drv, fs->win, sector, 1) != RES_OK) {
+> if (disk_read(fs->drv, fp->buf, fp->sect, 1) != RES_OK) res = FR_DISK_ERR;
+> if (disk_read(fs->drv, rbuff, sect, cc) != RES_OK) ABORT(fs, FR_DISK_ERR);
+> if (disk_read(fs->drv, fp->buf, sect, 1) != RES_OK)	ABORT(fs, FR_DISK_ERR);	/* Fill sector cache */
+>  disk_read(fs->drv, fp->buf, sect, 1) != RES_OK) {
+> if (disk_read(fs->drv, fp->buf, dsc, 1) != RES_OK) ABORT(fs, FR_DISK_ERR);	/* Load current sector */
+> if (disk_read(fs->drv, fp->buf, nsect, 1) != RES_OK) ABORT(fs, FR_DISK_ERR);	/* Fill sector cache */
+> if (disk_read(fs->drv, fp->buf, sect, 1) != RES_OK) ABORT(fs, FR_DISK_ERR);
+> if (disk_read(pdrv, buf, 0, 1) != RES_OK) return FR_DISK_ERR;	/* Load MBR */
+> if (disk_read(pdrv, buf, 0, 1) != RES_OK) return FR_DISK_ERR;	/* Read the MBR */
+> ```
+>
+> 搜索 disk_write，有以下 28 行代码：
+>
+> ```c
+> if (disk_write(fs->drv, fs->win, wsect, 1) != RES_OK) {
+> disk_write(fs->drv, fs->win, wsect, 1);
+> disk_write(fs->drv, fs->win, fs->winsect, 1);
+> if (disk_write(fs->drv, fp->buf, fp->sect, 1) != RES_OK) ABORT(fs, FR_DISK_ERR);
+> if (disk_write(fs->drv, fp->buf, fp->sect, 1) != RES_OK) ABORT(fs, FR_DISK_ERR);
+> if (disk_write(fs->drv, wbuff, sect, cc) != RES_OK) ABORT(fs, FR_DISK_ERR);
+> if (disk_write(fs->drv, fp->buf, fp->sect, 1) != RES_OK) LEAVE_FF(fs, FR_DISK_ERR);
+> if (disk_write(fs->drv, fp->buf, fp->sect, 1) != RES_OK) ABORT(fs, FR_DISK_ERR);
+> if (disk_write(fs->drv, fp->buf, fp->sect, 1) != RES_OK) ABORT(fs, FR_DISK_ERR);
+> if (disk_write(fs->drv, fp->buf, fp->sect, 1) != RES_OK) {
+> if (disk_write(fs->drv, fp->buf, fp->sect, 1) != RES_OK) ABORT(fs, FR_DISK_ERR);
+> if (disk_write(pdrv, buf, sect, n) != RES_OK) return FR_DISK_ERR;
+> if (disk_write(pdrv, buf, sect, n) != RES_OK) return FR_DISK_ERR;
+> if (disk_write(pdrv, buf, sect, n) != RES_OK) return FR_DISK_ERR;
+> if (disk_write(pdrv, buf, sect, n) != RES_OK) return FR_DISK_ERR;
+> if (disk_write(pdrv, buf, sect++, 1) != RES_OK) return FR_DISK_ERR;
+> if (disk_write(pdrv, buf, sect++, 1) != RES_OK) return FR_DISK_ERR;
+> if (disk_write(pdrv, buf, sect++, 1) != RES_OK) return FR_DISK_ERR;
+> if (disk_write(pdrv, buf, sect++, 1) != RES_OK) return FR_DISK_ERR;
+> if (disk_write(pdrv, buf, b_vol, 1) != RES_OK) return FR_DISK_ERR;	/* Write it to the VBR sector */
+> disk_write(pdrv, buf, b_vol + 6, 1);		/* Write backup VBR (VBR + 6) */
+> disk_write(pdrv, buf, b_vol + 7, 1);		/* Write backup FSINFO (VBR + 7) */
+> disk_write(pdrv, buf, b_vol + 1, 1);		/* Write original FSINFO (VBR + 1) */
+> if (disk_write(pdrv, buf, sect, (UINT)n) != RES_OK) return FR_DISK_ERR;
+> if (disk_write(pdrv, buf, sect, (UINT)n) != RES_OK) return FR_DISK_ERR;
+> if (disk_write(pdrv, buf, 0, 1) != RES_OK) return FR_DISK_ERR;	/* Write it back to the MBR */
+> if (disk_write(pdrv, buf, 0, 1) != RES_OK) return FR_DISK_ERR;	/* Write it to the MBR */
+> return (disk_write(pdrv, buf, 0, 1) != RES_OK || disk_ioctl(pdrv, CTRL_SYNC, 0) != RES_OK) ? FR_DISK_ERR : FR_OK;
+> ```
+>
+> disk_read()使用的参数共同点：
+>
+> - 参数1：读驱动的函数指针
+>
+> - 参数2、参数 4：
+>
+>   > 为 fs->win 是 FATFS 的win[512]、为 fp->buf 是 FIL 的 buf[512]
+>   >
+>   > 为  fs->win 、fp->buf、buf 时，参数 4 一定是 1
+>   >
+>   > 为 rbuff 时，参数 4 是 cc 变量，那么 rbuff 是写的文件的缓冲区的地址，cc 缓冲区以Block为单位的大小（1 Block = 512B ）
+>
+> - 参数3：
+>
+>   > 参数 2 是 fs->win 时
+>   >
+>   > > 例如 move_window中 向 disk_read 传入 的 sector 参数表示在 fs->win[] 中出现的扇区号![](Images/disk_read的fs-win下sector参数的意义.png)
+>   >
+>   > 参数 2 是 fp->buf 时
+>   >
+>   > > 例如 f_open 中 向的 disk_read 传入 的 fp->sect 参数表示buf[]中出现的扇区号（0：表示无效）
+>   > >
+>   > > ![](Images/f_open的fp-buf下fp-sec参数的意义.png)
+>
+> disk_write()使用的参数共同点：
+>
+> - 参数1：写驱动的函数指针
+>
+> - 参数2、参数 4：
+>
+>   > 为 fs->win、fp->buf、buf 时，参数 4 情况很多
+>   >
+>   > 为 wbuff 时，参数 4 是 cc 变量，那么 wbuff 是读的文件的缓冲区的地址，cc 缓冲区以Block为单位的大小（1 Block = 512B ）
+>
+> - 参数3：略
+
+解决方法：禁用 cache 的情况
+
+> 关闭Cache，确保文件缓冲区至少4字节对齐，使用默认的sd_diskio.c（不修改0x3），禁用cache配置，避免 sd_diskio.c 读写函数执行SCB_InvalidateDCache_by_Addr()和处理非32字节对齐地址的 memcpy + scratch[512]
+
+解决方法：打开 cache 的情况
+
+> 无法解决，Cache反被Cache误，好在这个对读写速度的影响微乎其微，见本文测试部分的对比
+
+## 测试
+
+被测SD卡：闪迪64G Ultra 
+
+### 6号命令（关闭读校验）
+
+使能Cache + FS 模式 （SDMMC 时钟频率 25MHz ）@3.3V
+
+> 将 sdmmc.c 的 hsd1.Init.ClockDiv = 4; 从 本工程默认的 4分频 临时改为 8分频 测试
 
 | IO SIZE | 写速度   | 写耗时  | 读速度   | 读耗时 | 测试文件名称 | 测试文件大小 | 校验文件数据 |
 | ------- | -------- | ------- | -------- | ------ | ------------ | ------------ | ------------ |
-| 512B    | 453KB/S  | 18064ms | 971KB/S  | 8433ms | Speed00.txt  | 8192KB       | N/A          |
-| 1KB     | 869KB/S  | 9422ms  | 1650KB/S | 4962ms | Speed01.txt  | 8192KB       | N/A          |
-| 2KB     | 1654KB/S | 4952ms  | 2449KB/S | 3345ms | Speed02.txt  | 8192KB       | N/A          |
-| 4KB     | 2827KB/S | 2897ms  | 3340KB/S | 2452ms | Speed03.txt  | 8192KB       | N/A          |
-| 8KB     | 3496KB/S | 2343ms  | 4444KB/S | 1843ms | Speed04.txt  | 8192KB       | N/A          |
-| 16KB    | 4740KB/S | 1728ms  | 4949KB/S | 1655ms | Speed05.txt  | 8192KB       | N/A          |
-| 32KB    | 4824KB/S | 1698ms  | 5375KB/S | 1524ms | Speed06.txt  | 8192KB       | N/A          |
-| 64KB    | 4818KB/S | 1700ms  | 5371KB/S | 1525ms | Speed07.txt  | 8192KB       | N/A          |
+| 512B    | 329KB/S  | 24884ms | 1282KB/S | 6386ms | Speed00.txt  | 8192KB       | N/A          |
+| 1KB     | 565KB/S  | 14475ms | 2025KB/S | 4044ms | Speed01.txt  | 8192KB       | N/A          |
+| 2KB     | 1207KB/S | 6782ms  | 3176KB/S | 2579ms | Speed02.txt  | 8192KB       | N/A          |
+| 4KB     | 1941KB/S | 4219ms  | 4222KB/S | 1940ms | Speed03.txt  | 8192KB       | N/A          |
+| 8KB     | 2952KB/S | 2775ms  | 4890KB/S | 1675ms | Speed04.txt  | 8192KB       | N/A          |
+| 16KB    | 4949KB/S | 1655ms  | 5329KB/S | 1537ms | Speed05.txt  | 8192KB       | N/A          |
+| 32KB    | 5214KB/S | 1571ms  | 5572KB/S | 1470ms | Speed06.txt  | 8192KB       | N/A          |
+| 64KB    | 5221KB/S | 1569ms  | 5572KB/S | 1470ms | Speed07.txt  | 8192KB       | N/A          |
+
+使能Cache + HS 模式（SDMMC 时钟频率 50MHz）@3.3V
+
+| IO SIZE | 写速度   | 写耗时  | 读速度    | 读耗时 | 测试文件名称 | 测试文件大小 | 校验文件数据 |
+| ------- | -------- | ------- | --------- | ------ | ------------ | ------------ | ------------ |
+| 512B    | 336KB/S  | 24349ms | 1452KB/S  | 5640ms | Speed00.txt  | 8192KB       | N/A          |
+| 1KB     | 607KB/S  | 13490ms | 2522KB/S  | 3247ms | Speed01.txt  | 8192KB       | N/A          |
+| 2KB     | 1234KB/S | 6637ms  | 4483KB/S  | 1827ms | Speed02.txt  | 8192KB       | N/A          |
+| 4KB     | 2663KB/S | 3076ms  | 6736KB/S  | 1216ms | Speed03.txt  | 8192KB       | N/A          |
+| 8KB     | 3383KB/S | 2421ms  | 8359KB/S  | 980ms  | Speed04.txt  | 8192KB       | N/A          |
+| 16KB    | 8677KB/S | 944ms   | 9752KB/S  | 840ms  | Speed05.txt  | 8192KB       | N/A          |
+| 32KB    | 8167KB/S | 1003ms  | 10475KB/S | 782ms  | Speed06.txt  | 8192KB       | N/A          |
+| 64KB    | 8445KB/S | 970ms   | 10502KB/S | 780ms  | Speed07.txt  | 8192KB       | N/A          |
+
+禁用Cache + HS 模式（SDMMC 时钟频率 50MHz）@3.3V
+
+> 数据来自于 H750VBT6_chapter_88 工程的测试
+
+| IO SIZE | 写速度   | 写耗时  | 读速度    | 读耗时 | 测试文件名称 | 测试文件大小 | 校验文件数据 |
+| ------- | -------- | ------- | --------- | ------ | ------------ | ------------ | ------------ |
+| 512B    | 331KB/S  | 24732ms | 1437KB/S  | 5699ms | Speed0.txt   | 8192KB       | N/A          |
+| 1KB     | 610KB/S  | 13422ms | 2486KB/S  | 3294ms | Speed1.txt   | 8192KB       | N/A          |
+| 2KB     | 1190KB/S | 6883ms  | 4110KB/S  | 1993ms | Speed2.txt   | 8192KB       | N/A          |
+| 4KB     | 2678KB/S | 3058ms  | 6595KB/S  | 1242ms | Speed3.txt   | 8192KB       | N/A          |
+| 8KB     | 3411KB/S | 2401ms  | 8551KB/S  | 958ms  | Speed4.txt   | 8192KB       | N/A          |
+| 16KB    | 8687KB/S | 943ms   | 9869KB/S  | 830ms  | Speed5.txt   | 8192KB       | N/A          |
+| 32KB    | 9112KB/S | 899ms   | 10625KB/S | 771ms  | Speed6.txt   | 8192KB       | N/A          |
+| 64KB    | 9163KB/S | 894ms   | 10652KB/S | 769ms  | Speed7.txt   | 8192KB       | N/A          |
+
+### 7号命令（开启读校验）
+
+> 可以看出开 Cache 的显著优势，不再被读校验最高 4MB/s 所限制
+
+使能Cache + HS 模式（SDMMC 时钟频率 50MHz）@3.3V
 
 | IO SIZE | 写速度   | 写耗时  | 读速度   | 读耗时 | 测试文件名称 | 测试文件大小 | 校验文件数据 |
 | ------- | -------- | ------- | -------- | ------ | ------------ | ------------ | ------------ |
-| 512B    | 455KB/S  | 18000ms | 1067KB/S | 7677ms | Speed00.txt  | 8192KB       | OK           |
-| 1KB     | 894KB/S  | 9163ms  | 1120KB/S | 7310ms | Speed01.txt  | 8192KB       | OK           |
-| 2KB     | 1762KB/S | 4648ms  | 1821KB/S | 4498ms | Speed02.txt  | 8192KB       | OK           |
-| 4KB     | 3211KB/S | 2551ms  | 2724KB/S | 3007ms | Speed03.txt  | 8192KB       | OK           |
-| 8KB     | 3944KB/S | 2077ms  | 3574KB/S | 2292ms | Speed04.txt  | 8192KB       | OK           |
-| 16KB    | 4740KB/S | 1728ms  | 4164KB/S | 1967ms | Speed05.txt  | 8192KB       | OK           |
-| 32KB    | 4835KB/S | 1694ms  | 4350KB/S | 1883ms | Speed06.txt  | 8192KB       | OK           |
-| 64KB    | 4827KB/S | 1697ms  | 4376KB/S | 1872ms | Speed07.txt  | 8192KB       | OK           |
+| 512B    | 328KB/S  | 24948ms | 1380KB/S | 5935ms | Speed00.txt  | 8192KB       | OK           |
+| 1KB     | 591KB/S  | 13846ms | 2283KB/S | 3588ms | Speed01.txt  | 8192KB       | OK           |
+| 2KB     | 1351KB/S | 6062ms  | 3785KB/S | 2164ms | Speed02.txt  | 8192KB       | OK           |
+| 4KB     | 2271KB/S | 3607ms  | 5271KB/S | 1554ms | Speed03.txt  | 8192KB       | OK           |
+| 8KB     | 4397KB/S | 1863ms  | 6455KB/S | 1269ms | Speed04.txt  | 8192KB       | OK           |
+| 16KB    | 8614KB/S | 951ms   | 7154KB/S | 1145ms | Speed05.txt  | 8192KB       | OK           |
+| 32KB    | 9416KB/S | 870ms   | 7550KB/S | 1085ms | Speed06.txt  | 8192KB       | OK           |
+| 64KB    | 7488KB/S | 1094ms  | 7550KB/S | 1085ms | Speed07.txt  | 8192KB       | OK           |
 
-## 模拟实时读写发生器
+禁用Cache + HS 模式（SDMMC 时钟频率 50MHz）@3.3V
 
-> 待补充
+> 数据来自于 H750VBT6_chapter_88 工程的测试
+
+| IO SIZE | 写速度   | 写耗时  | 读速度   | 读耗时 | 测试文件名称 | 测试文件大小 | 校验文件数据 |
+| ------- | -------- | ------- | -------- | ------ | ------------ | ------------ | ------------ |
+| 512B    | 314KB/S  | 26087ms | 1154KB/S | 7096ms | Speed0.txt   | 8192KB       | OK           |
+| 1KB     | 540KB/S  | 15154ms | 1943KB/S | 4214ms | Speed1.txt   | 8192KB       | OK           |
+| 2KB     | 1035KB/S | 7912ms  | 2978KB/S | 2750ms | Speed2.txt   | 8192KB       | OK           |
+| 4KB     | 1630KB/S | 5024ms  | 3862KB/S | 2121ms | Speed3.txt   | 8192KB       | OK           |
+| 8KB     | 2031KB/S | 4032ms  | 4394KB/S | 1864ms | Speed4.txt   | 8192KB       | OK           |
+| 16KB    | 7543KB/S | 1086ms  | 4727KB/S | 1733ms | Speed5.txt   | 8192KB       | OK           |
+| 32KB    | 8274KB/S | 990ms   | 4914KB/S | 1667ms | Speed6.txt   | 8192KB       | OK           |
+| 64KB    | 9547KB/S | 858ms   | 4914KB/S | 1667ms | Speed7.txt   | 8192KB       | OK           |
+
+### MPU 配置的影响
+
+本工程运行域默认使用 RAM_D1，通过在 demo_sd_fatfs.c 的宏 RAM_D2 将读写缓冲区编译到 RAM_D2 测试
+
+MPU 对 RAM_D1 和 RAM_D2 的配置如下：
+
+| 内存域 | TEX   | C    | B    | S    | 说明                                      |
+| ------ | ----- | ---- | ---- | ---- | ----------------------------------------- |
+| RAM_D1 | 0b001 | 1    | 1    | 0    | Write back，read allocate，write allocate |
+| RAM_D2 | 0b000 | 0    | 0    | 0    | Non-cacheable                             |
+
+| RAM_D1 使用安富莱 v7 bsp教程 AXI_SRAM 的配置    | RAM_D2 无 Cache 配置                          |
+| ----------------------------------------------- | --------------------------------------------- |
+| ![](Images/安富莱_v7_bsp教程AXI_SRAM的配置.png) | ![](Images/安富莱_v7_bsp教程24.4.1的配置.png) |
+
+#### 不使用 宏 RAM_D2 
+
+```
+		【2 - CreateNewFile】
+		armfly.txt 文件打开成功
+		armfly.txt 文件写入成功
+
+		【1 - ViewRootDir】
+		UHS-I SD Card <50MB/S for SDR50, DDR50 Cards, MAX Clock < 50MHz OR 100MHz
+		UHS-I SD Card <104MB/S for SDR104, MAX Clock < 108MHz, Spec version 3.01
+		属性        |  文件大小 | 短文件名 | 长文件名
+		(0x22)目录            0  System Volume Information
+		(0x32)文件           37  armfly.txt
+		(0x32)文件           10  1234567890.txt
+
+		【3 - ReadFileData】
+
+		armfly.txt 文件内容 :
+		FatFS Write Demo
+		 www.armfly.com
+```
+
+ #### 使用 宏 RAM_D2 
+
+```shell
+		【2 - CreateNewFile】
+		armfly.txt 文件打开成功
+		armfly.txt 文件写入成功
+
+		【1 - ViewRootDir】
+		UHS-I SD Card <50MB/S for SDR50, DDR50 Cards, MAX Clock < 50MHz OR 100MHz
+		UHS-I SD Card <104MB/S for SDR104, MAX Clock < 108MHz, Spec version 3.01
+		属性        |  文件大小 | 短文件名 | 长文件名
+		(0x22)目录            0  System Volume Information
+		(0x32)文件          178  armfly.txt
+		(0x32)文件           10  1234567890.txt
+
+		【3 - ReadFileData】
+
+		armfly.txt 文件内容 :
+		��9j����*F�/��:��QL
+		�B�GuI5�&Z�-兔���&A8�Ŭ���*nS�T@�Y>c���峿����!E��R�x�V�].��b�������҄�	u��k�*�Ae2�] ��"�S����-�%y�	>�`�7��.dR�,�^̓Qpr�S�!�l��)��̡6�c��弩�l�
+```
+

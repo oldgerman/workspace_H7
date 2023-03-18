@@ -5,9 +5,19 @@
 在某个H750VBT6_ST_USB_CDC工程（带有fibre通信框架并处理好print线程安全）的基础上，添加安富莱V7教程 《第88章 STM32H7 的 SDMMC总线应用之 SD 卡移植 FatFs 文件系统》 的相关例程： **V7-025_FatFS文件系统例子（SD卡 V1.2）**  代码 中的示例程序 `demo_sd_fatfs.c`文件到 `H750VBT6_chapter_88\UserApp` 路径下，少许修改后进行测试
 
 - 开发环境：STM32CubeIDE v1.11.2 + STM32CubeMX v6.6
+
 - 包版本：STM32CubeH7 V1.11.0 / 04-Nov-2022
+
 - FATFS版本：R0.12c
-- SD卡：使用三星64G evo 红卡 和闪迪64G ultra测试，使用DiskGenius格式化两款sd卡为FAT32 + 簇大小32KB（默认值）
+
+- SD卡：
+
+  > 型号：三星64G evo 红卡 和 闪迪64G ultra测试
+  >
+  > 格式化：使用DiskGenius格式化两款sd卡为FAT32 + 簇大小32KB（默认值）
+  >
+  > 单片机跑的6和7号命令的测速程序的SD卡速度模式：HS模式，SDMMC 时钟频率 50MHz
+
 - 编译器：本工程的所有测试都是在 OPtimization Level -O0，Debug level -g3 下进行
 
 ## 参考资料

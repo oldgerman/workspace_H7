@@ -52,8 +52,8 @@ typedef enum{
 /* Private macro -------------------------------------------------------------*/
 /* 将缓冲区编译到指定RAM的宏 */
 #ifndef  RAM_D2
-//#define RAM_D2	    // 待定
-#define  RAM_D2	__attribute__((section(".RAM_D2_Array")))	// 放在.RAM_D2，默认4字节对齐
+#define RAM_D2	    											// 放在默认的 .RAM_D1 (AXI SRAM)
+//#define  RAM_D2	__attribute__((section(".RAM_D2_Array"))) 	// 放在 .RAM_D2 (SRAM1~3)
 #endif
 #ifndef RAM_D2
 #error "macro 'RAM_D2' not defined"

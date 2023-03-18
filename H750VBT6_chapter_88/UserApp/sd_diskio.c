@@ -1,10 +1,55 @@
 /* USER CODE BEGIN Header */
+/**
+  ******************************************************************************
+  * @file    sd_diskio.c
+  * @brief   SD Disk I/O driver
+  ******************************************************************************
+  * @attention
+  *
+  * Copyright (c) 2023 STMicroelectronics.
+  * All rights reserved.
+  *
+  * This software is licensed under terms that can be found in the LICENSE file
+  * in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is provided AS-IS.
+  *
+  * @bug-fixed 2023-03-17 OldGerman
+  *  将 SD_read() 的 0x3 修改为 0x1f，解决打开 H750 Dcache 时 FATFS 对象的成员数据乱码导致 FatFs API 错误
+  *  参考方法：《STM32+SDIO+FATFS在带有DMA和CACHE的平台的调试注意要点》
+  *  文章链接：https://blog.csdn.net/fairchild_1947/article/details/122268377
+  *
+  * @bug-fixed 2023-03-18 OldGerman
+  *  STM32CubeH7 V1.11.0 / 04-Nov-2022 包自动生成的 sd_diskio.c 的 SD_write() 括号位置有 BUG，需要如下修改：
+
+		DRESULT SD_write(BYTE lun, const BYTE *buff, DWORD sector, UINT count)
+		{
+		...
+		  if (!((uint32_t)buff & 0x3))
+		  {
+			  ...
+		#if defined(ENABLE_SCRATCH_BUFFER)
+		  }       // <-----在此处添加括号！！
+		  else {
+			  ...
+			}
+
+		//  }     // <-----错误的括号位置！！
+		#endif
+
+		  return res;
+		}
+
+	需要保持 SD_write() 的 0x3 不变，修改为 0x1f 反而报错
+  *
+  ******************************************************************************
+  */
 /* USER CODE END Header */
 
 /* Note: code generation based on sd_diskio_dma_rtos_template_bspv1.c v2.1.4
    as FreeRTOS is enabled. */
 
 /* USER CODE BEGIN firstSection */
+/* can be used to modify / undefine following code or add new definitions */
 /* USER CODE END firstSection*/
 
 /* Includes ------------------------------------------------------------------*/
@@ -28,7 +73,6 @@ Notice: depending on the HAL/SD driver the HAL_SD_ErrorCallback()
 may not be available.
 See BSP_SD_ErrorCallback() and BSP_SD_AbortCallback() below
 ==================================================================
-
 #define RW_ERROR_MSG       (uint32_t) 3
 #define RW_ABORT_MSG       (uint32_t) 4
 */
@@ -48,6 +92,7 @@ See BSP_SD_ErrorCallback() and BSP_SD_AbortCallback() below
  * BSP_SD_Init() elsewhere in the application.
  */
 /* USER CODE BEGIN disableSDInit */
+/* #define DISABLE_SD_INIT */
 /* USER CODE END disableSDInit */
 
 /*
@@ -57,6 +102,7 @@ See BSP_SD_ErrorCallback() and BSP_SD_AbortCallback() below
  * Notice: This is applicable only for cortex M7 based platform.
  */
 /* USER CODE BEGIN enableSDDmaCacheMaintenance */
+//#define ENABLE_SD_DMA_CACHE_MAINTENANCE  1
 /* USER CODE END enableSDDmaCacheMaintenance */
 
 /*
@@ -65,6 +111,7 @@ See BSP_SD_ErrorCallback() and BSP_SD_AbortCallback() below
 * transfer data
 */
 /* USER CODE BEGIN enableScratchBuffer */
+//#define ENABLE_SCRATCH_BUFFER
 /* USER CODE END enableScratchBuffer */
 
 /* Private variables ---------------------------------------------------------*/
@@ -110,6 +157,7 @@ const Diskio_drvTypeDef  SD_Driver =
 };
 
 /* USER CODE BEGIN beforeFunctionSection */
+/* can be used to modify / undefine following code or add new code */
 /* USER CODE END beforeFunctionSection */
 
 /* Private functions ---------------------------------------------------------*/
@@ -215,6 +263,7 @@ DSTATUS SD_status(BYTE lun)
 }
 
 /* USER CODE BEGIN beforeReadSection */
+/* can be used to modify previous code / undefine following code / add new code */
 /* USER CODE END beforeReadSection */
 /**
   * @brief  Reads Sector(s)
@@ -249,7 +298,9 @@ DRESULT SD_read(BYTE lun, BYTE *buff, DWORD sector, UINT count)
   }
 
 #if defined(ENABLE_SCRATCH_BUFFER)
-  if (!((uint32_t)buff & 0x3))
+/* buff是32字节对齐 */
+  if (!((uint32_t)buff & 0x1f))
+//                       ^~~~   从0x3修改为0x1f
   {
 #endif
     /* Fast path cause destination buffer is correctly aligned */
@@ -300,6 +351,8 @@ DRESULT SD_read(BYTE lun, BYTE *buff, DWORD sector, UINT count)
 
 #if defined(ENABLE_SCRATCH_BUFFER)
     }
+
+/* buff不是32字节对齐 */
     else
     {
       /* Slow path, fetch each sector a part and memcpy to destination buffer */
@@ -374,6 +427,7 @@ DRESULT SD_read(BYTE lun, BYTE *buff, DWORD sector, UINT count)
 }
 
 /* USER CODE BEGIN beforeWriteSection */
+/* can be used to modify previous code / undefine following code / add new code */
 /* USER CODE END beforeWriteSection */
 /**
   * @brief  Writes Sector(s)
@@ -412,6 +466,7 @@ DRESULT SD_write(BYTE lun, const BYTE *buff, DWORD sector, UINT count)
 
 #if defined(ENABLE_SCRATCH_BUFFER)
   if (!((uint32_t)buff & 0x3))
+//                       ^~~~   保持0x3不变，不要修改为0x1f，修改了反而报错
   {
 #endif
 #if (ENABLE_SD_DMA_CACHE_MAINTENANCE == 1)
@@ -465,6 +520,7 @@ DRESULT SD_write(BYTE lun, const BYTE *buff, DWORD sector, UINT count)
 #endif
   }
 #if defined(ENABLE_SCRATCH_BUFFER)
+  }       // <-----在此处添加括号！！
   else {
     /* Slow path, fetch each sector a part and memcpy to destination buffer */
     int i;
@@ -532,9 +588,8 @@ DRESULT SD_write(BYTE lun, const BYTE *buff, DWORD sector, UINT count)
 
       if ((i == count) && (ret == MSD_OK ))
         res = RES_OK;
-    }
-
-  }
+     }
+//  }     // <-----错误的括号位置！！
 #endif
 
   return res;
@@ -542,6 +597,7 @@ DRESULT SD_write(BYTE lun, const BYTE *buff, DWORD sector, UINT count)
  #endif /* _USE_WRITE == 1 */
 
 /* USER CODE BEGIN beforeIoctlSection */
+/* can be used to modify previous code / undefine following code / add new code */
 /* USER CODE END beforeIoctlSection */
 /**
   * @brief  I/O control operation
@@ -595,9 +651,11 @@ DRESULT SD_ioctl(BYTE lun, BYTE cmd, void *buff)
 #endif /* _USE_IOCTL == 1 */
 
 /* USER CODE BEGIN afterIoctlSection */
+/* can be used to modify previous code / undefine following code / add new code */
 /* USER CODE END afterIoctlSection */
 
 /* USER CODE BEGIN callbackSection */
+/* can be used to modify / following code or add new code */
 /* USER CODE END callbackSection */
 /**
   * @brief Tx Transfer completed callbacks
@@ -639,7 +697,19 @@ void BSP_SD_ReadCpltCallback(void)
 }
 
 /* USER CODE BEGIN ErrorAbortCallbacks */
+/*
+void BSP_SD_AbortCallback(void)
+{
+#if (osCMSIS < 0x20000U)
+   osMessagePut(SDQueueID, RW_ABORT_MSG, 0);
+#else
+   const uint16_t msg = RW_ABORT_MSG;
+   osMessageQueuePut(SDQueueID, (const void *)&msg, NULL, 0);
+#endif
+}
+*/
 /* USER CODE END ErrorAbortCallbacks */
 
 /* USER CODE BEGIN lastSection */
+/* can be used to modify / undefine previous code or add new code */
 /* USER CODE END lastSection */

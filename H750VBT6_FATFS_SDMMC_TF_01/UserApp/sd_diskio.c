@@ -18,10 +18,33 @@
   *  #define ENABLE_SD_DMA_CACHE_MAINTENANCE  1
   *  #define ENABLE_SCRATCH_BUFFER
   *
-  * @bug-fixed 2023-03-17
+  * @bug-fixed 2023-03-17 OldGerman
   *  将 SD_read() 的 0x3 修改为 0x1f，解决打开 H750 Dcache 时 FATFS 对象的成员数据乱码导致 FatFs API 错误
   *  参考方法：《STM32+SDIO+FATFS在带有DMA和CACHE的平台的调试注意要点》
   *  文章链接：https://blog.csdn.net/fairchild_1947/article/details/122268377
+  *
+  * @bug-fixed 2023-03-18 OldGerman
+  *  STM32CubeH7 V1.11.0 / 04-Nov-2022 包自动生成的 sd_diskio.c 的 SD_write() 括号位置有 BUG，需要如下修改：
+
+		DRESULT SD_write(BYTE lun, const BYTE *buff, DWORD sector, UINT count)
+		{
+		...
+		  if (!((uint32_t)buff & 0x3))
+		  {
+			  ...
+		#if defined(ENABLE_SCRATCH_BUFFER)
+		  }       // <-----在此处添加括号！！
+		  else {
+			  ...
+			}
+
+		//  }     // <-----错误的括号位置！！
+		#endif
+
+		  return res;
+		}
+
+	需要保持 SD_write() 的 0x3 不变，修改为 0x1f 反而报错
   *
   ******************************************************************************
   */
@@ -55,7 +78,6 @@ Notice: depending on the HAL/SD driver the HAL_SD_ErrorCallback()
 may not be available.
 See BSP_SD_ErrorCallback() and BSP_SD_AbortCallback() below
 ==================================================================
-
 #define RW_ERROR_MSG       (uint32_t) 3
 #define RW_ABORT_MSG       (uint32_t) 4
 */
@@ -283,7 +305,7 @@ DRESULT SD_read(BYTE lun, BYTE *buff, DWORD sector, UINT count)
 #if defined(ENABLE_SCRATCH_BUFFER)
 /* buff是32字节对齐 */
   if (!((uint32_t)buff & 0x1f))
-  //                     ^~~~   从0x3修改为0x1f
+//                       ^~~~   从0x3修改为0x1f
   {
 #endif
     /* Fast path cause destination buffer is correctly aligned */
@@ -449,6 +471,7 @@ DRESULT SD_write(BYTE lun, const BYTE *buff, DWORD sector, UINT count)
 
 #if defined(ENABLE_SCRATCH_BUFFER)
   if (!((uint32_t)buff & 0x3))
+//                       ^~~~   保持0x3不变，不要修改为0x1f，修改了反而报错
   {
 #endif
 #if (ENABLE_SD_DMA_CACHE_MAINTENANCE == 1)
@@ -502,6 +525,7 @@ DRESULT SD_write(BYTE lun, const BYTE *buff, DWORD sector, UINT count)
 #endif
   }
 #if defined(ENABLE_SCRATCH_BUFFER)
+  }       // <-----在此处添加括号！！
   else {
     /* Slow path, fetch each sector a part and memcpy to destination buffer */
     int i;
@@ -569,9 +593,8 @@ DRESULT SD_write(BYTE lun, const BYTE *buff, DWORD sector, UINT count)
 
       if ((i == count) && (ret == MSD_OK ))
         res = RES_OK;
-    }
-
-  }
+     }
+//  }     // <-----错误的括号位置！！
 #endif
 
   return res;
