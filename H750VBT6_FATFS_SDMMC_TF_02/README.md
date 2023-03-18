@@ -1,0 +1,11 @@
+## H750VBT6_FATFS_SDMMC_TF_02
+
+## 关于
+
+在 H750VBT6_FATFS_SDMMC_TF_01 的基础上修改
+
+评估fatfs+sdio方案做项目采样数据实时储存的可行性
+
+## 模拟实时读写发生器
+
+> 待补充
