@@ -1,5 +1,9 @@
 ## H750VBT6_chapter_88
 
+## 警告
+
+请勿将存有重要数据的SD卡用于本工程的代码测试，请准备专用的SD卡测试 ！！！
+
 ## 关于
 
 在某个H750VBT6_ST_USB_CDC工程（带有fibre通信框架并处理好print线程安全）的基础上，添加安富莱V7教程 《第88章 STM32H7 的 SDMMC总线应用之 SD 卡移植 FatFs 文件系统》 的相关例程： **V7-025_FatFS文件系统例子（SD卡 V1.2）**  代码 中的示例程序 `demo_sd_fatfs.c`文件到 `H750VBT6_chapter_88\UserApp` 路径下，少许修改后进行测试
