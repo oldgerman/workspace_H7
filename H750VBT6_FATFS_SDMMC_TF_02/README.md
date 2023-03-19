@@ -120,13 +120,13 @@ memcpy() 最后一个参数是 0x400，单位 byte，也就是 1024B，需要大
 
 修改链接文件：H750VBT6_FATFS_SDMMC_TF_02.ld 
 
-DTCMRAM 还是从0x20000400 开始，复制中断向量表时会覆盖掉一些段的数据，导致程序崩溃
+DTCMRAM 若还是从0x20000400 开始，复制中断向量表时会覆盖掉一些段的数据，导致程序崩溃
 
 ```c
 DTCMRAM (xrw)  : ORIGIN = 0x20000000, LENGTH = 128K
 ```
 
-将 ORIGIN 增加 1KB，LENGTH 减去1KB，即可
+解决方法，将 ORIGIN 增加 1KB，LENGTH 减去1KB，即可
 
 ```c
 DTCMRAM (xrw)  : ORIGIN = 0x20000400, LENGTH = 127K
@@ -189,7 +189,7 @@ H750VBT6_FATFS_SDMMC_TF_02  的主 RAM 为 RAM_D1，没有指定 FsWriteBuf 的�
 
 ![](Images/FsWriteBuf当主RAM为RAM_D1时不指定编译位置，其在存储器中的分布.png)
 
-但本工程主 RAM 为 DTCM，且不指定 FsWriteBuf 的编译位置，那么 FsWriteBuf 会被链接到 DTCM 的 .data段，但 SDMMC 的 IDMA 不能访问DTCM 中的这个缓冲区，所以我使用 RAM_D1 宏将其连接到自定义的 .RAM_D1_Array段：
+本工程主 RAM 为 DTCM，若不指定 FsWriteBuf 的编译位置，那么 FsWriteBuf 会被链接到 DTCM 的 .data段，因为 SDMMC 的 IDMA 不能访问DTCM 中的这个缓冲区，所以使用 RAM_D1 宏将其链接到自定义的 .RAM_D1_Array段：
 
 ```c
 #define  RAM_D1	__attribute__((section(".RAM_D1_Array")))
@@ -200,7 +200,7 @@ RAM_D1 ALIGN_32BYTES(char FsWriteBuf[1024]) = {"FatFS Write Demo \r\n www.armfly
 
 ![](Images/FsWriteBuf当主RAM为DTCM时指定编译到RAM_D1，其在存储器中的分布.png)
 
-OK问题解决了，但当运行 2号 和 3号 测试命令时，写入的内容总是乱码：
+OK问题解决了，运行 2号 和 3号 测试命令，发现写入的内容总是乱码：
 
 ```shell
 【2 - CreateNewFile】
@@ -235,9 +235,7 @@ RW区包括 .data段（有初始值的全局变量） 和 .bss段（无初始值
   } >RAM_D1
 ```
 
-NOLOAD属性使这段不会在下载程序时写入 FLASH ，意味着不能断电保存 `"FatFS Write Demo \r\n www.armfly.com \r\n"` ，运行域中的 .data段 中变量的初始值 来自CPU执行启动文件的汇编代码时，将加载域中的 .data段拷贝到运行域， 而我自定义的 .RAM_D1_Array段根本没有加载域，只有运行域
-
-所以 FsWriteBuf 的初始值是未定义的，当测试命令2时，向armfly.txt 文件写入的都是乱码
+NOLOAD属性使这段不会在下载程序时写入 FLASH ，意味着不能断电保存 `"FatFS Write Demo \r\n www.armfly.com \r\n"` ，运行域中的 .data段 中变量的初始值 来自CPU执行启动文件的汇编代码时，将加载域中的 .data段拷贝到运行域， 而我自定义的 .RAM_D1_Array段 根本没有加载域，只有运行域。所以 FsWriteBuf 的初始值是未定义的，当测试命令2时，向armfly.txt 文件写入的都是乱码
 
 解决方法1：
 
@@ -322,7 +320,7 @@ FatFS Write Demo
 | 32KB    | 9492KB/S | 863ms   | 10597KB/S | 773ms  | Speed06.txt  | 8192KB       | N/A          |
 | 64KB    | 9581KB/S | 855ms   | 10611KB/S | 772ms  | Speed07.txt  | 8192KB       | N/A          |
 
-不校验数据下，优化等级体高，读写速度没有明显提升，对比下面的 H750VBT6_chapter_88 测试数据，无明显提升
+不校验数据下，优化等级提高，读写速度无明显提升，对比下面的 H750VBT6_chapter_88 测试数据，无明显提升
 
 | IO SIZE | 写速度   | 写耗时  | 读速度    | 读耗时 | 测试文件名称 | 测试文件大小 | 校验文件数据 |
 | ------- | -------- | ------- | --------- | ------ | ------------ | ------------ | ------------ |
