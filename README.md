@@ -1,6 +1,10 @@
 ## 关于
 
-> 备份学习[安富莱v7教程](https://www.armbbs.cn/forum.php?mod=viewthread&tid=86980)的代码，开发环境使用[STM32CubeIDE](https://www.st.com/en/development-tools/stm32cubeide.html)（版本v1.7.0或更高）
+> 备份学习[安富莱教程](https://www.armbbs.cn/forum.php?mod=viewthread&tid=86980)的代码，夹带超出教程讨论范围的私货
+>
+> - 开发环境：STM32CubeIDE v1.11.2 + STM32CubeMX v6.6
+>
+> - 包版本：STM32CubeH7 V1.11.0 / 04-Nov-2022
 
 ### 使用的开发板
 

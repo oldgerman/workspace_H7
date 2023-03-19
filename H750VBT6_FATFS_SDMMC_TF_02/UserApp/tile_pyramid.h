@@ -43,8 +43,11 @@ extern "C" {
 /* Exported functions --------------------------------------------------------*/
 
 #ifdef __cplusplus
-class tile_pyramid
+class TilePyramid
 {
+public:
+	TilePyramid();
+private:
 
 };
 
