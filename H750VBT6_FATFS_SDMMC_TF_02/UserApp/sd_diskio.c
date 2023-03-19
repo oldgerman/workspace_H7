@@ -122,8 +122,10 @@ See BSP_SD_ErrorCallback() and BSP_SD_AbortCallback() below
 /* Private variables ---------------------------------------------------------*/
 #if defined(ENABLE_SCRATCH_BUFFER)
 #if defined (ENABLE_SD_DMA_CACHE_MAINTENANCE)
+__attribute__((section(".RAM_D1_Array")))
 ALIGN_32BYTES(static uint8_t scratch[BLOCKSIZE]); // 32-Byte aligned for cache maintenance
 #else
+__attribute__((section(".RAM_D1_Array")))
 __ALIGN_BEGIN static uint8_t scratch[BLOCKSIZE] __ALIGN_END;
 #endif
 #endif

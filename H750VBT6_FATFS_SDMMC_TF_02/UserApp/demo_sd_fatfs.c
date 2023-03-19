@@ -27,6 +27,9 @@
 *                                对接fibre框架处理的USB命令解析
 *                                支持不同IO/SIZE读写测速，范围 1~ 128 Block，以markdown表格语法打印结果
 *
+*      日期         修改人       说明
+*      2023-03-19   OldGerman    将armfly.txt里写入的测试文本使用单独的全局变量保存
+*
 *********************************************************************************************************
 */
 /* Includes ------------------------------------------------------------------*/
@@ -51,12 +54,11 @@ typedef enum{
 
 /* Private macro -------------------------------------------------------------*/
 /* 将缓冲区编译到指定RAM的宏 */
-#ifndef  RAM_D2
-#define RAM_D2	    											// 放在默认的 .RAM_D1 (AXI SRAM)
-//#define  RAM_D2	__attribute__((section(".RAM_D2_Array"))) 	// 放在 .RAM_D2 (SRAM1~3)
+#ifndef  RAM_D1
+#define  RAM_D1	 __attribute__((section(".RAM_D1_Array"))) 	// 放在 .RAM_D1 (AXI SRAM)
 #endif
-#ifndef RAM_D2
-#error "macro 'RAM_D2' not defined"
+#ifndef RAM_D1
+#error "macro 'RAM_D1' not defined"
 #endif
 
 /* Exported constants --------------------------------------------------------*/
@@ -64,12 +66,15 @@ typedef enum{
 extern SD_HandleTypeDef hsd1; // 仅用于在 ViewRootDir() 中获取卡速度信息
 
 /* Private constants ---------------------------------------------------------*/
+/* 在.data段的测试文本内容 */
+char DataSec_ArmflyTxt[] = {"FatFS Write Demo \r\n www.armfly.com \r\n"};
+
 /* Exported variables --------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 /* FATFS文件系统对象 */
-FATFS fs;
+RAM_D1 FATFS fs;
 /* 文件对象 */
-FIL file;
+RAM_D1 FIL file;
 /* 文件夹对象 */
 DIR DirInf;
 /* 文件信息对象 */
@@ -85,11 +90,11 @@ char DiskPath[4];
   *   读写函数 SDMMC_CmdReadMultiBlock() 和 SDMMC_CmdWriteMultiBlock()
   */
 /* FatFs的读取临时缓冲区 */
-RAM_D2 ALIGN_32BYTES(char FsReadBuf[1024]);
+RAM_D1 ALIGN_32BYTES(char FsReadBuf[1024]);
 /* FatFs的写入临时缓冲区 */
-RAM_D2 ALIGN_32BYTES(char FsWriteBuf[1024]) = {"FatFS Write Demo \r\n www.armfly.com \r\n"};
+RAM_D1 ALIGN_32BYTES(char FsWriteBuf[1024]);
 /* 测试的读写临时缓冲区 */
-RAM_D2 ALIGN_32BYTES(uint8_t g_TestBuf[BUF_SIZE]);
+RAM_D1 ALIGN_32BYTES(uint8_t g_TestBuf[BUF_SIZE]);
 
 /* Private function prototypes -----------------------------------------------*/
 static void DispMenu(void);
@@ -319,11 +324,14 @@ static void CreateNewFile(void)
 		printf("armfly.txt 文件打开失败  (%s)\r\n", FR_Table[result]);
 	}
 
+	/* 重置缓冲区的数据为待写入内容 */
+	//strlen 遇到'\0'停止，字符串大小不计算'\0'在内
+//    memcpy((void *)FsWriteBuf, DataSec_ArmflyTxt, strlen(DataSec_ArmflyTxt) + 1);
+	//strlen 是函数需要调用，耗费时间长，sizeof是运算符，使用sizeof更好
+    memcpy((void *)FsWriteBuf, DataSec_ArmflyTxt, sizeof(DataSec_ArmflyTxt));
+
 	/* 写一串数据 */
-	result = f_write(&file,
-			FsWriteBuf,
-			strlen(FsWriteBuf),
-			(UINT* )&bw);
+	result = f_write(&file, FsWriteBuf, sizeof(DataSec_ArmflyTxt), (UINT* )&bw);
 
 	if (result == FR_OK)
 	{

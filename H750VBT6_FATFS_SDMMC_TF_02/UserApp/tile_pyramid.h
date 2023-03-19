@@ -43,11 +43,15 @@ extern "C" {
 /* Exported functions --------------------------------------------------------*/
 
 #ifdef __cplusplus
+
+/* 1维瓦片，2维金字塔 */
 class TilePyramid
 {
 public:
 	TilePyramid();
+
 private:
+
 
 };
 

@@ -52,7 +52,7 @@ osThreadId_t ledTaskHandle;
 /* Thread definitions */
 void threadLedUpdate(void* argument){
 	TickType_t xLastWakeTime;
-	const TickType_t xFrequency = 10000;
+	const TickType_t xFrequency = 5000;
 	/* 获取当前的系统时间 */
 	xLastWakeTime = xTaskGetTickCount();
 
@@ -61,7 +61,7 @@ void threadLedUpdate(void* argument){
 //		HAL_GPIO_TogglePin(VOUT_EN_GPIO_Port, VOUT_EN_Pin);
 
 		/* 打印时间节拍 */
-//		printf("[led_task] sysTick : %ld ms\r\n", xTaskGetTickCount());
+		printf("[led_task] sysTick : %ld ms\r\n", xTaskGetTickCount());
 
 		/* arm math 单精度硬件浮点测试 */
 //		float data[3];

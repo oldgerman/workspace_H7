@@ -73,7 +73,36 @@ void MX_FREERTOS_Init(void);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-//	SCB->VTOR = 0x90000000; /* 设置中断向量表Addr */
+  /* Operation interrupt vector table begin ----------------------------------*/
+//#define INTERNAL_FLASH_BOOTLOADER_JUMP_TO_QSPI_FLASH_APP
+
+#if defined(INTERNAL_FLASH_BOOTLOADER_JUMP_TO_QSPI_FLASH_APP)
+	/** 将当前使用的内部flash里的中断向量表改为外部QSPI Flash里的中断向量�??
+	  * Change the currently used interrupt vector table in the internal flash
+	  * to the interrupt vector table in the external QSPI Flash
+	  */
+	SCB->VTOR = (uint32_t *)QSPI_BASE;
+#endif
+
+//#define COPY_VECTORTABLE_TO_DTCM
+
+#if defined(COPY_VECTORTABLE_TO_DTCM)
+#if defined(INTERNAL_FLASH_BOOTLOADER_JUMP_TO_QSPI_FLASH_APP)
+	uint32_t *SouceAddr = (uint32_t *)QSPI_BASE;
+#else
+	uint32_t *SouceAddr = (uint32_t *)FLASH_BANK1_BASE;
+#endif
+	uint32_t *DestAddr = (uint32_t *)D1_DTCMRAM_BASE;
+	memcpy(DestAddr, SouceAddr, 0x400);
+
+	/** 设置当前的中断向量表�?? ITCM 里复制好的中断向量表副本
+	  * Set the current interrupt vector table as a copy of the copied interrupt
+	  * vector table in ITCM
+	  */
+	SCB->VTOR = D1_DTCMRAM_BASE;
+#endif
+  /* Operation interrupt vector table end ------------------------------------*/
+
   /* USER CODE END 1 */
 
   /* MPU Configuration--------------------------------------------------------*/
@@ -259,6 +288,7 @@ void MPU_Config(void)
   MPU_InitStruct.Number = MPU_REGION_NUMBER2;
   MPU_InitStruct.BaseAddress = 0x30000000;
   MPU_InitStruct.Size = MPU_REGION_SIZE_128KB;
+  MPU_InitStruct.IsCacheable = MPU_ACCESS_CACHEABLE;
   MPU_InitStruct.IsBufferable = MPU_ACCESS_NOT_BUFFERABLE;
 
   HAL_MPU_ConfigRegion(&MPU_InitStruct);
@@ -283,7 +313,6 @@ void MPU_Config(void)
   MPU_InitStruct.Number = MPU_REGION_NUMBER5;
   MPU_InitStruct.BaseAddress = 0x38000000;
   MPU_InitStruct.Size = MPU_REGION_SIZE_64KB;
-  MPU_InitStruct.IsCacheable = MPU_ACCESS_CACHEABLE;
 
   HAL_MPU_ConfigRegion(&MPU_InitStruct);
 
