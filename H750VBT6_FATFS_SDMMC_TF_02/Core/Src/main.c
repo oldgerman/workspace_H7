@@ -77,14 +77,14 @@ int main(void)
 //#define INTERNAL_FLASH_BOOTLOADER_JUMP_TO_QSPI_FLASH_APP
 
 #if defined(INTERNAL_FLASH_BOOTLOADER_JUMP_TO_QSPI_FLASH_APP)
-	/** 将当前使用的内部flash里的中断向量表改为外部QSPI Flash里的中断向量�??
+	/** 将当前使用的内部flash里的中断向量表改为外部QSPI Flash里的中断向量�??
 	  * Change the currently used interrupt vector table in the internal flash
 	  * to the interrupt vector table in the external QSPI Flash
 	  */
 	SCB->VTOR = (uint32_t *)QSPI_BASE;
 #endif
 
-//#define COPY_VECTORTABLE_TO_DTCM
+#define COPY_VECTORTABLE_TO_DTCM
 
 #if defined(COPY_VECTORTABLE_TO_DTCM)
 #if defined(INTERNAL_FLASH_BOOTLOADER_JUMP_TO_QSPI_FLASH_APP)
@@ -95,7 +95,7 @@ int main(void)
 	uint32_t *DestAddr = (uint32_t *)D1_DTCMRAM_BASE;
 	memcpy(DestAddr, SouceAddr, 0x400);
 
-	/** 设置当前的中断向量表�?? ITCM 里复制好的中断向量表副本
+	/** 设置当前的中断向量表�?? ITCM 里复制好的中断向量表副本
 	  * Set the current interrupt vector table as a copy of the copied interrupt
 	  * vector table in ITCM
 	  */
