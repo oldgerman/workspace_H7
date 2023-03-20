@@ -10,6 +10,36 @@
 - 包版本：STM32CubeH7 V1.11.0 / 04-Nov-2022
 - 主RAM：DTCM
 
+## 典例
+
+```c
+/* Mem head */
+mem_head_t *DTCMUsed;
+/*       Memory Pool        Size [KB  *1024/8]                  Section       */
+uint64_t AppMallocDTCM           [64*1024/8]     __attribute__((section(".RAM_DTCM_Array")));
+/* Allocated Memory Address */
+void *DTCM_Addr0;
+
+void Demo()
+{
+    /* 从DTCM申请280字节空间，使用指针变量DTCM_Addr0操作这些空间时不要超过280字节大小 */
+    printf("=========================================================\r\n");
+    DTCM_Addr0 = osRtxMemoryAlloc(AppMallocDTCM, 280, 0);
+    DTCMUsed = MemHeadPtr(AppMallocDTCM);
+    printf("DTCM总大小 = %d字节，申请大小 = 0280字节，当前共使用大小 = %d字节\r\n",
+           DTCMUsed->size, DTCMUsed->used);
+
+    /* 释放从DTCM申请的280字节空间 */
+    osRtxMemoryFree(AppMallocDTCM, DTCM_Addr0);
+    DTCMUsed = MemHeadPtr(AppMallocDTCM);
+    printf("释放DTCM动态内存区申请的0280字节，当前共使用大小 = %d字节\r\n", DTCMUsed->used);
+}
+```
+
+## 关联工程
+
+典例中使相关函数时，总是传全局参数有点繁琐，小改成 C++ 封装的版本：[H750VBT6_RTX_MEMORY_01](https://github.com/oldgerman/workspace_H7/tree/master/H750VBT6_RTX_MEMORY_01)
+
 ## 代码分布
 
 内存管理的文件位于`Bsp\ram`，有以下源代码
@@ -47,7 +77,7 @@ void OnAsciiCmd(const char* _cmd, size_t _len, StreamSink &_responseChannel)
 }
 ```
 
-链接文件中 SECTION 中加入了以下段，用于指定编译内存池的RAM：
+链接文件的 SECTION {...} 中加入了以下段，用于指定编译内存池的RAM：
 
 ```c
   .RAM_DTCM_Array (NOLOAD):
