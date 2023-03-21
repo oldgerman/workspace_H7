@@ -46,12 +46,7 @@ extern "C" {
 
 #include "rtx_memory.h"
 
-extern osRtxMemory DRAM_DTCM;
-extern osRtxMemory DRAM_AXISRAM;
-extern osRtxMemory DRAM_SRAM1;
-extern osRtxMemory DRAM_SRAM2;
-extern osRtxMemory DRAM_SRAM3;
-extern osRtxMemory DRAM_SRAM4;
+extern osRtxMemory DRAM_D2;
 
 }
 #endif

@@ -39,8 +39,6 @@ extern "C" {
 #include "bsp.h"
 #include "cmsis_os.h"
 #include "freertos_inc.h"
-#include "rtx_memory.h"
-#include "dynamic_ram.h"
 
 /* Exported types ------------------------------------------------------------*/
 /* Exported define -----------------------------------------------------------*/
@@ -54,6 +52,7 @@ void Main(void);
 #ifdef __cplusplus
 }
 #include "communication.hpp"
+#include "dynamic_ram.h"
 #endif
 
 #endif /* COMMON_INC_H_ */

@@ -29,12 +29,24 @@
 #include "arm_math.h"
 #include "tim.h"
 
+#include "tile_wave.h"
+
+//#include <iostream>
+#include <functional>
+/* 使用using 定义成员函数指针的别名 */
+using mf_malloc = void*(osRtxMemory::*)(uint32_t);
+using mf_free = void(osRtxMemory::*)(void*);
+
+TileWave::Config_t config = {
+	0
+};
+TileWave pyrLayers(config);
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
-const uint32_t ledTaskStackSize = 256 * 4;
+const uint32_t ledTaskStackSize = 1024 * 4;
 const osThreadAttr_t ledTask_attributes = {
     .name = "ledTask",
     .stack_size = ledTaskStackSize,
@@ -63,6 +75,8 @@ void threadLedUpdate(void* argument){
 		/* 打印时间节拍 */
 		printf("[led_task] sysTick : %ld ms\r\n", xTaskGetTickCount());
 
+		pyrLayers.testDynamicMemory();
+
 		/* arm math 单精度硬件浮点测试 */
 //		float data[3];
 //		data[0] = arm_sin_f32(3.1415926/6);	// sin(PI/6)
@@ -82,11 +96,24 @@ void ledUpdateInit()
 void Main()
 {
 	/* 启用统计CPU利用率的定时器中断 */
-	 HAL_TIM_Base_Start_IT(&htim7);
+	HAL_TIM_Base_Start_IT(&htim7);
 
     /* 初始化一些通信，USB-CDC/VCP/WIFI等 */
     InitCommunication();
 
     /* 初始化LED时间片任务 */
     ledUpdateInit();
+
+    /* 闭包 */
+    TileWave::malloc = std::bind(
+    			(mf_malloc)&osRtxMemory::malloc, 	// 对象的成员函数的指针
+    			DRAM_D2,							// 对象的地址
+    			std::placeholders::_1				//
+    	);
+
+    TileWave::free = std::bind(
+    			(mf_free)&osRtxMemory::free, 		// 对象的成员函数的指针
+    			DRAM_D2,							// 对象的地址
+    			std::placeholders::_1				//
+    	);
 }

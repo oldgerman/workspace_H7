@@ -1,6 +1,6 @@
 /**
   ******************************************************************************
-  * @file        tile_slicer.h
+  * @file        tile_wave.h
   * @author      OldGerman
   * @created on  Mar 20, 2023
   * @brief       
@@ -25,11 +25,13 @@
   */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef TILE_SLICER_H_
-#define TILE_SLICER_H_
+#ifndef TILE_WAVE_H_
+#define TILE_WAVE_H_
 
 #include "common_inc.h"
-
+#include <list>
+#include <algorithm>
+#include <functional>
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -45,7 +47,7 @@ extern "C" {
 #ifdef __cplusplus
 
 /**
- * 将 IDMA 需要访问的 4K FIFO 作为每个类的实例成员添加RAM_D1修饰，这样声明该对象就不会编译到 DTCM
+ * 将 IDMA 需要访问的 4K FIFO 作为每个类的实例成员添加RAM_D1修饰，这样声明该对象就不会编译到 D2
  * 缓冲区不使用动态内存，缓冲区的最大大小在编译时已写死，运行时只可通过变量限制最大可用的缓冲区，但缓冲区的总大小是不变的
  * 如果使用动态内存，RTOS下就涉及到malloc的线程安全问题，得参照 heap_useNewlib_ST.c 实现 malloc 锁，比较麻烦
  * 如果FIFO中接收/发送的数据量超过/低于这个阈值时，FIFO就会触发相应的接收/发送
@@ -61,12 +63,56 @@ extern "C" {
  * 4K FIFO也是可变的
  * NAND Flash  擦除以block为最小操作单位，读/写以page为最小操作单位。出厂默认浮栅不带电荷，为1状态。擦除就是全写1
  */
-/* pyramid layer
- * 表示金字塔所有层的类*/
-class PyrLayers
+/* 瓦片金字塔类*/
+class TileWave
 {
 public:
-	PyrLayers();
+	typedef struct {
+		/* IO Size */
+		uint16_t usIOSize;
+		uint16_t usIOSizeMin; 	// = 4096;  /* 单位 B */
+	    uint32_t ulIOSizeMax; 	// = 32768; /* 单位 B */
+	    /* Layer */
+	    uint8_t  ucLayer;			// 层编号
+	    uint8_t  ucLayerMax; 		// 最大层数(总层数)
+	    /* WaveForm */
+	    uint8_t	 ucWaveFrameSize;  	// 波形帧大小，单位B
+	    uint16_t usWaveDispWidth;	// 波形显示宽度，单位Px
+	}Config_t;
+
+	TileWave(Config_t &xConfig) {
+		usIOSize = xConfig.usIOSize;
+		usIOSizeMin = xConfig.usIOSizeMin;
+		ulIOSizeMax = xConfig.ulIOSizeMax;
+		ucLayer = xConfig.ucLayer;
+		ucLayerMax = xConfig.ucLayerMax;
+
+//		initTileBufferList();
+	}
+
+	/* 初始化瓦片缓冲区链表 */
+	uint32_t initTileBufferList()
+	{
+		return 1U;
+	}
+	/* 初始化瓦片缓冲区链表 */
+	void testDynamicMemory()
+	{
+		void *D2_Addr0;
+
+		/* 从D2申请280字节空间，使用指针变量D2_Addr0操作这些空间时不要超过280字节大小 */
+		printf("=========================================================\r\n");
+		D2_Addr0 = malloc(280);
+		printf("D2总大小 = %d字节，申请280字节，当前共使用 = %d字节，历史最少可用 = %d字节\r\n",
+				DRAM_D2.getMemSize(), DRAM_D2.getMemUsed(), DRAM_D2.getMemFreeMin());
+
+		/* 释放从D2申请的6111字节空间 */
+		free(D2_Addr0);
+		printf("释放D2动态内存区申请的280字节，当前共使用 = %d字节，当前剩余大小 = %d字节，历史最少可用 = %d字节\r\n",
+				DRAM_D2.getMemUsed(), DRAM_D2.getMemFree(), DRAM_D2.getMemFreeMin());
+
+	}
+
 	/** @brief  一次可以读取或写入的最小数据块，单位B
 	  * @notice 不要与储存介质的最小 IO/SIZE 混淆
 	  *         此参数应根据诸多参数综合设置
@@ -78,19 +124,28 @@ public:
 				| 8bit       | 400              | 400B                 | PSRAM      | 1B                 | 512B（512B > 400B 就够）                            | 512B         |
 	  */
 	uint16_t usIOSize;
-	static uint16_t usIOSize_Min; // = 4096;  /* 单位 B */
-    static uint32_t ulIOSize_Max; // = 32768; /* 单位 B */
+//	static
+	uint16_t usIOSizeMin;	// = 4096;  /* 单位 B */
+//    static
+	uint32_t ulIOSizeMax;	// = 32768; /* 单位 B */
 
-    uint16_t usLayer;             // 层编号
-    static uint8_t  ucLayers_Max; // 最大层数
-    static uint8_t  ucLayers_All; // 总层数
+    uint8_t ucLayer;				// 层编号
+//    static
+	uint8_t  ucLayerMax;		// 最大层数(总层数)
 
-	uint8_t ucTxBuf[];
-	uint8_t ucRxBuf[];
+//    static
+	uint16_t usWaveDispBufferSize; //缓冲区大小：波形显示
 
+	std::list<uint32_t *> xpTileBufferList; // 瓦片缓冲区的双向链表
+
+    static std::function<void*(size_t)> 	malloc;
+    static std::function<void(void*)>		free;
+
+//	uint8_t ucTxBuf[];
+//	uint8_t ucRxBuf[];
 };
 
 }
 #endif
 
-#endif /* TILE_SLICER_H_ */
+#endif /* TILE_WAVE_H_ */

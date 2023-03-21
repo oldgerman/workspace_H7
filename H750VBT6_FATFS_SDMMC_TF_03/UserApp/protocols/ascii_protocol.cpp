@@ -95,11 +95,8 @@ void OnAsciiCmd(const char* _cmd, size_t _len, StreamSink &_responseChannel)
         }
 
     }
-    /* SD card: S0, S1, S2... */
-    else if (_cmd[0] == 'S')
-    {
-    	DemoFatFS(_cmd[1]);
-    }
+
+    DemoFatFS(_cmd[0]);
     /*---------------------------- ↑ Add Your CMDs Here ↑ -----------------------------*/
 }
 

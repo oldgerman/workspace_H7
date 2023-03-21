@@ -93,18 +93,12 @@ public:
 	  uint32_t            info;		// Block Info or max used Memory (in last block)
 	} mem_block_t;
 
-	void      *mem;					// Pointer to memory pool.
-	uint32_t   sizePool;			// Size of a memory pool in bytes.
-	uint32_t   statusConstructor;	// Status of Constuctor
-	mem_head_t *memHead;			// Memory head structer
-	uint32_t   sizeFreeMin;			// Historical minimum free memory size
-
 	/* Constructor */
 	osRtxMemory(void *Mem, uint32_t SizePool);
 
 	/* Memory Heap Library functions */
-	void      *Alloc(uint32_t size, uint32_t type = 0);
-	uint32_t   Free(void *block);
+	void      *malloc(size_t size, uint32_t type = 0);
+	uint32_t   free(void *block);
 
 	/* Memory Head Pointer */
 	__STATIC_INLINE mem_head_t *MemHeadPtr (void *mem) {
@@ -131,15 +125,25 @@ public:
 	}
 	uint32_t getMemSize() {
 		memHead = MemHeadPtr(mem);
-		return  memHead->size;
+		return memHead->size;
 	}
 	uint32_t getMemFree() {
 		memHead = MemHeadPtr(mem);
-		return  memHead->size - memHead->used;
+		return memHead->size - memHead->used;
+	}
+	uint32_t getMemFreeMin() {
+		if(getMemFree() < sizeFreeMin) {
+			sizeFreeMin = getMemFree();
+		}
+			return sizeFreeMin;
 	}
 
 private:
-
+	void      *mem;					// Pointer to memory pool.
+	uint32_t   sizePool;			// Size of a memory pool in bytes.
+	uint32_t   statusConstructor;	// Status of Constuctor
+	mem_head_t *memHead;			// Memory head structer
+	uint32_t   sizeFreeMin;			// Historical minimum free memory size
 };
 
 }

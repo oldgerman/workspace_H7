@@ -64,10 +64,8 @@
  * @param  SizePool        size of a memory pool in bytes.
  */
 osRtxMemory::osRtxMemory(void *Mem, uint32_t SizePool)
-:mem(Mem), sizePool(SizePool)
+:mem(Mem), sizePool(SizePool), sizeFreeMin(sizePool)
 {
-	sizeFreeMin = getMemFree();
-
 	uint32_t size = sizePool;
 	mem_head_t  *head;
 	mem_block_t *ptr;
@@ -105,7 +103,7 @@ osRtxMemory::osRtxMemory(void *Mem, uint32_t SizePool)
  * @param  type            memory block type: 0 - generic, 1 - control block
  * @retval allocated memory block or NULL in case of no memory is available.
  */
-void *osRtxMemory::Alloc(uint32_t size, uint32_t type) {
+void *osRtxMemory::malloc(size_t size, uint32_t type) {
 	if(statusConstructor == FUN_ERROR)
 		return NULL;
 
@@ -170,9 +168,6 @@ void *osRtxMemory::Alloc(uint32_t size, uint32_t type) {
 
 	//EvrRtxMemoryAlloc(mem, size, type, ptr);
 
-	/* 记录历史最少可用内存大小 */
-	if(getMemFree() < sizeFreeMin)
-		sizeFreeMin = getMemFree();
 	return ptr;
 }
 
@@ -182,7 +177,7 @@ void *osRtxMemory::Alloc(uint32_t size, uint32_t type) {
  * @param  block           memory block to be returned to the memory pool.
  * @retval 0 - success, 1 - failure.
  */
-uint32_t osRtxMemory::Free(void *block) {
+uint32_t osRtxMemory::free(void *block) {
 	if(statusConstructor == FUN_ERROR)
 		return FUN_ERROR;
 
