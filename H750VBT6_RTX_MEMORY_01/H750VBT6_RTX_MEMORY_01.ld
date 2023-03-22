@@ -154,37 +154,27 @@ SECTIONS
 
   .RAM_DTCM_Array (NOLOAD):
   {
-    . = ALIGN(4);
     *(.RAM_DTCM_Array)
-    . = ALIGN(4);
   } >DTCMRAM
   
   .RAM_ITCM_Array (NOLOAD):
   {
-    . = ALIGN(4);
     *(.RAM_ITCM_Array)
-    . = ALIGN(4);
   } >ITCMRAM
   
   .RAM_D1_Array (NOLOAD):
   {
-    . = ALIGN(4);
     *(.RAM_D1_Array)
-    . = ALIGN(4);
   } >RAM_D1
   
   .RAM_D2_Array (NOLOAD):
   {
-    . = ALIGN(4);
     *(.RAM_D2_Array)
-    . = ALIGN(4);
   } >RAM_D2
 
   .RAM_D3_Array (NOLOAD):
   {
-    . = ALIGN(4);
     *(.RAM_D3_Array)
-    . = ALIGN(4);
   } >RAM_D3
   
   /* User_heap_stack section, used to check that there is enough RAM left */
