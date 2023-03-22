@@ -37,10 +37,21 @@
 using mf_malloc = void*(osRtxMemory::*)(uint32_t);
 using mf_free = void(osRtxMemory::*)(void*);
 
-TileWave::Config_t config = {
-	0
+TileWave::Config_t xConfig = {
+		/* IO Size */
+		.ulIOSize = 512,
+		.ulIOSizeMin = 4096,	// 4KB
+	    .ulIOSizeMax = 32768,	// 64KB
+	    /* Layer */
+	    .ulLayerNum = 0,
+	    .ulLayerNumMax = 15,
+	    .ulLayerTilesNumMax = 2048,
+	    /* WaveForm */
+	    .ulWaveFrameSize = 4,
+	    .ulWaveDispWidth = 400,
+	    .ulWaveDispTileBufferSize = 4096,
 };
-TileWave pyrLayers(config);
+TileWave xTileWave(xConfig);
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
@@ -75,7 +86,7 @@ void threadLedUpdate(void* argument){
 		/* 打印时间节拍 */
 		printf("[led_task] sysTick : %ld ms\r\n", xTaskGetTickCount());
 
-		pyrLayers.testDynamicMemory();
+		xTileWave.testDynamicMemory();
 
 		/* arm math 单精度硬件浮点测试 */
 //		float data[3];
@@ -105,15 +116,14 @@ void Main()
     ledUpdateInit();
 
     /* 闭包 */
-    TileWave::malloc = std::bind(
+    TileWave::init(
+    		std::bind(
     			(mf_malloc)&osRtxMemory::malloc, 	// 对象的成员函数的指针
-    			DRAM_D2,							// 对象的地址
-    			std::placeholders::_1				//
-    	);
-
-    TileWave::free = std::bind(
+    			DRAM_SRAM1,							// 对象的地址
+    			std::placeholders::_1),
+    		std::bind(
     			(mf_free)&osRtxMemory::free, 		// 对象的成员函数的指针
-    			DRAM_D2,							// 对象的地址
-    			std::placeholders::_1				//
-    	);
+    			DRAM_SRAM1,							// 对象的地址
+    			std::placeholders::_1));
+    xTileWave.createTileBufferList();
 }
