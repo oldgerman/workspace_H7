@@ -66,6 +66,9 @@
 osRtxMemory::osRtxMemory(void *Mem, uint32_t SizePool)
 :mem(Mem), sizePool(SizePool), sizeFreeMin(sizePool)
 {
+	/* 全部填0 */
+	memset(mem, 0, SizePool);
+
 	uint32_t size = sizePool;
 	mem_head_t  *head;
 	mem_block_t *ptr;

@@ -36,7 +36,7 @@
 /*       Memory Pool        Size [KB  *1024/8]                  Section       */
 //uint64_t MEMPOOL_DTCM            [64  *1024/8]  __attribute__((section(".RAM_DTCM_Array")));
 //uint64_t MEMPOOL_D1_AXISRAM      [512 *1024/8]  __attribute__((section(".RAM_D1_Array")));
-uint64_t MEMPOOL_D2_SRAM1        [128 *1024/8]  __attribute__((section(".RAM_D2_Array")));
+uint64_t MEMPOOL_D2_SRAM1          [128 *1024/8]  __attribute__((section(".RAM_D1_Array")));
 //uint64_t MEMPOOL_D2_SRAM2        [128 *1024/8]  __attribute__((section(".RAM_D2_Array")));
 //uint64_t MEMPOOL_D2_SRAM3        [32  *1024/8]  __attribute__((section(".RAM_D2_Array")));
 //uint64_t MEMPOOL_D3_SRAM4        [64  *1024/8]  __attribute__((section(".RAM_D3_Array")));

@@ -137,8 +137,6 @@ public:
 		}
 			return sizeFreeMin;
 	}
-
-private:
 	void      *mem;					// Pointer to memory pool.
 	uint32_t   sizePool;			// Size of a memory pool in bytes.
 	uint32_t   statusConstructor;	// Status of Constuctor

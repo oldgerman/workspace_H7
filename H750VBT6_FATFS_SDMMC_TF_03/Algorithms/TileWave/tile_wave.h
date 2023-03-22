@@ -84,15 +84,16 @@ public:
 
 	}Config_t;
 
-	char ucStrBuffer[15][256];
+	char ucStrBuffer[15][64];
 
 	/* 层结构体 */
 	typedef struct {
-		uint32_t ulNum;					// 层编号
-		uint32_t ulTileSize;			// 层的瓦片大小，单位B
-		uint32_t ulTileBufferSize;		// 层的缓冲区大小，单位B
-		void *pucTileBuffer;			// 层的缓冲区地址
-		uint32_t ulTileBufferTxPeriod;	// 层的缓冲区发送周期，单位，调度周期的倍数
+		uint32_t ulLayerNum;			// 层编号
+		uint32_t ulTileSize;			// 瓦片大小，单位B
+		uint32_t ulTileBufferSize;		// RAM：瓦片缓冲区大小，单位B
+		void *pucTileBuffer;			// 瓦片缓冲区地址
+		uint32_t ulBufferSize;			// ROM：缓冲区大小，单位B
+		uint32_t ulTileBufferTxPeriod;	// 缓冲区发送周期，单位，调度周期的倍数
 	}Layer_t;
 
  	/* 初始化瓦片缓冲区链表 */
@@ -132,20 +133,20 @@ public:
 
 			pucLayerTileBuffer = malloc(ulLayerTileBufferSize);
 
-			sprintf(&(ucStrBuffer[ulLayerNum][0]), "| %6d | %8d | %10d | %8d | %12d |\r\n",
-					ulLayerNum, ulLayerTileBufferSize,
+			sprintf(&(ucStrBuffer[ulLayerNum][0]), "| %15d | %13d | %17d |\r\n",
 					DRAM_SRAM1.getMemUsed(), DRAM_SRAM1.getMemFree(), DRAM_SRAM1.getMemFreeMin());
 
 
 			Layer_t xLayer = {
-					.ulNum = ulLayerNum,
+					.ulLayerNum = ulLayerNum,
 					.ulTileSize = ulLayerTileSize,
 					.ulTileBufferSize = ulLayerTileBufferSize,
 					.pucTileBuffer = pucLayerTileBuffer,
+					.ulBufferSize = ulLayerTileSize * ulLayerTilesNumMax,
 					.ulTileBufferTxPeriod = ulLayerTileBufferSize / ulLayerTileSize
 			};
 			/* 链表正向遍历越往后层编号越大 */
-			pxLayersList.push_front(xLayer);
+			xLayersList.push_back(xLayer);
 
 			ulLayersTileBufferSize += ulLayerTileBufferSize;
 
@@ -183,13 +184,25 @@ public:
 	void testDynamicMemory()
 	{
 #if 1
-		printf("| 层编号 | 申请字节 | 当前共使用 | 当前剩余 | 历史最少可用 |\r\n");
-		printf("| ------ | -------- | ---------- | -------- | ------------ |\r\n");
-		for(uint8_t i = 0; i < ulLayerNumMax; i ++)
-			printf("%s", &(ucStrBuffer[i][0]));
+		printf("| 层编号 | 瓦片大小 | 瓦片缓冲区大小 | 瓦片缓冲区地址 | 缓冲区大小 | 缓冲区发送周期 | DRAM 当前共使用 | DRAM 当前剩余 | DRAM 历史最少可用 |\r\n");
+		printf("| ------ | -------- | -------------- | -------------- | ---------- | -------------- | --------------- | ------------- | ----------------- |\r\n");
+		std::list<Layer_t>::iterator xIt = xLayersList.begin();
+		for(uint8_t i = 0; i < ulLayerNumMax; i++) {
+			Layer_t	xLayer = *xIt;
+			printf("| %6d | %8d | %14d | %p | %10d | %14d %s",
+					xLayer.ulLayerNum,
+					xLayer.ulTileSize,
+					xLayer.ulTileBufferSize,
+					xLayer.pucTileBuffer,
+					xLayer.ulBufferSize,
+					xLayer.ulTileBufferTxPeriod,
+					&(ucStrBuffer[i][0]));
+			++xIt;
+		}
 
 #endif
 
+#if 0
 		void  *SRAM1_Addr0,  *SRAM1_Addr1, *SRAM1_Addr2;
 
 		/* 从SRAM1域的SRAM申请200字节空间，使用指针变量SRAM1_Addr0操作这些空间时不要超过200字节大小 */
@@ -224,6 +237,7 @@ public:
 		DRAM_SRAM1.free(SRAM1_Addr2);
 		printf("释放SRAM1域SRAM动态内存区申请的4111字节，当前共使用大小 = %d字节，当前剩余大小 = %d字节，历史最少可用大小 = %d字节\r\n",
 				DRAM_SRAM1.getMemUsed(), DRAM_SRAM1.getMemFree(), DRAM_SRAM1.getMemFreeMin());
+#endif
 	}
 
 	/** @brief  一次可以读取或写入的最小数据块，单位B
@@ -260,7 +274,7 @@ public:
     uint32_t ulWaveDispTileBufferSize;  // 波形显示区的瓦片缓冲区大小，单位B
     uint32_t ulWaveDispTileBufferSizeMin;	/* 波形显示区的瓦片缓冲区最小大小，单位B */
 
-	std::list<Layer_t> pxLayersList; // 层链表(双向)
+	std::list<Layer_t> xLayersList; // 层链表(双向)
 
 private:
     static std::function<void*(size_t)> 	malloc;
