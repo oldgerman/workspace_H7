@@ -53,6 +53,8 @@ extern osRtxMemory DRAM_SRAM2;
 extern osRtxMemory DRAM_SRAM3;
 extern osRtxMemory DRAM_SRAM4;
 
+uint32_t DRAM_Init();
+
 }
 #endif
 

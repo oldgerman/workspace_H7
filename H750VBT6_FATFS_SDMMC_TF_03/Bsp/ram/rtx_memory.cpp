@@ -1,50 +1,51 @@
 /**
- ******************************************************************************
- * @file        rtx_memory.hpp
- * @modify      OldGerman
- * @created on  Mar 20, 2023
- * @brief
- *
- * 模块名称 : 动态内存管理
- * 文件名称 : rtx_memory.h
- * 版    本 : V1.0
- * 说    明 : 将RTX5的动态内存管理整理出来, 可以管理多个内存块
- *
- * 修改记录 :
- * 	版本号   日期         作者        说明
- * 	V1.0    2018-04-09   Eric2013   将RTX5的动态内存管理整理出来
- *          2023-03-21   OldGermna  打包到 osRtxMemory 类
- *
- * Copyright (C), 2018-2030, 安富莱电子 www.armfly.com
- *
- ******************************************************************************
- * @attention
- *
- * Copyright (c) 2013-2018 Arm Limited. All rights reserved.
- *
- * SPDX-License-Identifier: Apache-2.0
- *
- * Licensed under the Apache License, Version 2.0 (the License); you may
- * not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an AS IS BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- * ----------------------------------------------------------------------------
- *
- * Project:     CMSIS-RTOS RTX
- * Title:       RTX Library definitions
- *
- * ----------------------------------------------------------------------------
- *
- ******************************************************************************
- */
+  ******************************************************************************
+  * @file        rtx_memory.hpp
+  * @modify      OldGerman
+  * @created on  Mar 20, 2023
+  * @brief
+  *
+  * 模块名称 : 动态内存管理
+  * 文件名称 : rtx_memory.h
+  * 版    本 : V1.0
+  * 说    明 : 将RTX5的动态内存管理整理出来, 可以管理多个内存块
+  *
+  * 修改记录 :
+  * 	版本号   日期         作者        说明
+  * 	V1.0    2018-04-09   Eric2013   将RTX5的动态内存管理整理出来
+  *             2023-03-21   OldGerman  打包到 osRtxMemory 类
+  *             2023-03-22   OldGerman  修复在构造函数中初始化内存池进hardfault的问题
+  *
+  * Copyright (C), 2018-2030, 安富莱电子 www.armfly.com
+  *
+  ******************************************************************************
+  * @attention
+  *
+  * Copyright (c) 2013-2018 Arm Limited. All rights reserved.
+  *
+  * SPDX-License-Identifier: Apache-2.0
+  *
+  * Licensed under the Apache License, Version 2.0 (the License); you may
+  * not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  * www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an AS IS BASIS, WITHOUT
+  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  *
+  * ----------------------------------------------------------------------------
+  *
+  * Project:     CMSIS-RTOS RTX
+  * Title:       RTX Library definitions
+  *
+  * ----------------------------------------------------------------------------
+  *
+  ******************************************************************************
+  */
 
 /* Includes ------------------------------------------------------------------*/
 #include "rtx_memory.h"
@@ -59,16 +60,22 @@
 /* Private function prototypes -----------------------------------------------*/
 /* Function implementations --------------------------------------------------*/
 /**
- * @brief  Initialize Memory Pool with variable block size.
+ * @brief  The constructor of the memory pool object
  * @param  Mem             pointer to memory pool.
  * @param  SizePool        size of a memory pool in bytes.
+ * @retval N/A
  */
 osRtxMemory::osRtxMemory(void *Mem, uint32_t SizePool)
-:mem(Mem), sizePool(SizePool), sizeFreeMin(sizePool)
-{
-	/* 全部填0 */
-	memset(mem, 0, SizePool);
+	:mem(Mem), sizePool(SizePool), sizeFreeMin(sizePool)
+{}
 
+/**
+ * @brief  Initialize Memory Pool with variable block size.
+ * @param  None
+ * @retval 0 - success, 1 - failure.
+ */
+uint32_t osRtxMemory::init()
+{
 	uint32_t size = sizePool;
 	mem_head_t  *head;
 	mem_block_t *ptr;
@@ -79,7 +86,7 @@ osRtxMemory::osRtxMemory(void *Mem, uint32_t SizePool)
 			(size < (sizeof(mem_head_t) + (2U*sizeof(mem_block_t))))) {
 		//EvrRtxMemoryInit(mem, size, 0U);
 		//lint -e{904} "Return statement before end of function" [MISRA Note 1]
-		statusConstructor = FUN_ERROR;
+		return FUN_ERROR;
 	}
 
 	// Initialize memory pool header
@@ -96,9 +103,8 @@ osRtxMemory::osRtxMemory(void *Mem, uint32_t SizePool)
 
 	//EvrRtxMemoryInit(mem, size, 1U);
 
-	statusConstructor = FUN_OK;
+	return FUN_OK;
 }
-
 /**
  * @brief  Allocate a memory block from a Memory Pool.
  * @param  mem             pointer to memory pool.

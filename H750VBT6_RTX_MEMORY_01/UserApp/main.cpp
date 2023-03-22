@@ -81,6 +81,9 @@ void ledUpdateInit()
 
 void Main()
 {
+	/* 初始化动态内存对象的内存池 */
+	DRAM_Init();
+
 	/* 启用统计CPU利用率的定时器中断 */
 	HAL_TIM_Base_Start_IT(&htim7);
 

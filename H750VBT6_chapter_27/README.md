@@ -20,6 +20,13 @@ uint64_t AppMallocDTCM           [64*1024/8]     __attribute__((section(".RAM_DT
 /* Allocated Memory Address */
 void *DTCM_Addr0;
 
+void Main()
+{
+	/* 初始化动态内存池 */
+	osRtxMemoryInit(AppMallocDTCM, sizeof(AppMallocDTCM));
+    ...
+}
+
 void Demo()
 {
     /* 从DTCM申请280字节空间，使用指针变量DTCM_Addr0操作这些空间时不要超过280字节大小 */

@@ -52,3 +52,21 @@ osRtxMemory DRAM_SRAM4   (MEMPOOL_D3_SRAM4,   sizeof(MEMPOOL_D3_SRAM4));
 
 /* Private function prototypes -----------------------------------------------*/
 /* Function implementations --------------------------------------------------*/
+/**
+  * @brief  初始化动态内存对象的内存池
+  * @param  None
+  * @retval 0 - success, ≥1 - failure.
+  */
+uint32_t DRAM_Init()
+{
+	uint32_t ret = 0;
+
+	ret += DRAM_DTCM.init();
+	ret += DRAM_AXISRAM.init();
+	ret += DRAM_SRAM1.init();
+	ret += DRAM_SRAM2.init();
+	ret += DRAM_SRAM3.init();
+	ret += DRAM_SRAM4.init();
+
+	return ret;
+}

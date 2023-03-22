@@ -202,7 +202,7 @@ public:
 
 #endif
 
-#if 0
+#if 1
 		void  *SRAM1_Addr0,  *SRAM1_Addr1, *SRAM1_Addr2;
 
 		/* 从SRAM1域的SRAM申请200字节空间，使用指针变量SRAM1_Addr0操作这些空间时不要超过200字节大小 */

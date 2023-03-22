@@ -13,7 +13,8 @@
   * 修改记录 :
   * 	版本号   日期         作者        说明
   * 	V1.0    2018-04-09   Eric2013   将RTX5的动态内存管理整理出来
-  *             2023-03-21   OldGermna  打包到 osRtxMemory 类
+  *             2023-03-21   OldGerman  打包到 osRtxMemory 类
+  *             2023-03-22   OldGerman  修复在构造函数中初始化内存池进hardfault的问题
   *
   * Copyright (C), 2018-2030, 安富莱电子 www.armfly.com
   *
@@ -95,6 +96,8 @@ public:
 
 	/* Constructor */
 	osRtxMemory(void *Mem, uint32_t SizePool);
+	/* Init memory pool */
+	uint32_t init();
 
 	/* Memory Heap Library functions */
 	void      *malloc(size_t size, uint32_t type = 0);
@@ -137,6 +140,8 @@ public:
 		}
 			return sizeFreeMin;
 	}
+
+private:
 	void      *mem;					// Pointer to memory pool.
 	uint32_t   sizePool;			// Size of a memory pool in bytes.
 	uint32_t   statusConstructor;	// Status of Constuctor

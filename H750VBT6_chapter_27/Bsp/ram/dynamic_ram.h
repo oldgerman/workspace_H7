@@ -60,7 +60,7 @@ extern mem_head_t *SRAM4Used;
 extern uint64_t AppMallocSRAM4[64*1024/8];
 
 /* Exported functions --------------------------------------------------------*/
-uint8_t RamInit();
+uint32_t DRAM_Init();
 
 #ifdef __cplusplus
 }

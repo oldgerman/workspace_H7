@@ -66,9 +66,9 @@ uint64_t AppMallocSRAM4[64*1024/8]__attribute__((section(".RAM_D3_Array")));
   * @param  None
   * @retval 0 - success, ≥1 - failure.
   */
-uint8_t RamInit()
+uint32_t DRAM_Init()
 {
-	uint8_t ret = 0;
+	uint32_t ret = 0;
 
 	ret += osRtxMemoryInit(AppMallocDTCM,    sizeof(AppMallocDTCM));
 	ret += osRtxMemoryInit(AppMallocAXISRAM, sizeof(AppMallocAXISRAM));

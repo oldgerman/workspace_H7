@@ -15,13 +15,22 @@
 ```c
 /*       Memory Pool        Size [KB  *1024/8]                  Section       */
 uint64_t MEMPOOL_DTCM            [64  *1024/8]  __attribute__((section(".RAM_DTCM_Array")));
+
 /* osRtxMemory objecct */
 osRtxMemory DRAM_DTCM    (MEMPOOL_DTCM,       sizeof(MEMPOOL_DTCM));
+
 /* Allocated Memory Address */
 void *DTCM_Addr0;
-    
-void Demo()
+
+void Main()
 {
+     /* 初始化动态内存对象的内存池 */
+	DRAM_DTCM.init();
+	...
+}
+
+void Demo()
+{   
     /* 从DTCM申请280字节空间，使用指针变量DTCM_Addr0操作这些空间时不要超过280字节大小 */
     printf("=========================================================\r\n");
     DTCM_Addr0 = DRAM_DTCM.malloc(280, 0);
@@ -32,6 +41,26 @@ void Demo()
     DRAM_DTCM.free(DTCM_Addr0);
     printf("释放DTCM动态内存区申请的0280字节，当前共使用大小 = %d字节，当前剩余大小 = %d字节，历史最少可用大小 = %d字节\r\n",
            DRAM_DTCM.getMemUsed(), DRAM_DTCM.getMemFree(), DRAM_DTCM.getMemFreeMin());
+}
+```
+
+## BUG
+
+不能将 osRtxMemory::init() 内初始化内存池的代码放在构造函数 osRtxMemory::osRtxMemory()
+
+全局对象的构造函数的执行时刻，在启动文件的汇编代码之后，在 main() 函数之前。
+
+也就是说 main() 还未执行 MPU_Config()、SCB_EnableICache()、SCB_EnableDCache()，osRtxMemory类的全局对象的构造函数就执行初始化内存池的代码，可能导致进 hardfault ，硬故障是 FORCED + UNALIGNED
+
+![](Images/malloc试图执行未对齐访问进hardfault.png)
+
+将构造函数内的代码移到 osRtxMemory::init()，将初始化内存池的代码延迟到 main() 之后执行（在main.cpp 的 Main() 执行），即可解决
+
+```c++
+void Main()
+{
+	DRAM_DTCM.init();
+	...
 }
 ```
 
