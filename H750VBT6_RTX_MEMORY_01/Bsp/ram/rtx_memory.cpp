@@ -105,6 +105,7 @@ uint32_t osRtxMemory::init()
 
 	return FUN_OK;
 }
+
 /**
  * @brief  Allocate a memory block from a Memory Pool.
  * @param  mem             pointer to memory pool.

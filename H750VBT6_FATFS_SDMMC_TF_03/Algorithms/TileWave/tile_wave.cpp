@@ -32,8 +32,17 @@
 /* Exported constants --------------------------------------------------------*/
 /* Private constants ---------------------------------------------------------*/
 /* Exported variables --------------------------------------------------------*/
-std::function<void*(size_t)> 	TileWave::malloc;
-std::function<void(void*)>		TileWave::free;
+std::function<void*(size_t size)> 	TileWave::malloc;
+std::function<void(void* ptr)>		TileWave::free;
+
+__attribute__((section(".RAM_D1_Array"))) ALIGN_32BYTES(uint8_t TxBuffer [64 *1024]);
+__attribute__((section(".RAM_D1_Array"))) ALIGN_32BYTES(uint8_t RxBuffer [10 *1024]);
+
+void* TileWave::ucpTxBuffer = TxBuffer;
+void* TileWave::ucpRxBuffer = RxBuffer;
+
+std::function<uint32_t (uint32_t addr, uint32_t size, uint8_t* pData)> 		TileWave::write;
+std::function<uint32_t (uint32_t addr, uint32_t size, uint8_t* pData)>		TileWave::read;
 
 /* Private variables ---------------------------------------------------------*/
 /* Private function prototypes -----------------------------------------------*/

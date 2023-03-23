@@ -30,8 +30,9 @@
 #include "tim.h"
 
 #include "tile_wave.h"
+#include "frame_processor.h"
+#include "demo_sd_fatfs.h"
 
-//#include <iostream>
 #include <functional>
 /* 使用using 定义成员函数指针的别名 */
 using mf_malloc = void*(osRtxMemory::*)(uint32_t);
@@ -40,8 +41,8 @@ using mf_free = void(osRtxMemory::*)(void*);
 TileWave::Config_t xConfig = {
 		/* IO Size */
 		.ulIOSize = 512,
-		.ulIOSizeMin = 4096,	// 4KB
-	    .ulIOSizeMax = 32768,	// 64KB
+		.ulIOSizeMin = 2048,	// 2KB
+	    .ulIOSizeMax = 65536,	// 64KB
 	    /* Layer */
 	    .ulLayerNum = 0,
 	    .ulLayerNumMax = 15,
@@ -57,7 +58,7 @@ TileWave xTileWave(xConfig);
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
-const uint32_t ledTaskStackSize = 1024 * 4;
+const uint32_t ledTaskStackSize = 512 * 4;
 const osThreadAttr_t ledTask_attributes = {
     .name = "ledTask",
     .stack_size = ledTaskStackSize,
@@ -86,7 +87,8 @@ void threadLedUpdate(void* argument){
 		/* 打印时间节拍 */
 		printf("[led_task] sysTick : %ld ms\r\n", xTaskGetTickCount());
 
-		xTileWave.testDynamicMemory();
+//		xTileWave.vPrintLayerInfo();
+//		xTileWave.vTestMallocFree();
 
 		/* arm math 单精度硬件浮点测试 */
 //		float data[3];
@@ -130,4 +132,11 @@ void Main()
     			std::placeholders::_1));
 
     xTileWave.createTileBufferList();
+
+    openWaveFile();
+    TileWave::read = readWaveFile;
+    TileWave::write = writeWaveFile;
+
+
+    frame_processor_init();
 }

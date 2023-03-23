@@ -136,7 +136,6 @@ public:
 			sprintf(&(ucStrBuffer[ulLayerNum][0]), "| %15d | %13d | %17d |\r\n",
 					DRAM_SRAM1.getMemUsed(), DRAM_SRAM1.getMemFree(), DRAM_SRAM1.getMemFreeMin());
 
-
 			Layer_t xLayer = {
 					.ulLayerNum = ulLayerNum,
 					.ulTileSize = ulLayerTileSize,
@@ -154,7 +153,41 @@ public:
 			ulLayerTileBufferSize = ulLayerTileBufferSize << 1;
 			ulLayerTileSize = ulLayerTileSize << 1;
 		}
+
+//		ucpTxBuffer = malloc(ulIOSizeMax);
+//		ucpRxBuffer = malloc(5*ulIOSizeMin); //先随便给5个最小IO缓冲区
+
 		return 0U;
+	}
+
+	void writeTileBuffer(uint8_t* pulData) {
+		uint32_t ret = 0;
+		static uint32_t ulPeriod = 0;
+		++ulPeriod;	// = 1、2、3...2048;
+		std::list<Layer_t>::reverse_iterator xRit = xLayersList.rbegin();
+		uint32_t ulPeriodMax = (*xLayersList.begin()).ulTileBufferTxPeriod;
+		uint32_t ucTxBufferOffset = 0;
+		static uint32_t ucTxBufferOffsetOld = 0;
+
+		for(uint8_t i = 0; i < ulLayerNumMax; i++) {
+			/* 若层瓦片缓冲区周期等于周期计数器，
+			 * 说明该层需要向缓冲区发送瓦片缓冲区的所有数据 */
+			if((*xRit).ulTileBufferTxPeriod <= ulPeriod)
+			{
+				//从最大的瓦片迭代到最小的
+				memcpy(ucpTxBuffer + ucTxBufferOffset, (*xRit).pucTileBuffer, (*xRit).ulTileBufferSize);
+				ucTxBufferOffset += (*xRit).ulTileBufferSize;
+			}
+			++xRit;
+		}
+		ulPeriod %= ulPeriodMax;
+
+		ret = write(ucTxBufferOffsetOld, ucTxBufferOffset, (uint8_t *)ucpTxBuffer);
+		printf("writeTileBuffer: ulPeriod = %5d, ret = %2d, addr = %10d, size = %10d\r\n",
+				ulPeriod, ret, ucTxBufferOffsetOld, ucTxBufferOffset);
+
+		ucTxBufferOffsetOld += ucTxBufferOffset;
+
 	}
 
 	TileWave(Config_t &xConfig) {
@@ -180,62 +213,58 @@ public:
 		return 0U;
 	}
 
-	/* 测试动态内存API */
-	void testDynamicMemory()
+	void vPrintLayerInfo()
 	{
-#if 1
 		printf("| 层编号 | 瓦片大小 | 瓦片缓冲区大小 | 瓦片缓冲区地址 | 缓冲区大小 | 缓冲区发送周期 | DRAM 当前共使用 | DRAM 当前剩余 | DRAM 历史最少可用 |\r\n");
 		printf("| ------ | -------- | -------------- | -------------- | ---------- | -------------- | --------------- | ------------- | ----------------- |\r\n");
 		std::list<Layer_t>::iterator xIt = xLayersList.begin();
 		for(uint8_t i = 0; i < ulLayerNumMax; i++) {
-			Layer_t	xLayer = *xIt;
 			printf("| %6d | %8d | %14d | %p | %10d | %14d %s",
-					xLayer.ulLayerNum,
-					xLayer.ulTileSize,
-					xLayer.ulTileBufferSize,
-					xLayer.pucTileBuffer,
-					xLayer.ulBufferSize,
-					xLayer.ulTileBufferTxPeriod,
+					(*xIt).ulLayerNum,
+					(*xIt).ulTileSize,
+					(*xIt).ulTileBufferSize,
+					(*xIt).pucTileBuffer,
+					(*xIt).ulBufferSize,
+					(*xIt).ulTileBufferTxPeriod,
 					&(ucStrBuffer[i][0]));
 			++xIt;
 		}
-
-#endif
-
-#if 1
+	}
+	/* 测试动态内存API */
+	void vTestMallocFree()
+	{
+#if 0
 		void  *SRAM1_Addr0,  *SRAM1_Addr1, *SRAM1_Addr2;
 
-		/* 从SRAM1域的SRAM申请200字节空间，使用指针变量SRAM1_Addr0操作这些空间时不要超过200字节大小 */
+		/* 从SRAM1域的SRAM申请200字节空间，使用指针变量SRAM1_Addr0操作这些空间时不要超过200字节 */
 		printf("=========================================================\r\n");
 		SRAM1_Addr0 = DRAM_SRAM1.malloc(200, 0);
-		printf("SRAM1域SRAM总大小 = %d字节，申请大小 = 0200字节，当前共使用大小 = %d字节，当前剩余大小 = %d字节，历史最少可用大小 = %d字节\r\n",
+		printf("SRAM1域SRAM总 = %d字节，申请 = 0200字节，当前共使用 = %d字节，当前剩余 = %d字节，历史最少可用 = %d字节\r\n",
 				DRAM_SRAM1.getMemSize(), DRAM_SRAM1.getMemUsed(), DRAM_SRAM1.getMemFree(), DRAM_SRAM1.getMemFreeMin());
 
-		/* 从SRAM1域的SRAM申请96字节空间，使用指针变量SRAM1_Addr1操作这些空间时不要超过96字节大小 */
+		/* 从SRAM1域的SRAM申请96字节空间，使用指针变量SRAM1_Addr1操作这些空间时不要超过96字节 */
 		SRAM1_Addr1 = DRAM_SRAM1.malloc(96, 0);
-		printf("SRAM1域SRAM总大小 = %d字节，申请大小 = 0096字节，当前共使用大小 = %d字节，当前剩余大小 = %d字节，历史最少可用大小 = %d字节\r\n",
+		printf("SRAM1域SRAM总 = %d字节，申请 = 0096字节，当前共使用 = %d字节，当前剩余 = %d字节，历史最少可用 = %d字节\r\n",
 				DRAM_SRAM1.getMemSize(), DRAM_SRAM1.getMemUsed(), DRAM_SRAM1.getMemFree(), DRAM_SRAM1.getMemFreeMin());
 
-		/* 从SRAM1域的SRAM申请4111字节空间，使用指针变量SRAM1_Addr2操作这些空间时不要超过4111字节大小 */
+		/* 从SRAM1域的SRAM申请4111字节空间，使用指针变量SRAM1_Addr2操作这些空间时不要超过4111字节 */
 		SRAM1_Addr2 = DRAM_SRAM1.malloc(4111, 0);
-		printf("SRAM1域SRAM总大小 = %d字节，申请大小 = 4111字节，当前共使用大小 = %d字节，当前剩余大小 = %d字节，历史最少可用大小 = %d字节\r\n",
+		printf("SRAM1域SRAM总 = %d字节，申请 = 4111字节，当前共使用 = %d字节，当前剩余 = %d字节，历史最少可用 = %d字节\r\n",
 				DRAM_SRAM1.getMemSize(), DRAM_SRAM1.getMemUsed(), DRAM_SRAM1.getMemFree(), DRAM_SRAM1.getMemFreeMin());
-
-	/* 释放从SRAM1域SRAM申请的空间 */
 
 		/* 释放从SRAM1域的SRAM申请的200字节空间 */
 		DRAM_SRAM1.free(SRAM1_Addr0);
-		printf("释放SRAM1域SRAM动态内存区申请的0200字节，当前共使用大小 = %d字节，当前剩余大小 = %d字节，历史最少可用大小 = %d字节\r\n",
+		printf("释放SRAM1域SRAM动态内存区申请的0200字节，当前共使用 = %d字节，当前剩余 = %d字节，历史最少可用 = %d字节\r\n",
 				DRAM_SRAM1.getMemUsed(), DRAM_SRAM1.getMemFree(), DRAM_SRAM1.getMemFreeMin());
 
 		/* 释放从SRAM1域的SRAM申请的96字节空间 */
 		DRAM_SRAM1.free(SRAM1_Addr1);
-		printf("释放SRAM1域SRAM动态内存区申请的0096字节，当前共使用大小 = %d字节，当前剩余大小 = %d字节，历史最少可用大小 = %d字节\r\n",
+		printf("释放SRAM1域SRAM动态内存区申请的0096字节，当前共使用 = %d字节，当前剩余 = %d字节，历史最少可用 = %d字节\r\n",
 				DRAM_SRAM1.getMemUsed(), DRAM_SRAM1.getMemFree(), DRAM_SRAM1.getMemFreeMin());
 
 		/* 释放从SRAM1域的SRAM申请的4111字节空间 */
 		DRAM_SRAM1.free(SRAM1_Addr2);
-		printf("释放SRAM1域SRAM动态内存区申请的4111字节，当前共使用大小 = %d字节，当前剩余大小 = %d字节，历史最少可用大小 = %d字节\r\n",
+		printf("释放SRAM1域SRAM动态内存区申请的4111字节，当前共使用 = %d字节，当前剩余 = %d字节，历史最少可用 = %d字节\r\n",
 				DRAM_SRAM1.getMemUsed(), DRAM_SRAM1.getMemFree(), DRAM_SRAM1.getMemFreeMin());
 #endif
 	}
@@ -276,9 +305,14 @@ public:
 
 	std::list<Layer_t> xLayersList; // 层链表(双向)
 
+	static void *ucpTxBuffer;
+	static void *ucpRxBuffer; //先随便5个2048
+    static std::function<uint32_t (uint32_t addr, uint32_t size, uint8_t* pData)> 	write;
+    static std::function<uint32_t (uint32_t addr, uint32_t size, uint8_t* pData)>	read;
+
 private:
-    static std::function<void*(size_t)> 	malloc;
-    static std::function<void(void*)>		free;
+    static std::function<void*(size_t size)> 	malloc;
+    static std::function<void(void* ptr)>		free;
     uint32_t ulCalculateSmallestPowerOf2GreaterThan(uint32_t ulValue) {
     	uint32_t ulNth = 1;
     	for(uint8_t i = 0; i < 32; i++)
@@ -290,8 +324,6 @@ private:
     	return ulNth;
     }
 
-//	uint32_t ulTxBuf[];
-//	uint32_t ulRxBuf[];
 };
 
 }

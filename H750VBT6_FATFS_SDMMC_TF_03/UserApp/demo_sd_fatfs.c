@@ -96,19 +96,8 @@ RAM_D1 ALIGN_32BYTES(char FsWriteBuf[1024]);
 /* 测试的读写临时缓冲区 */
 RAM_D1 ALIGN_32BYTES(uint8_t g_TestBuf[BUF_SIZE]);
 
-/* Private function prototypes -----------------------------------------------*/
-static void DispMenu(void);
-static void ViewRootDir(void);
-static void CreateNewFile(void);
-static void ReadFileData(void);
-static void CreateDir(void);
-static void DeleteDirFile(void);
-static void WriteFileTest(file_verify_t file_verify);
-
-/* Function implementations --------------------------------------------------*/
-
 /* FatFs API的返回值 */
-static const char * FR_Table[]= 
+static const char * FR_Table[]=
 {
 	"FR_OK：成功",				                             /* (0) Succeeded */
 	"FR_DISK_ERR：底层硬件错误",			                 /* (1) A hard error occurred in the low level disk I/O layer */
@@ -131,6 +120,105 @@ static const char * FR_Table[]=
 	"FR_TOO_MANY_OPEN_FILES：当前打开的文件数大于_FS_SHARE", /* (18) Number of open files > _FS_SHARE */
 	"FR_INVALID_PARAMETER：参数无效"	                     /* (19) Given parameter is invalid */
 };
+
+/* Private function prototypes -----------------------------------------------*/
+static void DispMenu(void);
+static void ViewRootDir(void);
+static void CreateNewFile(void);
+static void ReadFileData(void);
+static void CreateDir(void);
+static void DeleteDirFile(void);
+static void WriteFileTest(file_verify_t file_verify);
+
+/* Function implementations --------------------------------------------------*/
+
+#define FAT32_CLUSTER_SIZE (32*1024) 		//FAT32簇大小 32KB
+#define WAVE_FILE_SIZE		(128*1024*1024)	//波形文件大小128MB
+#define CLMT_ARRAY_ELEMENT_SIZE sizeof(DWORD) //CLMT数组元素大小
+#define SZ_TBL	((WAVE_FILE_SIZE / FAT32_CLUSTER_SIZE + 1) * 2) // clmt = 8194
+
+
+/** 在使用快速搜索模式前，必须将 CLMT 在内存中的缓冲区创建到 DWORD 数组中 **/
+/* DreamShell/firmware/isoldr/loader/fs/fat/fs.c 中 SZ_TBL 为 32 */
+DWORD clmt[SZ_TBL]; /* Cluster link map table buffer *//* 簇链接映射表缓冲区 */
+
+uint32_t openWaveFile()
+{
+	FRESULT result;
+	char path[32];
+
+
+ 	/* 挂载文件系统 */
+	result = f_mount(&fs, DiskPath, 0);			/* Mount a logical drive */
+	if (result != FR_OK)
+		printf("挂载文件系统失败 (%s)\r\n", FR_Table[result]);
+
+	/* 打开文件 */
+	/* 以 创建+写入+读取 的方式访问打开的文件
+	 * FA_CREATE_ALWAYS: 创建一个新文件。如果文件存在，它将被截断并覆盖
+	 */
+	sprintf(path, "%sWAVE.txt", DiskPath);
+	result = f_open(&file, path,
+			FA_CREATE_ALWAYS | FA_WRITE | FA_READ);
+	if (result == FR_OK)
+		printf("WAVE.txt 文件打开成功\r\n");
+	else
+		printf("WAVE.txt 文件打开失败  (%s)\r\n", FR_Table[result]);
+
+	/* 慢速搜索模式下 */
+	result = f_lseek (&file, WAVE_FILE_SIZE); 					/* 使用f_lseek() 拓展文件大小（集群预分配）为 128MB */
+    if (result || f_tell(&file) != WAVE_FILE_SIZE)		 	/* 检查文件大小增加是否成功 *//* 检查文件是否扩展成功 */
+    	printf("WAVE.txt 扩展文件大小（集群预分配）失败");
+
+	f_close(&file);
+	sprintf(path, "%sWAVE.txt", DiskPath);
+	result = f_open(&file, path,
+			FA_CREATE_ALWAYS | FA_WRITE | FA_READ);
+	if (result == FR_OK)
+		printf("WAVE.txt 文件打开成功\r\n");
+	else
+		printf("WAVE.txt 文件打开失败  (%s)\r\n", FR_Table[result]);
+
+    /* 设定快速搜索模式 */
+	(&file)->cltbl = clmt;						/* 启用快速搜索模式 (cltbl != NULL) */
+	clmt[0] = SZ_TBL;						/* 在数组的第一个元素中设置表的大小 */
+	result = f_lseek (&file, CREATE_LINKMAP);	/* 创建 CLMT */
+
+	/* 快速搜索模式下
+	 * f_read/f_write/f_lseek不会造成FAT访问，在这种模式下，文件大小不能通过 f_write/f_lseek 函数增加
+	 */
+	return result;
+}
+
+uint32_t readWaveFile(uint32_t addr, uint32_t size, uint8_t* pData)
+{
+	FRESULT result = FR_OK;
+	uint32_t bw;
+
+	result += f_lseek(&file, addr);
+	result += f_read(&file, pData, size, (UINT* )&bw);
+
+	return result;
+}
+
+uint32_t writeWaveFile(uint32_t addr, uint32_t size, uint8_t* pData)
+{
+	FRESULT result = FR_OK;
+	uint32_t bw;
+
+	result += f_lseek(&file, addr);
+	result += f_write(&file, pData, size, (UINT* )&bw);
+
+	/**
+	 * `f_sync`函数执行与`f_close`函数相同的过程，但文件保持打开状态，可以继续对文件进行读/写/查找操作。
+	 * 这适用于需要长时间以写入方式打开文件的应用程序，例如数据记录器。
+	 * 在一定的时间间隔执行`f_sync`功能可以最大限度地减少由于突然停电、错误的媒体移除或不可恢复的磁盘错误而导致数据丢失的风险。
+	 * 在`f_close`函数之前立即执行`f_sync`函数是没有意义的，因为它在其中执行`f_sync`函数
+	 */
+	result += f_sync(&file);
+
+	return result;
+}
 
 /*
 *********************************************************************************************************
