@@ -76,7 +76,7 @@ static void frameProcessorTask(void* argument)
 
 	TickType_t xLastWakeTime;
 	TickType_t xTaskPeriod;
-	xLastWakeTime = xTaskGetTickCount();            /* 获取当前的系统时间 */
+	xLastWakeTime = xTaskGetTickCount();	/* 获取当前的系统时间 */
 	/* 帧缓冲区全部归'.'*/
 	memset(frame, '.', sizeof(frame));
 	for (;;)

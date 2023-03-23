@@ -51,7 +51,8 @@ extern osThreadId_t usbServerTaskHandle;
 /*---------------------------------- User Tasks -------------------------------*/
 extern const uint32_t ledTaskStackSize;
 extern osThreadId_t ledTaskHandle;
-
+extern const uint32_t frameProcessorTaskStackSize;
+extern osThreadId_t frameProcessorTaskHandle;
 /*------------- xxxK (used) / xxxK (for FreeRTOS) / xxxK (total) --------------*/
 
 #ifdef __cplusplus

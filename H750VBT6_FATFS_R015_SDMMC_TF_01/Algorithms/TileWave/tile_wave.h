@@ -146,7 +146,7 @@ public:
 					.ulBufferSize = ulLayerTileSize * ulLayerTilesNumMax,
 					.ulTileBufferTxPeriod = ulLayerTileBufferSize / ulLayerTileSize
 			};
-			/* 链表正向遍历越往后层编号越大 */
+			/* 尾插入，链表正向遍历越往后层编号越大 */
 			xLayersList.push_back(xLayer);
 
 			ulLayersTileBufferSize += ulLayerTileBufferSize;
@@ -156,6 +156,7 @@ public:
 			ulLayerTileSize = ulLayerTileSize << 1;
 		}
 
+		// malloc未实现申请32字节对齐的内存
 //		ucpTxBuffer = malloc(ulIOSizeMax);
 //		ucpRxBuffer = malloc(5*ulIOSizeMin); //先随便给5个最小IO缓冲区
 
@@ -172,6 +173,12 @@ public:
 
 	void writeTileBuffer(uint8_t* pulData) {
 		uint32_t ret = 0;
+
+		static float ulRealWrittenFreq = 0;
+		static uint32_t ulWrittenCount = 0;
+		static uint32_t ulTickCountOld =  xTaskGetTickCount();
+		uint32_t ulTickCount;
+
 		++ulPeriod;	// = 1、2、3...2048;
 		xRit = xLayersList.rbegin();
 		uint32_t ulPeriodMax = (*xLayersList.begin()).ulTileBufferTxPeriod;
@@ -198,7 +205,7 @@ public:
 				/* 归零瓦片缓冲区的偏移地址 */
 				(*xRit).ulTileBufferOffset = 0;
 
-				// 将DRAM中的 非连续储存 的 瓦片缓冲区数据 复制 到 发送缓冲区 以变为连续储存的数据
+				// 将DRAM中的 非连续储存 的 瓦片缓冲区数据 复制 到 发送缓冲区 以变为连续储存的
 				memcpy((uint8_t*)ucpTxBuffer + ulTxBufferOffset, (*xRit).pucTileBuffer, (*xRit).ulTileBufferSize);
 				// 更新向缓冲区写入的起始地址偏移
 				ulTxBufferOffset += (*xRit).ulTileBufferSize;
@@ -207,14 +214,24 @@ public:
 			}
 			++xRit;
 		}
-		ulPeriod %= ulPeriodMax;
 
 		ret = write(ulTxBufferOffsetOld, ulTxBufferOffset, (uint8_t *)ucpTxBuffer);
-		printf("writeTileBuffer: ulPeriod = %5d, ret = %2d, addr = %10d, size = %10d, mark = %c\r\n",
-				ulPeriod, ret, ulTxBufferOffsetOld, ulTxBufferOffset, cWrittenMark);
 
+
+		/* 每5秒更新计算实际写入频率 */
+		++ulWrittenCount;
+		ulTickCount = xTaskGetTickCount();	/* 获取当前的系统时间 */
+		uint32_t ulTickOffest = ulTickCount - ulTickCountOld;
+		if(ulTickOffest >  1000) {
+			ulTickCountOld = ulTickCount;
+			ulRealWrittenFreq = (float)1000 / ((float)ulTickOffest / ulWrittenCount);
+			ulWrittenCount = 0;
+		}
+		printf("| writeTileBuffer | ulPeriod = %4d | ret = %2d | addr = %10d | size = %9d | mark = %c | freq = %3.3fHz |\r\n",
+				ulPeriod, ret, ulTxBufferOffsetOld, ulTxBufferOffset, cWrittenMark, ulRealWrittenFreq);
+
+		ulPeriod %= ulPeriodMax;
 		ulTxBufferOffsetOld += ulTxBufferOffset;
-
 	}
 
 	TileWave(Config_t &xConfig) {
@@ -258,9 +275,8 @@ public:
 		}
 	}
 	/* 测试动态内存API */
-	void vTestMallocFree()
+	static void vTestMallocFree()
 	{
-#if 0
 		void  *SRAM1_Addr0,  *SRAM1_Addr1, *SRAM1_Addr2;
 
 		/* 从SRAM1域的SRAM申请200字节空间，使用指针变量SRAM1_Addr0操作这些空间时不要超过200字节 */
@@ -293,7 +309,6 @@ public:
 		DRAM_SRAM1.free(SRAM1_Addr2);
 		printf("释放SRAM1域SRAM动态内存区申请的4111字节，当前共使用 = %d字节，当前剩余 = %d字节，历史最少可用 = %d字节\r\n",
 				DRAM_SRAM1.getMemUsed(), DRAM_SRAM1.getMemFree(), DRAM_SRAM1.getMemFreeMin());
-#endif
 	}
 
 	/** @brief  一次可以读取或写入的最小数据块，单位B

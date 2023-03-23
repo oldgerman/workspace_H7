@@ -35,6 +35,7 @@
 #include <string>
 #include "demo_sd_fatfs.h"
 #include "frame_processor.h"
+#include "tile_wave.h"
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
@@ -42,6 +43,8 @@
 /* Exported constants --------------------------------------------------------*/
 /* Private constants ---------------------------------------------------------*/
 /* Exported variables --------------------------------------------------------*/
+extern TileWave xTileWave;
+
 /* Private variables ---------------------------------------------------------*/
 /* Private function prototypes -----------------------------------------------*/
 /* Function implementations --------------------------------------------------*/
@@ -58,7 +61,7 @@ void OnAsciiCmd(const char* _cmd, size_t _len, StreamSink &_responseChannel)
     uint8_t argNum;
 
     // Check incoming packet type
-    if (_cmd[0] == 'F')
+    if (_cmd[0] == 'P')
     {
         float value;
         argNum = sscanf(&_cmd[1], "%f", &value);
@@ -76,6 +79,7 @@ void OnAsciiCmd(const char* _cmd, size_t _len, StreamSink &_responseChannel)
         	RespondTaskStackUsageInWords(_responseChannel, usbServerTaskHandle, usbServerTaskStackSize / 4);
         	RespondTaskStackUsageInWords(_responseChannel, usbIrqTaskHandle, 	UsbIrqTaskStackSize / 4);
         	RespondTaskStackUsageInWords(_responseChannel, ledTaskHandle, 		ledTaskStackSize / 4);
+        	RespondTaskStackUsageInWords(_responseChannel, frameProcessorTaskHandle, frameProcessorTaskStackSize / 4);
         }
         else if (s.find("CPU_INFO") != std::string::npos)
         {
@@ -99,13 +103,23 @@ void OnAsciiCmd(const char* _cmd, size_t _len, StreamSink &_responseChannel)
     else if(_cmd[0] == 'T' && _cmd[1] == 'W' && _cmd[2] == '+')
     {
         std::string s(_cmd);
-        if (s.find("START_WRITE") != std::string::npos)
+        if(s.find("LAYER_INFO") != std::string::npos)
+        {
+        	xTileWave.vPrintLayerInfo();
+        }
+        else if(s.find("TEST_DRAM") != std::string::npos)
+        {
+        	TileWave::vTestMallocFree();
+        }
+        else if (s.find("START_WRITE") != std::string::npos)
         {
         	frame_writeTileBuffer = 1;
+        	Respond(_responseChannel, false, "波形文件: 开始写入");
         }
         else if (s.find("STOP_WRITE") != std::string::npos)
         {
         	frame_writeTileBuffer = 0;
+        	Respond(_responseChannel, false, "波形文件: 停止写入");
         }
         else if (s.find("RESET_WAVE_FILE") != std::string::npos)
         {
@@ -116,11 +130,13 @@ void OnAsciiCmd(const char* _cmd, size_t _len, StreamSink &_responseChannel)
             int value;
             sscanf(&_cmd[14], "%u", &value);
             frame_freq = value;
-            Respond(_responseChannel, false, "Set frame_freq = : %u Hz", value);
+            Respond(_responseChannel, false, "波形文件: 写入频率 %uHz", value);
         }
     }
-
-    DemoFatFS(_cmd[0]);
+    else if(_cmd[0] == 'F' && _cmd[1] == 'S' && _cmd[2] == '+')
+    {
+    	DemoFatFS(_cmd[3]);
+    }
     /*---------------------------- ↑ Add Your CMDs Here ↑ -----------------------------*/
 }
 
