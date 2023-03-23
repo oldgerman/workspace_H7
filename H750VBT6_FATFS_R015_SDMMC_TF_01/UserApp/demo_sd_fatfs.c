@@ -155,7 +155,8 @@ uint32_t openWaveFile()
 	if (res != FR_OK)
 		printf("挂载文件系统失败 (%s)\r\n", FR_Table[res]);
 
-	/* 删除文件 armfly.txt */
+#if 0
+	/* 删除文件 */
 	res = f_unlink(path);
 	if (res == FR_OK)
 	{
@@ -169,6 +170,7 @@ uint32_t openWaveFile()
 	{
 		printf("删除 %s 失败 (错误代码 = %d) 文件只读\r\n", filename, res);
 	}
+#endif
 
 	/* 打开文件 */
 	/* 以 创建+写入+读取 的方式访问打开的文件
