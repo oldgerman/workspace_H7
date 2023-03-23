@@ -99,11 +99,11 @@ void OnAsciiCmd(const char* _cmd, size_t _len, StreamSink &_responseChannel)
     else if(_cmd[0] == 'T' && _cmd[1] == 'W' && _cmd[2] == '+')
     {
         std::string s(_cmd);
-        if (s.find("START_WRTIE") != std::string::npos)
+        if (s.find("START_WRITE") != std::string::npos)
         {
         	frame_writeTileBuffer = 1;
         }
-        else if (s.find("STOP_WRTIE") != std::string::npos)
+        else if (s.find("STOP_WRITE") != std::string::npos)
         {
         	frame_writeTileBuffer = 0;
         }
@@ -111,7 +111,7 @@ void OnAsciiCmd(const char* _cmd, size_t _len, StreamSink &_responseChannel)
         {
         	frame_resetWaveFile = 1;
         }
-        else if (s.find("WRTIE_FREQ=") != std::string::npos)
+        else if (s.find("WRITE_FREQ=") != std::string::npos)
         {
             int value;
             sscanf(&_cmd[14], "%u", &value);

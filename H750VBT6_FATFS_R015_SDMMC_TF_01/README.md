@@ -1,10 +1,28 @@
+## H750VBT6_FATFS_R015_SDMMC_TF_01
+
+> 创建日期：2023-03-22
+
+## 关于
+
+本工程用于测试本id自研的瓦片切片算法，其产生的数据在 FATFS + TF卡 上读写的实时性
+
+记录了使用 CubeMX 自动生成的 FATFS R0.12C版本 ST团队写的配置文件和BSP驱动 适配 FATFS R0.15 的过程
+
+- 开发环境：STM32CubeIDE v1.11.2 + STM32CubeMX v6.6
+- 包版本：STM32CubeH7 V1.11.0 / 04-Nov-2022
+- 主RAM：DTCM
+
 ## FATFS R0.15 适配 CubeMX R0.12C
 
-## 适配 ffconf.h
+### R0.12C  f_lseek()  的BUG
+
+由于 CubeMX 6.6 + STM32CubeH7 V1.11.0 / 04-Nov-2022 生成的 FATFS 版本还是 13年 的 R0.12C，本工程在使用 f_lseek() 移到文件读写指针参数为非0地址时，会返回  FR_INT_ERR，看到这篇症状相同的帖子：[Getting FR_INT_ERR when using f_seek in ff.c - ST Community](https://community.st.com/s/question/0D53W000010vQCQSA2/getting-frinterr-when-using-fseek-in-ffc)，应该是 旧版本 R0.12C的BUG，ChaN老师在 FATFS 的版本更新日志中表明，此 BUG 在 R0.13 中修复，现在是 2023 年，最新版本 为 R0.15，又修复了不少BUG，那就用 CubeMX 自动生成的 FATFS 配置文件 适配最新版的 
+
+### 适配 ffconf.h
 
 新建 `ffconf_r0.15_by_r013c.h` 解决
 
-## 适配 用户同步函数
+### 适配 用户同步函数
 
 在 CubeMX 自动生成的 Middlewares/Third_Party/FatFs/option/syscall.c 中有
 
@@ -62,3 +80,14 @@ int ff_mutex_create (	/* Returns 1:Function succeeded or 0:Could not create the 
 ```
 
 ff15 中的 ffunicode 与 cubemx自动生成的  Middlewares/Third_Party/FatFs/option/cc936.c 中重复定义，在过滤器中排除 cc936.c 即可
+
+## 测试
+
+### CPU利用率
+
+向层缓冲区不同写入频率下的CPU利用率：
+
+| 32Hz 12%                                                     | 200Hz 41%                                                    |
+| ------------------------------------------------------------ | ------------------------------------------------------------ |
+| ![32Hz写110MB_CPU利用率_12_percent](Images/32Hz写110MB_CPU利用率_12_percent.png) | ![200Hz写110MB_CPU利用率_41_percent](Images/200Hz写110MB_CPU利用率_41_percent.png) |
+
