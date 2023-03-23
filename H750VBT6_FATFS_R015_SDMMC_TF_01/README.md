@@ -18,6 +18,12 @@
 
 由于 CubeMX 6.6 + STM32CubeH7 V1.11.0 / 04-Nov-2022 生成的 FATFS 版本还是 13年 的 R0.12C，本工程在使用 f_lseek() 移到文件读写指针参数为非0地址时，会返回  FR_INT_ERR，看到这篇症状相同的帖子：[Getting FR_INT_ERR when using f_seek in ff.c - ST Community](https://community.st.com/s/question/0D53W000010vQCQSA2/getting-frinterr-when-using-fseek-in-ffc)，应该是 旧版本 R0.12C的BUG，ChaN老师在 FATFS 的版本更新日志中表明，此 BUG 在 R0.13 中修复，现在是 2023 年，最新版本 为 R0.15，又修复了不少BUG，那就用 CubeMX 自动生成的 FATFS 配置文件 适配最新版的 
 
+### 下载 FATFS R0.15 源码，并在 Path 中添加路径
+
+ChaN 老师网站的下载链接：Download: [FatFs R0.15 (zip)](http://elm-chan.org/fsw/ff/arc/ff15.zip)
+
+解压到 本工程根目录即可，会生成一个 ff15 文件夹，将此文件夹路径添加到 Path 的 Source Location，将此文件夹内的 source 文件夹路径 添加到 Path 的 Includes 
+
 ### 适配 ffconf.h
 
 新建 `ffconf_r0.15_by_r013c.h` 解决
@@ -79,7 +85,17 @@ int ff_mutex_create (	/* Returns 1:Function succeeded or 0:Could not create the 
 }
 ```
 
+### 适配 ffunicode.c 
+
 ff15 中的 ffunicode 与 cubemx自动生成的  Middlewares/Third_Party/FatFs/option/cc936.c 中重复定义，在过滤器中排除 cc936.c 即可
+
+### Path 过滤器的配置
+
+| 文件夹：FATFS                                                | 文件夹：Middlewares                                          | 文件夹：ff15                                                 |
+| ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
+| ![R0.12C适配R0.15_过滤器设置-FATFS](Images/R0.12C适配R0.15_过滤器设置-FATFS.png) | ![R0.12C适配R0.15_过滤器设置-Middlewares](Images/R0.12C适配R0.15_过滤器设置-Middlewares.png) | ![R0.12C适配R0.15_过滤器设置-ff15](Images/R0.12C适配R0.15_过滤器设置-ff15.png) |
+
+备注：sd_diskio.c 的副本在UserApp 路径下，自定义了Cache配置并修复了BUG，副本出处：[H750VBT6_FATFS_SDMMC_TF_01](https://github.com/oldgerman/workspace_H7/tree/master/H750VBT6_FATFS_SDMMC_TF_01)
 
 ## 测试
 
