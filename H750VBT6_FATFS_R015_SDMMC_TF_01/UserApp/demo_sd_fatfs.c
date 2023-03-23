@@ -134,7 +134,7 @@ static void WriteFileTest(file_verify_t file_verify);
 /* Function implementations --------------------------------------------------*/
 
 #define FAT32_CLUSTER_SIZE (32*1024) 		//FAT32簇大小 32KB
-#define WAVE_FILE_SIZE		(4*1024*1024)	//波形文件大小8MB
+#define WAVE_FILE_SIZE		(16*1024*1024)	//波形文件大小8MB
 //#define WAVE_FILE_SIZE		(128*1024*1024)	//波形文件大小128MB
 #define CLMT_ARRAY_ELEMENT_SIZE sizeof(DWORD) //CLMT数组元素大小
 #define SZ_TBL	((WAVE_FILE_SIZE / FAT32_CLUSTER_SIZE + 1) * 2) // clmt = 8194

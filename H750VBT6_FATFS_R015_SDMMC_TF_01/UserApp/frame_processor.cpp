@@ -52,6 +52,7 @@ osThreadId_t frameProcessorTaskHandle;
 
 bool frame_writeTileBuffer = false;
 bool frame_resetWaveFile= false;
+uint16_t frame_freq = 1; /* 每秒调度频率，单位Hz */
 
 extern TileWave xTileWave;
 /* Private variables ---------------------------------------------------------*/
@@ -63,6 +64,7 @@ void resetTileWaveTxRxVariables()
 {
 	TileWave::ulPeriod = 0;
 	TileWave::ulTxBufferOffsetOld = 0;
+	xTileWave.resetTileBufferOffset();
 }
 /**
  * @brief  帧处理器任务函数
@@ -73,8 +75,7 @@ static void frameProcessorTask(void* argument)
 {
 
 	TickType_t xLastWakeTime;
-	uint8_t taskFreq = 1;  /* 每秒调度频率，单位Hz */
-	const TickType_t xTaskPeriod = 1000 / taskFreq; /* 调度周期，单位ms */
+	TickType_t xTaskPeriod;
 	xLastWakeTime = xTaskGetTickCount();            /* 获取当前的系统时间 */
 	/* 帧缓冲区全部归'.'*/
 	memset(frame, '.', sizeof(frame));
@@ -97,7 +98,7 @@ static void frameProcessorTask(void* argument)
 		{
 			resetTileWaveTxRxVariables();
 		}
-
+		xTaskPeriod = 1000 / frame_freq;	/* 调度周期，单位ms */
 		vTaskDelayUntil(&xLastWakeTime, xTaskPeriod);
 	}
 };

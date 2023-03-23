@@ -91,6 +91,7 @@ public:
 		uint32_t ulLayerNum;			// 层编号
 		uint32_t ulTileSize;			// 瓦片大小，单位B
 		uint32_t ulTileBufferSize;		// RAM：瓦片缓冲区大小，单位B
+		uint32_t ulTileBufferOffset;	// 向瓦片缓冲区写入地址的偏移，每次写入瓦片数据，都向后偏移一个瓦片大小
 		void *pucTileBuffer;			// 瓦片缓冲区地址
 		uint32_t ulBufferSize;			// ROM：缓冲区大小，单位B
 		uint32_t ulTileBufferTxPeriod;	// 缓冲区发送周期，单位，调度周期的倍数
@@ -140,6 +141,7 @@ public:
 					.ulLayerNum = ulLayerNum,
 					.ulTileSize = ulLayerTileSize,
 					.ulTileBufferSize = ulLayerTileBufferSize,
+					.ulTileBufferOffset = 0,
 					.pucTileBuffer = pucLayerTileBuffer,
 					.ulBufferSize = ulLayerTileSize * ulLayerTilesNumMax,
 					.ulTileBufferTxPeriod = ulLayerTileBufferSize / ulLayerTileSize
@@ -160,41 +162,55 @@ public:
 		return 0U;
 	}
 
+	void resetTileBufferOffset() {
+		xRit = xLayersList.rbegin();
+		for(uint8_t i = 0; i < ulLayerNumMax; i++) {
+			(*xRit).ulTileBufferOffset = 0;
+			++xRit;
+		}
+	}
+
 	void writeTileBuffer(uint8_t* pulData) {
 		uint32_t ret = 0;
 		++ulPeriod;	// = 1、2、3...2048;
-		std::list<Layer_t>::reverse_iterator xRit = xLayersList.rbegin();
+		xRit = xLayersList.rbegin();
 		uint32_t ulPeriodMax = (*xLayersList.begin()).ulTileBufferTxPeriod;
 		uint32_t ulTxBufferOffset = 0;
 
-		char *cWrittenMark = "a";
+		char cWrittenMark = 'a';
 
 		for(uint8_t i = 0; i < ulLayerNumMax; i++) {
 
 			/** 从帧缓冲区中复制瓦片大小的数据到瓦片缓冲区
 			  * TODO: 从帧缓冲区计算2幂缩放倍率的瓦片大小数据
 			  */
-			memcpy((*xRit).pucTileBuffer, pulData, (*xRit).ulTileSize);
+			memcpy((uint8_t*)((*xRit).pucTileBuffer) + (*xRit).ulTileBufferOffset, 	// 注意加上偏移地址
+					pulData, (*xRit).ulTileSize);
+
+			/* 更新写入瓦片缓冲区的偏移地址 */
+			(*xRit).ulTileBufferOffset += (*xRit).ulTileSize;
 
 			/** 若 计数器周期 整除 层瓦片缓冲区周期
 			  * 说明该层需要向缓冲区发送瓦片缓冲区的所有数据
 			  */
-			if(ulPeriod % (*xRit).ulTileBufferTxPeriod == 0 ) //从缓冲区最大的层迭代到最小的
+			if(ulPeriod % (*xRit).ulTileBufferTxPeriod == 0 ) // 从缓冲区最大的层迭代到最小的
 			{
+				/* 归零瓦片缓冲区的偏移地址 */
+				(*xRit).ulTileBufferOffset = 0;
 
 				// 将DRAM中的 非连续储存 的 瓦片缓冲区数据 复制 到 发送缓冲区 以变为连续储存的数据
 				memcpy((uint8_t*)ucpTxBuffer + ulTxBufferOffset, (*xRit).pucTileBuffer, (*xRit).ulTileBufferSize);
 				// 更新向缓冲区写入的起始地址偏移
 				ulTxBufferOffset += (*xRit).ulTileBufferSize;
 
-				++cWrittenMark[0];
+				++cWrittenMark;
 			}
 			++xRit;
 		}
 		ulPeriod %= ulPeriodMax;
 
 		ret = write(ulTxBufferOffsetOld, ulTxBufferOffset, (uint8_t *)ucpTxBuffer);
-		printf("writeTileBuffer: ulPeriod = %5d, ret = %2d, addr = %10d, size = %10d, mark = %s\r\n",
+		printf("writeTileBuffer: ulPeriod = %5d, ret = %2d, addr = %10d, size = %10d, mark = %c\r\n",
 				ulPeriod, ret, ulTxBufferOffsetOld, ulTxBufferOffset, cWrittenMark);
 
 		ulTxBufferOffsetOld += ulTxBufferOffset;
@@ -228,7 +244,7 @@ public:
 	{
 		printf("| 层编号 | 瓦片大小 | 瓦片缓冲区大小 | 瓦片缓冲区地址 | 缓冲区大小 | 缓冲区发送周期 | DRAM 当前共使用 | DRAM 当前剩余 | DRAM 历史最少可用 |\r\n");
 		printf("| ------ | -------- | -------------- | -------------- | ---------- | -------------- | --------------- | ------------- | ----------------- |\r\n");
-		std::list<Layer_t>::iterator xIt = xLayersList.begin();
+		xIt = xLayersList.begin();
 		for(uint8_t i = 0; i < ulLayerNumMax; i++) {
 			printf("| %6d | %8d | %14d | %p | %10d | %14d %s",
 					(*xIt).ulLayerNum,
@@ -314,7 +330,9 @@ public:
     uint32_t ulWaveDispTileBufferSize;  // 波形显示区的瓦片缓冲区大小，单位B
     uint32_t ulWaveDispTileBufferSizeMin;	/* 波形显示区的瓦片缓冲区最小大小，单位B */
 
-	std::list<Layer_t> xLayersList; // 层链表(双向)
+	std::list<Layer_t> xLayersList; 			// 层链表(双向)
+	std::list<Layer_t>::iterator xIt;			// 层链表的正向迭代器
+	std::list<Layer_t>::reverse_iterator xRit; 	// 层链表的反向迭代器
 
 	static void *ucpTxBuffer;
 	static void *ucpRxBuffer; //先随便5个2048

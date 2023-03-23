@@ -96,7 +96,7 @@ void OnAsciiCmd(const char* _cmd, size_t _len, StreamSink &_responseChannel)
         }
 
     }
-    else if(_cmd[0] == 'T' && _cmd[1] == 'W')
+    else if(_cmd[0] == 'T' && _cmd[1] == 'W' && _cmd[2] == '+')
     {
         std::string s(_cmd);
         if (s.find("START_WRTIE") != std::string::npos)
@@ -110,6 +110,13 @@ void OnAsciiCmd(const char* _cmd, size_t _len, StreamSink &_responseChannel)
         else if (s.find("RESET_WAVE_FILE") != std::string::npos)
         {
         	frame_resetWaveFile = 1;
+        }
+        else if (s.find("WRTIE_FREQ=") != std::string::npos)
+        {
+            int value;
+            sscanf(&_cmd[14], "%u", &value);
+            frame_freq = value;
+            Respond(_responseChannel, false, "Set frame_freq = : %u Hz", value);
         }
     }
 
