@@ -111,15 +111,24 @@ void OnAsciiCmd(const char* _cmd, size_t _len, StreamSink &_responseChannel)
         {
         	TileWave::vTestMallocFree();
         }
-        else if (s.find("START_WRITE") != std::string::npos)
+        else if (s.find("START_SLICE") != std::string::npos)
         {
+        	int value = TileWave::ulSliceButNotWrite;
         	frame_writeTileBuffer = 1;
-        	Respond(_responseChannel, false, "波形文件 开始写入");
+        	Respond(_responseChannel, false, "波形文件 开始切片%s", (value == 1)?("不写入"):("并写入"));
         }
-        else if (s.find("STOP_WRITE") != std::string::npos)
+        else if (s.find("STOP_SLICE") != std::string::npos)
         {
+        	int value = TileWave::ulSliceButNotWrite;
         	frame_writeTileBuffer = 0;
-        	Respond(_responseChannel, false, "波形文件 停止写入");
+        	Respond(_responseChannel, false, "波形文件 停止切片%s", (value == 1)?("不写入"):("并写入"));
+        }
+        else if(s.find("SLICE_BUT_NOT_WRITE=") != std::string::npos)
+        {
+            int value;
+            sscanf(&_cmd[23], "%u", &value);
+            TileWave::ulSliceButNotWrite = value;
+            Respond(_responseChannel, false, "波形文件 设置切片时%s", (value == 1)?("不写入"):("并写入"));
         }
         else if (s.find("DELETE_THE_CREATE_WAVE_FILE") != std::string::npos)
         {
@@ -140,7 +149,7 @@ void OnAsciiCmd(const char* _cmd, size_t _len, StreamSink &_responseChannel)
         {
             int value;
             sscanf(&_cmd[23], "%u", &value);
-            TileWave::ulPrintWriteDetail = value;
+            TileWave::ulPrintSliceDetail = value;
             Respond(_responseChannel, false, "波形文件 %s写入详情", (value == 1)?("显示"):("隐藏"));
         }
     }

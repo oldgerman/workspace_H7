@@ -71,7 +71,7 @@ public:
 	typedef struct {
 		/* IO Size */
 		uint32_t ulIOSize;
-		uint32_t ulIOSizeMin;	// 4KB
+		uint32_t ulIOSizeMin;	// 2KB
 	    uint32_t ulIOSizeMax;	// 64KB
 	    /* Layer */
 	    uint32_t ulLayerNum;
@@ -81,9 +81,9 @@ public:
 	    uint32_t ulWaveFrameSize;
 	    uint32_t ulWaveDispWidth;
 	    uint32_t ulWaveDispTileBufferSize;
-
 	}Config_t;
 
+	/* 暂存初始化层链表时输出的信息 */
 	char ucStrBuffer[15][64];
 
 	/* 层结构体 */
@@ -163,6 +163,7 @@ public:
 		return 0U;
 	}
 
+	/* 重置向瓦片缓冲区写入地址的偏移 */
 	void resetTileBufferOffset() {
 		xRit = xLayersList.rbegin();
 		for(uint8_t i = 0; i < ulLayerNumMax; i++) {
@@ -171,23 +172,26 @@ public:
 		}
 	}
 
+	/* 切片瓦片缓冲区并写入 */
 	void writeTileBuffer(uint8_t* pulData) {
+		/* FATFS 返回值 */
 		uint32_t ret = 0;
 
-		static float ulRealWrittenFreq = 0;
+		/* 用于计算本函数被调用的实时频率的单次和平均值 */
+		static float fRealWrittenFreq = 0;
 		static uint32_t ulWrittenCount = 0;
 		static uint32_t ulTickCountOld =  xTaskGetTickCount();
 		uint32_t ulTickCount;
 
-		++ulPeriod;	// = 1、2、3...2048;
-		xRit = xLayersList.rbegin();
+		/* 用于瓦片切片 */
 		uint32_t ulPeriodMax = (*xLayersList.begin()).ulTileBufferTxPeriod;
 		uint32_t ulTxBufferOffset = 0;
-
 		char cWrittenMark = 'a';
 
+		/* 瓦片切片 */
+		++ulPeriod;	// = 1、2、3...2048;
+		xRit = xLayersList.rbegin();
 		for(uint8_t i = 0; i < ulLayerNumMax; i++) {
-
 			/** 从帧缓冲区中复制瓦片大小的数据到瓦片缓冲区
 			  * TODO: 从帧缓冲区计算2幂缩放倍率的瓦片大小数据
 			  */
@@ -215,28 +219,35 @@ public:
 			++xRit;
 		}
 
-		ret = write(ulTxBufferOffsetOld, ulTxBufferOffset, (uint8_t *)ucpTxBuffer);
+		/* 向层缓冲区写入数据 */
+		if(ulSliceButNotWrite == 0) {
+			ret = write(ulTxBufferOffsetOld, ulTxBufferOffset, (uint8_t *)ucpTxBuffer);
+		}
 
-
-		/* 每5秒更新计算实际写入频率 */
-		++ulWrittenCount;
-		ulTickCount = xTaskGetTickCount();	/* 获取当前的系统时间 */
-		uint32_t ulTickOffest = ulTickCount - ulTickCountOld;
-//		if(ulTickOffest >  1000) {
-			ulTickCountOld = ulTickCount;
-			ulRealWrittenFreq = (float)1000 / ((float)ulTickOffest / ulWrittenCount);
-			ulWrittenCount = 0;
-//		}
-		if(ulPrintWriteDetail) {
+		/* 打印本次切片详情 */
+		if(ulPrintSliceDetail) {
 			printf("| writeTileBuffer | ulPeriod = %4ld | ret = %2ld | addr = %10ld | size = %9ld | mark = %c | \r\n",
 				ulPeriod, ret, ulTxBufferOffsetOld, ulTxBufferOffset, cWrittenMark);
 		}
-		printf("freq: %3.3f\r\n", ulRealWrittenFreq);
 
+		/* 计算实时频率的单次和平均值 */
+		++ulWrittenCount;
+		ulTickCount = xTaskGetTickCount();	/* 获取当前的系统时间 */
+		uint32_t ulTickOffest = ulTickCount - ulTickCountOld;
+		ulTickCountOld = ulTickCount;
+		fRealWrittenFreq = (float)1000 / ((float)ulTickOffest / ulWrittenCount);
+		if(isnormal(fRealWrittenFreq))	{ // 是一个正常的浮点数
+			fRealWrittenFreqAvg = (fRealWrittenFreqAvg + fRealWrittenFreq ) / 2;
+		}
+		ulWrittenCount = 0;
+		printf("freq: %3.3f, %3.3f\r\n", fRealWrittenFreq, fRealWrittenFreqAvg);
+
+		/* 下次瓦片切片前需要处理的变量 */
 		ulPeriod %= ulPeriodMax;
 		ulTxBufferOffsetOld += ulTxBufferOffset;
 	}
 
+	/* 构造函数 */
 	TileWave(Config_t &xConfig) {
 		ulIOSize = xConfig.ulIOSize;
 		ulIOSizeMin = xConfig.ulIOSizeMin;
@@ -250,6 +261,8 @@ public:
 
 		ulLayersTileBufferSize = 0;
 	}
+
+	/* 获取动态内存API */
 	static uint32_t init(
 		    std::function<void*(size_t)> 	Malloc,
 		    std::function<void(void*)>		Free)
@@ -260,6 +273,7 @@ public:
 		return 0U;
 	}
 
+	/* 打执行 createTileBufferList() 时记录层信息 */
 	void vPrintLayerInfo()
 	{
 		printf("| 层编号 | 瓦片大小 | 瓦片缓冲区大小 | 瓦片缓冲区地址 | 缓冲区大小 | 缓冲区发送周期 | DRAM 当前共使用 | DRAM 当前剩余 | DRAM 历史最少可用 |\r\n");
@@ -277,6 +291,7 @@ public:
 			++xIt;
 		}
 	}
+
 	/* 测试动态内存API */
 	static void vTestMallocFree()
 	{
@@ -324,45 +339,60 @@ public:
 				| 16bit      | 400              | 800B                 | SDRAM      | 1B                 | 1KB（1K > 800B 就够）                               | 1KB          |
 				| 8bit       | 400              | 400B                 | PSRAM      | 1B                 | 512B（512B > 400B 就够）                            | 512B         |
 	  */
-	/* IO size 必须为 2 的幂 */
-	uint32_t ulIOSize;		// 当前读写的IOsize
-	uint32_t ulIOSizeMin;	// = 4096;  /* 单位 B */
-	uint32_t ulIOSizeMax;	// = 32768; /* 单位 B */
+	/* IO SZIE， 必须为 2 的幂 */
+	uint32_t ulIOSize;							// 当前读写的IO SZIE
+	uint32_t ulIOSizeMin;						// = 2048;  /* 单位 B */
+	uint32_t ulIOSizeMax;						// = 16384; /* 单位 B */
 
-    uint32_t ulLayerNum;				// 当前层编号
-	uint32_t ulLayerNumMax;				// 最大层数(总层数)
+	/* 层参数 */
+    uint32_t ulLayerNum;						// 当前层编号
+	uint32_t ulLayerNumMax;						// 最大层数(总层数)
 
-	/* 在FLASH */
-    uint32_t ulLayerBufferSizeMax;		// 层缓冲区大小的最大值，单位B
-    uint32_t ulLayersBufferSize;    	// 层缓冲区的总大小
-    /* 在RAM */
-    uint32_t ulLayerTileBufferSizeMax;	// 层瓦片缓冲区大小的最大值，单位B
-    uint32_t ulLayersTileBufferSize;    // 层瓦片缓冲区的总大小
+	/* 层缓冲区在FLASH */
+    uint32_t ulLayerBufferSizeMax;				// 层缓冲区大小的最大值，单位B
+    uint32_t ulLayersBufferSize;    			// 层缓冲区的总大小
 
-    uint32_t ulLayerTilesNumMax;		// 每层瓦片的最大个数，该值决定能记录多少时间，必须为 2的幂，本工程为 64MB/32K=2048
+    /* 瓦片缓冲区在RAM */
+    uint32_t ulLayerTileBufferSizeMax;			// 层瓦片缓冲区大小的最大值，单位B
+    uint32_t ulLayersTileBufferSize;    		// 层瓦片缓冲区的总大小
+    uint32_t ulLayerTilesNumMax;				// 每层瓦片的最大个数，该值决定能记录多少时间，必须为 2的幂，本工程为 64MB/32K=2048
 
-	uint32_t ulWaveDispBufferSize; 	// 缓冲区大小：波形显示
-    uint32_t ulWaveFrameSize;  		// 波形帧大小，单位B
-    uint32_t ulWaveDispWidth;		// 波形显示宽度，单位Pixel
-    uint32_t ulWaveDispDataSize; 	/* 波形显示区数据的大小，单位B */
-    uint32_t ulWaveDispTileBufferSize;  // 波形显示区的瓦片缓冲区大小，单位B
-    uint32_t ulWaveDispTileBufferSizeMin;	/* 波形显示区的瓦片缓冲区最小大小，单位B */
+    /* 波形参数 */
+	uint32_t ulWaveDispBufferSize; 				// 缓冲区大小：波形显示
+    uint32_t ulWaveFrameSize;  					// 波形帧大小，单位B
+    uint32_t ulWaveDispWidth;					// 波形显示宽度，单位Pixel
+    uint32_t ulWaveDispDataSize; 				// 波形显示区数据的大小，单位B
+    uint32_t ulWaveDispTileBufferSize;  		// 波形显示区的瓦片缓冲区大小，单位B
+    uint32_t ulWaveDispTileBufferSizeMin;		// 波形显示区的瓦片缓冲区最小大小，单位B
 
+    /* 层链表及其迭代器 */
 	std::list<Layer_t> xLayersList; 			// 层链表(双向)
 	std::list<Layer_t>::iterator xIt;			// 层链表的正向迭代器
 	std::list<Layer_t>::reverse_iterator xRit; 	// 层链表的反向迭代器
 
-	static void *ucpTxBuffer;
-	static void *ucpRxBuffer; //先随便5个2048
+	/* 层缓冲区的读写缓冲区 */
+	static void *ucpTxBuffer;					// 给64KB
+	static void *ucpRxBuffer; 					// 暂时随便给5个2KB
+
+	/* 层缓冲区读写API */
     static std::function<uint32_t (uint32_t addr, uint32_t size, uint8_t* pData)> 	write;
     static std::function<uint32_t (uint32_t addr, uint32_t size, uint8_t* pData)>	read;
+
+    /* 以下变量在停止切片后在下次切片前需要归 0 */
 	static uint32_t ulPeriod;	//周期计数器
 	static uint32_t ulTxBufferOffsetOld;
+	static float 	fRealWrittenFreqAvg; 		// 配合 fRealWrittenFreq 计算平均频率
 
-	static uint32_t ulPrintWriteDetail;
+	/* 以下是在协议解析程序中可更改的标志 */
+	static uint32_t ulPrintSliceDetail;			// 打印实时切片信息
+	static uint32_t ulSliceButNotWrite;			// 实时切片时不写入数据
+
 private:
+	/* 动态内存API */
     static std::function<void*(size_t size)> 	malloc;
     static std::function<void(void* ptr)>		free;
+
+    /* 计算大于某数的最小2的幂 */
     uint32_t ulCalculateSmallestPowerOf2GreaterThan(uint32_t ulValue) {
     	uint32_t ulNth = 1;
     	for(uint8_t i = 0; i < 32; i++)
