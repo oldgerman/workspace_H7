@@ -60,7 +60,7 @@ typedef union{
 /* Exported constants --------------------------------------------------------*/
 /* Exported variables --------------------------------------------------------*/
 extern bool frame_writeTileBuffer;
-extern bool frame_resetWaveFile;
+extern bool frame_initExistingWaveFile;
 extern uint16_t frame_freq;
 /* Exported functions --------------------------------------------------------*/
 void frame_processor_init();

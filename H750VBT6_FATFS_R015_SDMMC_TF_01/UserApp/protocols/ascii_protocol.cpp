@@ -114,23 +114,34 @@ void OnAsciiCmd(const char* _cmd, size_t _len, StreamSink &_responseChannel)
         else if (s.find("START_WRITE") != std::string::npos)
         {
         	frame_writeTileBuffer = 1;
-        	Respond(_responseChannel, false, "波形文件: 开始写入");
+        	Respond(_responseChannel, false, "波形文件 开始写入");
         }
         else if (s.find("STOP_WRITE") != std::string::npos)
         {
         	frame_writeTileBuffer = 0;
-        	Respond(_responseChannel, false, "波形文件: 停止写入");
+        	Respond(_responseChannel, false, "波形文件 停止写入");
         }
-        else if (s.find("RESET_WAVE_FILE") != std::string::npos)
+        else if (s.find("DELETE_THE_CREATE_WAVE_FILE") != std::string::npos)
         {
-        	frame_resetWaveFile = 1;
+        	delectThenCreateWaveFile();
+        }
+        else if (s.find("INIT_EXISTING_WAVE_FILE") != std::string::npos)
+        {
+        	frame_initExistingWaveFile = 1;
         }
         else if (s.find("WRITE_FREQ=") != std::string::npos)
         {
             int value;
             sscanf(&_cmd[14], "%u", &value);
             frame_freq = value;
-            Respond(_responseChannel, false, "波形文件: 写入频率 %uHz", value);
+            Respond(_responseChannel, false, "波形文件 写入频率 %uHz", value);
+        }
+        else if(s.find("PRTINT_WRITE_DETAIL=") != std::string::npos)
+        {
+            int value;
+            sscanf(&_cmd[23], "%u", &value);
+            TileWave::ulPrintWriteDetail = value;
+            Respond(_responseChannel, false, "波形文件 %s写入详情", (value == 1)?("显示"):("隐藏"));
         }
     }
     else if(_cmd[0] == 'F' && _cmd[1] == 'S' && _cmd[2] == '+')

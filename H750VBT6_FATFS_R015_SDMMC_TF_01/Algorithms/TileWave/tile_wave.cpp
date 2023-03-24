@@ -45,6 +45,7 @@ std::function<uint32_t (uint32_t addr, uint32_t size, uint8_t* pData)> 		TileWav
 std::function<uint32_t (uint32_t addr, uint32_t size, uint8_t* pData)>		TileWave::read;
 uint32_t TileWave::ulPeriod = 0;	//周期计数器
 uint32_t TileWave::ulTxBufferOffsetOld = 0;
+uint32_t TileWave::ulPrintWriteDetail = 0;
 /* Private variables ---------------------------------------------------------*/
 /* Private function prototypes -----------------------------------------------*/
 /* Function implementations --------------------------------------------------*/

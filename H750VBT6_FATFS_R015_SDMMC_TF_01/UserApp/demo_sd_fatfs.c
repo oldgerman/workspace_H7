@@ -133,60 +133,104 @@ static void WriteFileTest(file_verify_t file_verify);
 
 /* Function implementations --------------------------------------------------*/
 
-#define FAT32_CLUSTER_SIZE (32*1024) 		//FAT32簇大小 32KB
+#define FAT32_CLUSTER_SIZE_32KB		(32*1024) 		//FAT32簇大小 32KB
+#define FAT32_CLUSTER_SIZE_64KB		(64*1024) 		//FAT32簇大小 64KB
+#define EXFAT_CLUSTER_SIZE_128KB	(128*1024) 		//exFAT簇大小 128KB
+#define FAT_CLUSTER_SIZE			FAT32_CLUSTER_SIZE_64KB
+
 //#define WAVE_FILE_SIZE		(16*1024*1024)	//波形文件大小8MB
 #define WAVE_FILE_SIZE		(128*1024*1024)	//波形文件大小128MB
 #define CLMT_ARRAY_ELEMENT_SIZE sizeof(DWORD) //CLMT数组元素大小
-#define SZ_TBL	((WAVE_FILE_SIZE / FAT32_CLUSTER_SIZE + 1) * 2) // clmt = 8194
+
+#define SZ_TBL	((WAVE_FILE_SIZE / FAT_CLUSTER_SIZE + 1) * 2) // clmt = 8194 （32K）/ 2050（128K）
 
 /** 在使用快速搜索模式前，必须将 CLMT 在内存中的缓冲区创建到 DWORD 数组中 **/
 /* DreamShell/firmware/isoldr/loader/fs/fat/fs.c 中 SZ_TBL 为 32 */
 RAM_D1 DWORD clmt[SZ_TBL]; /* Cluster link map table buffer *//* 簇链接映射表缓冲区 */
 
-uint32_t openWaveFile()
+uint32_t delectThenCreateWaveFile()
 {
 	FRESULT res = FR_OK;
 	char path[32];
 	char* filename = "WAVE.txt";
 	sprintf(path, "%s%s", DiskPath, filename);
 
+	printf("\r\n尝试删除并新建 %s ...\r\n", filename);
+
  	/* 挂载文件系统 */
 	res += f_mount(&fs, DiskPath, 0);			/* Mount a logical drive */
-	if (res != FR_OK)
+	if (res != FR_OK) {
 		printf("挂载文件系统失败 (%s)\r\n", FR_Table[res]);
+	}
 
-#if 0
 	/* 删除文件 */
 	res = f_unlink(path);
-	if (res == FR_OK)
-	{
+	if (res == FR_OK) {
 		printf("删除 %s 成功\r\n", filename);
 	}
-	else if (res == FR_NO_FILE)
-	{
+	else if (res == FR_NO_FILE) {
 		printf("删除 %s 无效, 没有发现此文件\r\n", filename);
 	}
-	else
-	{
+	else {
 		printf("删除 %s 失败 (错误代码 = %d) 文件只读\r\n", filename, res);
 	}
-#endif
+
+	res += f_open(&file, path,
+			FA_CREATE_ALWAYS);
+	if (res == FR_OK) {
+		printf("创建新文件 %s 成功\r\n", filename);
+	}
+	else {
+		printf("创建新文件 %s 失败 (错误代码 = %d) \r\n", filename, res);
+	}
+
+	/* 关闭文件 */
+	res += f_close(&file);
+
+	/* 卸载文件系统 */
+	res += f_mount(NULL, DiskPath, 0);
+
+	printf("\r\n删除并新建 %s (%s)\r\n", filename, FR_Table[res]);
+
+	return res;
+}
+
+uint32_t initExistingWaveFile()
+{
+	FRESULT res = FR_OK;
+	char path[32];
+	char* filename = "WAVE.txt";
+	sprintf(path, "%s%s", DiskPath, filename);
+
+	printf("\r\n尝试初始化已有的 %s ...\r\n", filename);
+
+ 	/* 挂载文件系统 */
+	res += f_mount(&fs, DiskPath, 0);			/* Mount a logical drive */
+	if (res != FR_OK) {
+		printf("挂载文件系统失败 (%s)\r\n", FR_Table[res]);
+	}
 
 	/* 打开文件 */
-	/* 以 创建+写入+读取 的方式访问打开的文件
+	/* 以 写入+读取 的方式访问打开的文件
 	 * FA_CREATE_ALWAYS: 创建一个新文件。如果文件存在，它将被截断并覆盖
+	 * 					(不论已有文件大小多大，截断覆盖后的显示大小都为0字节)
+	 * 					截断覆盖后的文件预分配大小和原有文件一样的，都是128MB
+	 * 					那么紧接着创建的CLMT还是和截断覆盖前的一样
+	 * 					如果是删除了原有文件再 FA_CREATE_ALWAYS，那么紧接着
+	 * 					创建的CLMT会随着文件边读边改变
 	 */
-	res += f_open(&file, path,
-			FA_CREATE_ALWAYS | FA_WRITE | FA_READ);
+	res += f_open(&file, path, FA_WRITE | FA_READ);
 	if (res == FR_OK)
 		printf("%s 打开成功\r\n", filename);
-	else
+	else {
 		printf("%s 打开失败(%s)\r\n", filename, FR_Table[res]);
+	}
 
 	/* 慢速搜索模式下 */
 	res += f_lseek (&file, WAVE_FILE_SIZE); 					/* 使用f_lseek() 拓展文件大小（集群预分配）为 128MB */
-    if (res || f_tell(&file) != WAVE_FILE_SIZE)		 	/* 检查文件大小增加是否成功 *//* 检查文件是否扩展成功 */
+    if (res || f_tell(&file) != WAVE_FILE_SIZE)	{	 	/* 检查文件大小增加是否成功 *//* 检查文件是否扩展成功 */
     	printf("%s 扩展文件大小（集群预分配）%dMB 失败\r\n", filename, WAVE_FILE_SIZE / 1024 / 1024);
+    }
     else
     	printf("%s 扩展文件大小（集群预分配）%dMB 成功\r\n", filename, WAVE_FILE_SIZE / 1024 / 1024);
 
@@ -199,6 +243,9 @@ uint32_t openWaveFile()
 	fp->cltbl = clmt;
 	clmt[0] = SZ_TBL;
 	res += f_lseek(fp, CREATE_LINKMAP);
+
+
+	printf("\r\n初始化已有的 %s (%s)\r\n", filename, FR_Table[res]);
 
 	return res;
 }

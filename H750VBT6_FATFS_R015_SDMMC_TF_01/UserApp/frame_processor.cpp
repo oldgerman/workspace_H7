@@ -51,7 +51,7 @@ ALIGN_32BYTES(__attribute__((section (".RAM_DTCM_Array"))) frame_format_t frame[
 osThreadId_t frameProcessorTaskHandle;
 
 bool frame_writeTileBuffer = false;
-bool frame_resetWaveFile= false;
+bool frame_initExistingWaveFile= false;
 uint16_t frame_freq = 1; /* 每秒调度频率，单位Hz */
 
 extern TileWave xTileWave;
@@ -81,14 +81,14 @@ static void frameProcessorTask(void* argument)
 	memset(frame, '.', sizeof(frame));
 	for (;;)
 	{
-		if(frame_resetWaveFile)
+		if(frame_initExistingWaveFile)
 		{
-			frame_resetWaveFile = 0;
-			openWaveFile();
+			frame_initExistingWaveFile = 0;
+			initExistingWaveFile();
 			resetTileWaveTxRxVariables();
 		}
 
-		sprintf((char*)&(frame[0].ctrl_u8[0]), "%4d", TileWave::ulPeriod);
+		sprintf((char*)&(frame[0].ctrl_u8[0]), "%4ld", TileWave::ulPeriod);
 
 		if(frame_writeTileBuffer)
 		{

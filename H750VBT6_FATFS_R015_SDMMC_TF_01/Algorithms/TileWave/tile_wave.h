@@ -134,7 +134,7 @@ public:
 
 			pucLayerTileBuffer = malloc(ulLayerTileBufferSize);
 
-			sprintf(&(ucStrBuffer[ulLayerNum][0]), "| %15d | %13d | %17d |\r\n",
+			sprintf(&(ucStrBuffer[ulLayerNum][0]), "| %15ld | %13ld | %17ld |\r\n",
 					DRAM_SRAM1.getMemUsed(), DRAM_SRAM1.getMemFree(), DRAM_SRAM1.getMemFreeMin());
 
 			Layer_t xLayer = {
@@ -222,13 +222,16 @@ public:
 		++ulWrittenCount;
 		ulTickCount = xTaskGetTickCount();	/* 获取当前的系统时间 */
 		uint32_t ulTickOffest = ulTickCount - ulTickCountOld;
-		if(ulTickOffest >  1000) {
+//		if(ulTickOffest >  1000) {
 			ulTickCountOld = ulTickCount;
 			ulRealWrittenFreq = (float)1000 / ((float)ulTickOffest / ulWrittenCount);
 			ulWrittenCount = 0;
+//		}
+		if(ulPrintWriteDetail) {
+			printf("| writeTileBuffer | ulPeriod = %4ld | ret = %2ld | addr = %10ld | size = %9ld | mark = %c | \r\n",
+				ulPeriod, ret, ulTxBufferOffsetOld, ulTxBufferOffset, cWrittenMark);
 		}
-		printf("| writeTileBuffer | ulPeriod = %4d | ret = %2d | addr = %10d | size = %9d | mark = %c | freq = %3.3fHz |\r\n",
-				ulPeriod, ret, ulTxBufferOffsetOld, ulTxBufferOffset, cWrittenMark, ulRealWrittenFreq);
+		printf("freq: %3.3f\r\n", ulRealWrittenFreq);
 
 		ulPeriod %= ulPeriodMax;
 		ulTxBufferOffsetOld += ulTxBufferOffset;
@@ -263,7 +266,7 @@ public:
 		printf("| ------ | -------- | -------------- | -------------- | ---------- | -------------- | --------------- | ------------- | ----------------- |\r\n");
 		xIt = xLayersList.begin();
 		for(uint8_t i = 0; i < ulLayerNumMax; i++) {
-			printf("| %6d | %8d | %14d | %p | %10d | %14d %s",
+			printf("| %6ld | %8ld | %14ld | %p | %10ld | %14ld %s",
 					(*xIt).ulLayerNum,
 					(*xIt).ulTileSize,
 					(*xIt).ulTileBufferSize,
@@ -282,32 +285,32 @@ public:
 		/* 从SRAM1域的SRAM申请200字节空间，使用指针变量SRAM1_Addr0操作这些空间时不要超过200字节 */
 		printf("=========================================================\r\n");
 		SRAM1_Addr0 = DRAM_SRAM1.malloc(200, 0);
-		printf("SRAM1域SRAM总 = %d字节，申请 = 0200字节，当前共使用 = %d字节，当前剩余 = %d字节，历史最少可用 = %d字节\r\n",
+		printf("SRAM1域SRAM总 = %ld字节，申请 = 0200字节，当前共使用 = %ld字节，当前剩余 = %ld字节，历史最少可用 = %ld字节\r\n",
 				DRAM_SRAM1.getMemSize(), DRAM_SRAM1.getMemUsed(), DRAM_SRAM1.getMemFree(), DRAM_SRAM1.getMemFreeMin());
 
 		/* 从SRAM1域的SRAM申请96字节空间，使用指针变量SRAM1_Addr1操作这些空间时不要超过96字节 */
 		SRAM1_Addr1 = DRAM_SRAM1.malloc(96, 0);
-		printf("SRAM1域SRAM总 = %d字节，申请 = 0096字节，当前共使用 = %d字节，当前剩余 = %d字节，历史最少可用 = %d字节\r\n",
+		printf("SRAM1域SRAM总 = %ld字节，申请 = 0096字节，当前共使用 = %ld字节，当前剩余 = %ld字节，历史最少可用 = %ld字节\r\n",
 				DRAM_SRAM1.getMemSize(), DRAM_SRAM1.getMemUsed(), DRAM_SRAM1.getMemFree(), DRAM_SRAM1.getMemFreeMin());
 
 		/* 从SRAM1域的SRAM申请4111字节空间，使用指针变量SRAM1_Addr2操作这些空间时不要超过4111字节 */
 		SRAM1_Addr2 = DRAM_SRAM1.malloc(4111, 0);
-		printf("SRAM1域SRAM总 = %d字节，申请 = 4111字节，当前共使用 = %d字节，当前剩余 = %d字节，历史最少可用 = %d字节\r\n",
+		printf("SRAM1域SRAM总 = %ld字节，申请 = 4111字节，当前共使用 = %ld字节，当前剩余 = %ld字节，历史最少可用 = %ld字节\r\n",
 				DRAM_SRAM1.getMemSize(), DRAM_SRAM1.getMemUsed(), DRAM_SRAM1.getMemFree(), DRAM_SRAM1.getMemFreeMin());
 
 		/* 释放从SRAM1域的SRAM申请的200字节空间 */
 		DRAM_SRAM1.free(SRAM1_Addr0);
-		printf("释放SRAM1域SRAM动态内存区申请的0200字节，当前共使用 = %d字节，当前剩余 = %d字节，历史最少可用 = %d字节\r\n",
+		printf("释放SRAM1域SRAM动态内存区申请的0200字节，当前共使用 = %ld字节，当前剩余 = %ld字节，历史最少可用 = %ld字节\r\n",
 				DRAM_SRAM1.getMemUsed(), DRAM_SRAM1.getMemFree(), DRAM_SRAM1.getMemFreeMin());
 
 		/* 释放从SRAM1域的SRAM申请的96字节空间 */
 		DRAM_SRAM1.free(SRAM1_Addr1);
-		printf("释放SRAM1域SRAM动态内存区申请的0096字节，当前共使用 = %d字节，当前剩余 = %d字节，历史最少可用 = %d字节\r\n",
+		printf("释放SRAM1域SRAM动态内存区申请的0096字节，当前共使用 = %ld字节，当前剩余 = %ld字节，历史最少可用 = %ld字节\r\n",
 				DRAM_SRAM1.getMemUsed(), DRAM_SRAM1.getMemFree(), DRAM_SRAM1.getMemFreeMin());
 
 		/* 释放从SRAM1域的SRAM申请的4111字节空间 */
 		DRAM_SRAM1.free(SRAM1_Addr2);
-		printf("释放SRAM1域SRAM动态内存区申请的4111字节，当前共使用 = %d字节，当前剩余 = %d字节，历史最少可用 = %d字节\r\n",
+		printf("释放SRAM1域SRAM动态内存区申请的4111字节，当前共使用 = %ld字节，当前剩余 = %ld字节，历史最少可用 = %ld字节\r\n",
 				DRAM_SRAM1.getMemUsed(), DRAM_SRAM1.getMemFree(), DRAM_SRAM1.getMemFreeMin());
 	}
 
@@ -355,6 +358,8 @@ public:
     static std::function<uint32_t (uint32_t addr, uint32_t size, uint8_t* pData)>	read;
 	static uint32_t ulPeriod;	//周期计数器
 	static uint32_t ulTxBufferOffsetOld;
+
+	static uint32_t ulPrintWriteDetail;
 private:
     static std::function<void*(size_t size)> 	malloc;
     static std::function<void(void* ptr)>		free;

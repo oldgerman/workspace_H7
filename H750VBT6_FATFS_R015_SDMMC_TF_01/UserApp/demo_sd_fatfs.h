@@ -42,7 +42,8 @@ extern "C" {
 /* Exported functions --------------------------------------------------------*/
 void DemoFatFS(uint8_t cmd);
 
-uint32_t openWaveFile();
+uint32_t delectThenCreateWaveFile();
+uint32_t initExistingWaveFile();
 uint32_t readWaveFile(uint32_t addr, uint32_t size, uint8_t* pData);
 uint32_t writeWaveFile(uint32_t addr, uint32_t size, uint8_t* pData);
 
