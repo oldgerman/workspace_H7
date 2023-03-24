@@ -23,11 +23,11 @@ USB 命令、控件和窗口的 JSON 文件在 VOFA+ 文件夹内，可导入伏
 
 ### R0.12C  f_lseek()  的BUG
 
-由于 CubeMX 6.6 + STM32CubeH7 V1.11.0 / 04-Nov-2022 生成的 FATFS 版本还是 13年 的 R0.12C，本工程在使用 `f_lseek()` 移到文件读写指针参数为非0地址时，会返回  `FR_INT_ERR`，看到这篇症状相同的帖子：[Getting FR_INT_ERR when using f_seek in ff.c - ST Community](https://community.st.com/s/question/0D53W000010vQCQSA2/getting-frinterr-when-using-fseek-in-ffc)，应该是 旧版本 R0.12C 的BUG，ChaN 老师在 FATFS 的版本更新日志中表明，此 BUG 在 R0.13 中修复，现在是 2023 年，最新版本 为 R0.15，又修复了不少BUG，那就用 CubeMX 自动生成的 FATFS 配置文件 适配最新版的 
+由于 CubeMX 6.6 + STM32CubeH7 V1.11.0 / 04-Nov-2022 生成的 FATFS 版本还是 13年 的 R0.12C，本工程在使用 `f_lseek()` 移到文件读写指针参数为非0地址时，会返回  `FR_INT_ERR`，看到这篇症状相同的帖子：[Getting FR_INT_ERR when using f_seek in ff.c - ST Community](https://community.st.com/s/question/0D53W000010vQCQSA2/getting-frinterr-when-using-fseek-in-ffc)，应该是 旧版本 R0.12C 的 BUG，ChaN 老师在 FATFS 的版本更新日志中表明，此 BUG 在 R0.13 中修复，现在是 2023 年，最新版本 为 R0.15，又修复了不少 BUG，那就用 CubeMX 自动生成的 FATFS 配置文件 适配最新版的 
 
 ### 下载 FATFS R0.15 源码，并在 Path 中添加路径
 
-ChaN 老师网站的下载链接：Download: [FatFs R0.15 (zip)](http://elm-chan.org/fsw/ff/arc/ff15.zip)
+ChaN 老师网站的下载链接：[FatFs R0.15 (zip)](http://elm-chan.org/fsw/ff/arc/ff15.zip)
 
 解压到 本工程根目录即可，会生成一个 `ff15` 文件夹，将此文件夹路径添加到 Path 的 Source Location，将此文件夹内的 source 文件夹路径 添加到 Path 的 Includes 
 
@@ -314,7 +314,7 @@ CLMT 的数据：
 
 与本工程的直方图测试对比：
 
-- 影响小的因素：TF 卡跑在 HS 速度，FATFS 最大 IO/SZIE 64KB，当前写入任务概率发起 30.0-52.1K 大小的写入，在允许范围内
+- 影响小的因素：TF 卡跑在 HS 速度，FATFS 最大 IO/SIZE 64KB，当前写入任务概率发起 30.0-52.1K 大小的写入，在允许范围内
 - 影响大的因素：当前写入任务是单缓冲的，那么 FATFS + TF 卡实时性不确定的固有属性就被直方图反映出了，这个固有属性应该是无法消除的，解决方法可以参考云台系统加大缓冲区对冲掉（ H750VB 不能外挂SRAM，片内再开几个层缓冲区有点紧张啊，明明都已经竭尽全力...）
 
 拟解决思路：
@@ -330,7 +330,7 @@ CLMT 的数据：
 
 ### 2的幂层缓冲区同步写入4byte帧数据@100Ksps
 
-保持触发ADC采样的定时器频率 100KHz 不变，将 ADC DMA 缓冲区从 8000 点增大到 8192 点，这样帧处理器的调度频率就会变小，具从 100KHz / 4000 = 25Hz 变小为  100KHz / 4096 ≈ 24.4Hz，那么当 ADC DMA 传输半满或满中断时，帧处理器处理 一半的缓冲区 4096 点，每点 4B，2次幂就是 16384B，刚好等于第 14 层的瓦片缓冲区大小
+保持触发ADC采样的定时器频率 100KHz 不变，将 ADC DMA 缓冲区从 8000 点增大到 8192 点，这样帧处理器的调度频率就会变小（从 100KHz / 4000 = 25Hz 变小为  100KHz / 4096 ≈ 24.4Hz），当 ADC DMA 传输半满或满中断时，帧处理器处理 一半的缓冲区 4096 点，每点 4B，2次幂就是 16384B，刚好等于第 14 层的瓦片缓冲区大小
 
 ### 任务实际调度的单次和平均频率计算
 
