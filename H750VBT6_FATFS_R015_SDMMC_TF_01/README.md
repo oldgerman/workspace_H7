@@ -4,39 +4,40 @@
 
 ## 关于
 
-本工程用于测试本id自研的瓦片切片算法，其产生的数据在 FATFS + TF卡 上读写的实时性
+用于测试本 id 自研的瓦片切片算法，其产生的数据在 FATFS + TF卡 上读写的实时性
 
-记录了使用 CubeMX 自动生成的 FATFS R0.12C版本 ST团队写的配置文件和BSP驱动 适配 FATFS R0.15 的过程
+记录了使用 CubeMX 自动生成的 FATFS R0.12C 版本 ST 团队写的配置文件和BSP驱动 适配 FATFS R0.15 的过程
 
 - 开发环境：STM32CubeIDE v1.11.2 + STM32CubeMX v6.6
 - 包版本：STM32CubeH7 V1.11.0 / 04-Nov-2022
 - 主RAM：DTCM
 - FATFS：R0.15
-- TF卡：FAT32 + 32KB 簇大小
+- TF卡：FAT32 + 32KB 或 64KB 簇大小
+- CPU利用率：由 TIM7 产生 20Ksps 中断作为高精度计数源
 
-## USB命令
+## VOFA+
 
-USB命令的JSON文件在 VOFA+ 文件夹内，可导入伏特加上位机方便测试
+USB 命令、控件和窗口的 JSON 文件在 VOFA+ 文件夹内，可导入伏特加上位机方便测试
 
 ## FATFS R0.15 适配 CubeMX R0.12C
 
 ### R0.12C  f_lseek()  的BUG
 
-由于 CubeMX 6.6 + STM32CubeH7 V1.11.0 / 04-Nov-2022 生成的 FATFS 版本还是 13年 的 R0.12C，本工程在使用 f_lseek() 移到文件读写指针参数为非0地址时，会返回  FR_INT_ERR，看到这篇症状相同的帖子：[Getting FR_INT_ERR when using f_seek in ff.c - ST Community](https://community.st.com/s/question/0D53W000010vQCQSA2/getting-frinterr-when-using-fseek-in-ffc)，应该是 旧版本 R0.12C的BUG，ChaN老师在 FATFS 的版本更新日志中表明，此 BUG 在 R0.13 中修复，现在是 2023 年，最新版本 为 R0.15，又修复了不少BUG，那就用 CubeMX 自动生成的 FATFS 配置文件 适配最新版的 
+由于 CubeMX 6.6 + STM32CubeH7 V1.11.0 / 04-Nov-2022 生成的 FATFS 版本还是 13年 的 R0.12C，本工程在使用 `f_lseek()` 移到文件读写指针参数为非0地址时，会返回  `FR_INT_ERR`，看到这篇症状相同的帖子：[Getting FR_INT_ERR when using f_seek in ff.c - ST Community](https://community.st.com/s/question/0D53W000010vQCQSA2/getting-frinterr-when-using-fseek-in-ffc)，应该是 旧版本 R0.12C 的BUG，ChaN 老师在 FATFS 的版本更新日志中表明，此 BUG 在 R0.13 中修复，现在是 2023 年，最新版本 为 R0.15，又修复了不少BUG，那就用 CubeMX 自动生成的 FATFS 配置文件 适配最新版的 
 
 ### 下载 FATFS R0.15 源码，并在 Path 中添加路径
 
 ChaN 老师网站的下载链接：Download: [FatFs R0.15 (zip)](http://elm-chan.org/fsw/ff/arc/ff15.zip)
 
-解压到 本工程根目录即可，会生成一个 ff15 文件夹，将此文件夹路径添加到 Path 的 Source Location，将此文件夹内的 source 文件夹路径 添加到 Path 的 Includes 
+解压到 本工程根目录即可，会生成一个 `ff15` 文件夹，将此文件夹路径添加到 Path 的 Source Location，将此文件夹内的 source 文件夹路径 添加到 Path 的 Includes 
 
-### 适配 ffconf.h
+### 适配 ffconf.h`
 
 新建 `ffconf_r0.15_by_r013c.h` 解决
 
 ### 适配 用户同步函数
 
-在 CubeMX 自动生成的 Middlewares/Third_Party/FatFs/option/syscall.c 中有
+同步函数在 CubeMX 自动生成的 `Middlewares/Third_Party/FatFs/option/syscall.c` 中：
 
 ```c
 /* R0.13C 的4个用户同步函数 */
@@ -52,7 +53,7 @@ void ff_memfree ( void* mblock )
 #endif
 ```
 
-但 R0.15 版本这几个函数都没了，在ff15/documents/updates.html中有以下说明：
+但 R0.15 版本这几个函数都没了，在 `ff15/documents/updates.html` 中有以下说明：
 
 > User provided synchronization functions, `ff_cre_syncobj`, `ff_del_syncobj`, `ff_req_grant` and `ff_rel_grant`, needed when `FF_FS_REENTRANT` are replaced with `ff_mutex_create`, `ff_mutex_delete`, `ff_mutex_take` and `ff_mutex_give` respectively. For example, see `ffsystem.c`.
 >
@@ -60,7 +61,7 @@ void ff_memfree ( void* mblock )
 >
 > 用户提供的同步函数，`ff_cre_syncobj`、`ff_del_syncobj`、`ff_req_grant` 和 `ff_rel_grant`。当使能 `FF_FS_REENTRANT` 时，需要分别替换为 `ff_mutex_create`、`ff_mutex_delete`、`ff_mutex_take` 和 `ff_mutex_give`。示例请参见 `ffsystem.c`
 
-ok，看看 ffsystem.c ，cubeMX 我配置为 _FS_REENTRANT 对应使能 FF_FS_REENTRANT，我需要修改此文件的 4个 同步函数 调用 Middlewares/Third_Party/FatFs/option/syscall.c 中的四个同步函数 
+ok，看看 `ffsystem.c` ，cubeMX 我配置为 `_FS_REENTRANT` 对应使能 `FF_FS_REENTRANT`，我需要修改此文件的 4个 同步函数 调用 `Middlewares/Third_Party/FatFs/option/syscall.c` 中的四个同步函数 
 
 ```c
 #if FF_FS_REENTRANT	/* Mutal exclusion */
@@ -71,7 +72,7 @@ ok，看看 ffsystem.c ，cubeMX 我配置为 _FS_REENTRANT 对应使能 FF_FS_R
 #define OS_TYPE	0	/* 0:Win32, 1:uITRON4.0, 2:uC/OS-II, 3:FreeRTOS, 4:CMSIS-RTOS */
 ```
 
-ffsystem.c 中使能 OS_TYPE 4 是 CMSIS-RTOS V1的，但我的工程是 V2的，这样  ff_mutex_create 中的写法编译就会报错，需要修改如下：
+`ffsystem.c` 中使能 OS_TYPE 4 是 CMSIS-RTOS V1 的，但我的工程是用 V2 的，直接编译 `ff_mutex_create` 中的写法会报错，需要修改如下：
 
 ```c
 int ff_mutex_create (	/* Returns 1:Function succeeded or 0:Could not create the mutex */
@@ -93,7 +94,7 @@ int ff_mutex_create (	/* Returns 1:Function succeeded or 0:Could not create the 
 
 ### 适配 ffunicode.c 
 
-ff15 中的 ffunicode.c 中的数据 与 cubemx自动生成的  Middlewares/Third_Party/FatFs/option/cc936.c（GBK编码） 中存在重复定义，在过滤器中排除 cc936.c 即可。实测这样配置后，USB可以正常打印 FATFS 解析文件名和目录名的 GBK 编码的中文字符
+`ff15`文件夹的 `ffunicode.c` 中的数据 与 cubemx 自动生成的  `Middlewares/Third_Party/FatFs/option/cc936.c`（GBK编码） 中存在重复定义，在过滤器中排除 `cc936.c` 即可。实测这样配置后，USB可以正常打印 FATFS 解析文件名和目录名的 GBK 编码的中文字符
 
 ### Path 过滤器的配置
 
@@ -101,7 +102,7 @@ ff15 中的 ffunicode.c 中的数据 与 cubemx自动生成的  Middlewares/Thir
 | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
 | ![R0.12C适配R0.15_过滤器设置-FATFS](Images/R0.12C适配R0.15_过滤器设置-FATFS.png) | ![R0.12C适配R0.15_过滤器设置-Middlewares](Images/R0.12C适配R0.15_过滤器设置-Middlewares.png) | ![R0.12C适配R0.15_过滤器设置-ff15](Images/R0.12C适配R0.15_过滤器设置-ff15.png) |
 
-备注：sd_diskio.c 的副本在UserApp 路径下，自定义了Cache配置并修复了BUG，副本出处：[H750VBT6_FATFS_SDMMC_TF_01](https://github.com/oldgerman/workspace_H7/tree/master/H750VBT6_FATFS_SDMMC_TF_01)
+备注：`sd_diskio.c` 的副本在 `UserApp` 路径下，自定义了 Cache 配置并修复了 BUG，副本出处：[H750VBT6_FATFS_SDMMC_TF_01](https://github.com/oldgerman/workspace_H7/tree/master/H750VBT6_FATFS_SDMMC_TF_01)
 
 ## 测试（FAT32+32KB簇）
 
@@ -140,10 +141,10 @@ ff15 中的 ffunicode.c 中的数据 与 cubemx自动生成的  Middlewares/Thir
 
 ### 实时切片并写入波形文件
 
-- 从文件的第一个扇区开始写入，写100MB以上停止
-- 切片 和 写入TF卡 都由 Realtime 优先级（最高优先级）的 frameProcessorTask（帧处理齐任务）处理，下表格中的频率即此任务的调度频率，其他任务的优先级都比此任务低
+- 从文件的第一个扇区开始写入，写 100MB 以上停止
+- 切片和写入 TF 卡都由 `Realtime 优先级`（最高优先级）的 `frameProcessorTask`（帧处理齐任务）处理，下表格中的频率即此任务的调度频率，其他任务的优先级都比此任务低
 
-> *覆盖写入已有文件：表示已有写入 100MB 左右的文件，当前将文件指针移到地址0开始覆盖写入，会使用前一次写入文件的 CLMT，这样 f_lseek() 的执行会更快
+> *覆盖写入已有文件：表示已有写入 100MB 左右的文件，当前将文件指针移到地址 0 开始覆盖写入，会使用前一次写入文件的 CLMT，这样 `f_lseek()` 的执行会更快
 >
 > *实际频率（Hz）：是取出现概率比较高的值，不是通过直方图计算的平均值
 
@@ -160,7 +161,7 @@ ff15 中的 ffunicode.c 中的数据 与 cubemx自动生成的  Middlewares/Thir
 
 > 不是一边写入一边拓展文件小：
 >
-> > 一边写入一边拓展文件小的速度会更快，但应用场景除了写，每秒还可能读十来次此文件任意位置的一段数据，那么就需要在这种情况下使用 f_lseek 随机定位文件指针，这么玩的弊端是 f_lseek 执行时快时慢，每次执行 f_lseek、f_write 和 f_read 都可能访问 TF 卡中 的 FAT 表（当访问地址超出RAM中FAT表缓冲区的范围），增加向 SDMMC 的 IDMA 发起读写事务的数量，降低速度
+> > 一边写入一边拓展文件小的速度会更快，但应用场景除了写，每秒还可能读十来次此文件任意位置的一段数据，那么就需要在这种情况下使用 `f_lseek` 随机定位文件指针，这么玩的弊端是 `f_lseek` 执行时快时慢，每次执行 `f_lseek`、`f_write` 和 `f_read` 都可能访问 TF 卡中 的 FAT 表（当访问地址超出RAM中FAT表缓冲区的范围），增加向 SDMMC 的 IDMA 发起读写事务的数量，降低速度
 > >
 > > 参考：
 > >
@@ -168,15 +169,15 @@ ff15 中的 ffunicode.c 中的数据 与 cubemx自动生成的  Middlewares/Thir
 >
 > 一般解决方法：
 >
-> > 使用 FATFS 快速查找功能，通过使用内存中的 CLMT（cluster link map table 簇链接映射表），实现无需 FAT 访问的快速向后/长查找操作。这么玩的好处是 f_lseek 在读写时都可以快速在波形文件中定位，缺点是当文件处于快速搜索模式时，文件大小不能通过`f_write`和`f_lseek`扩展
+> > 使用 FATFS 快速查找功能，通过使用内存中的 CLMT（cluster link map table 簇链接映射表），实现无需 FAT 访问的快速向后/长查找操作。这么玩的好处是 `f_lseek` 在读写时都可以快速在波形文件中定位，缺点是当文件处于快速搜索模式时，文件大小不能通过`f_write`和`f_lseek`扩展
 >>
 > > 文件大小不能拓展的解决方法：
 > >
-> > > 新建文件时，集群预分配大小128MB，停止写入时，记录已写入的有效数据量，关闭文件后再次打开（此操作可以退出快速查找模式），使用 f_lseek 裁剪文件到有效数据大小
+> > > 新建文件时，集群预分配大小 128MB，停止写入时，记录已写入的有效数据量，关闭文件后再次打开（此操作可以退出快速查找模式），使用 `f_lseek` 裁剪文件到有效数据大小
 > >
 > > 建立CLMT及其开销：
 > >
-> > > 将 128MB 文件切片为 4096 份（切片粒度为 32KB，即 TF卡 格式化为 FAT32 时设置的簇大小 32KB），那么可计算 CLMT 数组大小 (128MB / 32K + 1) x 2  = 8194 ，CLMT数组每个元素的大小 sizeof(DWORD) = 4B，开销 STM32H750 RAM 8194 x 4B = 32776B ≈ 32KB
+> > > 将 128MB 文件切片为 4096 份（切片粒度为 32KB，即 TF卡 格式化为 FAT32 时设置的簇大小 32KB），那么可计算 CLMT 数组大小 (128MB / 32K + 1) x 2  = 8194 ，CLMT数组每个元素的大小 `sizeof(DWORD)` = 4B，开销 STM32H750 RAM 8194 x 4B = 32776B ≈ 32KB
 > > >
 > > > 计算公式来源：[f_lseek：The number of items needed is (number of the file fragments + 1) * 2.](http://elm-chan.org/fsw/ff/doc/lseek.html)
 >
@@ -188,7 +189,7 @@ ff15 中的 ffunicode.c 中的数据 与 cubemx自动生成的  Middlewares/Thir
 
 CLMT 的数据：
 
-> 未格式化，新建删除WAVE.TXT 多次，重置后第一次以100Hz 写入100MB 
+> 未格式化，新建删除 WAVE.TXT 多次，重置后第一次以 100Hz 写入 100MB 
 >
 > | 前100个元素                                                  | 后100个元素                                                  |
 > | ------------------------------------------------------------ | ------------------------------------------------------------ |
@@ -215,8 +216,8 @@ CLMT 的数据：
 
 ### 实时切片并写入
 
-- 从文件的第一个扇区开始写入，写100MB以上停止
-- 切片 和 写入TF卡 都由 Realtime 优先级（最高优先级）的 frameProcessorTask（帧处理齐任务）处理，下表格中的频率即此任务的调度频率，其他任务的优先级都比此任务低
+- 从文件的第一个扇区开始写入，写 100MB 以上停止
+- 切片和写入TF卡 都由 `Realtime` 优先级（最高优先级）的 `frameProcessorTask`（帧处理齐任务）处理，下表格中的频率即此任务的调度频率，其他任务的优先级都比此任务低
 
 > *实际频率（Hz）：是取出现概率比较高的值，不是通过直方图计算的平均值
 
@@ -230,7 +231,7 @@ CLMT 的数据：
 
 写入任务频率的直方图：
 
-> > 每次写入任务都立即计算当前的调度频率，直方图的刻度为1Hz
+> > 每次写入任务都立即计算当前的调度频率，直方图的刻度为 1Hz
 >
 > ## 25Hz
 >
@@ -240,13 +241,13 @@ CLMT 的数据：
 >
 > ## 32Hz
 >
-> 3755次的82.7%落在31-34Hz（调度频率取32Hz时，因为 1000 / 32 = 31.25，无法整除，uint32_t 向下舍入得 31，所以写入任务其实是 31ms 的调度周期，约32.26Hz）
+> 3755 次的 82.7% 落在 31-34Hz（调度频率取 32Hz 时，因为 1000 / 32 = 31.25，无法整除，uint32_t 向下舍入得 31，所以写入任务其实是 31ms 的调度周期，约 32.26Hz）
 >
 > ![32Hz写入频率不打印详情下的直方图3755次的百分之82.7落在31-34Hz](Images/32Hz写入频率不打印详情下的直方图3755次的百分之82.7落在31-34Hz.png)
 >
 > ## 100Hz
 >
-> 3751次的14.8%落在99-100Hz
+> 3751 次的 14.8% 落在 99-100Hz
 >
 > ![](Images/100Hz写入频率不打印详情下的直方图3751次的百分之14.8落在99-100Hz.png)
 >
@@ -258,7 +259,7 @@ CLMT 的数据：
 >
 > ## 200Hz
 >
-> 3669次的54%落在165Hz，达到实时切片并写入频率的上限
+> 3669 次的 54% 落在 165Hz，达到实时切片并写入频率的上限
 >
 > ![](Images/200Hz写入频率打印详情并写入下的直方图3669次的一半落在165Hz.png)
 
@@ -271,11 +272,13 @@ CLMT 的数据：
 | 覆盖写入已有文件 | 32             | 32.2           | 1               | 31335              | 3659     |
 | 覆盖写入已有文件 | 25             | 25             | 1               | 31317              | 3657     |
 
-3387次切片 100% 都落在200Hz，并且  frame 任务运行计数 会从30000+ 增加到 120000+，这增加了 90000 次任务打断 ！可见写入 TF 卡就是破坏帧处理器任务实时性的罪魁祸首
+对比实时切片并写入的测试表格，发现 frame 任务运行计数 会从30000+ 增加到 120000+，这增加了 90000 次任务打断 ！可见写入 TF 卡就是破坏帧处理器任务实时性的罪魁祸首
+
+3387 次切片 100% 都落在 200Hz
 
 ![](Images/200Hz写入频率不打印详情不写入下的直方图3387次的百分之100落在200Hz.png)
 
-## FATFS + TF卡的实时性欠佳，多缓冲能否曲线救国？
+## FATFS + TF 卡的实时性欠佳，多缓冲能否曲线救国？
 
 在本工程的直方图测试中，FATFS + TF 卡的实时性确不太不行
 
@@ -303,7 +306,7 @@ CLMT 的数据：
 
 > "4K的视频真的很大，不过才5分钟就2G多"
 >
-> 备注：4K实时录像下，TF 卡平均写入速度得 6.83MB/s 左右，约54M码率
+> 备注：4K 实时录像下，TF 卡平均写入速度得 6.83MB/s 左右，约 54M 码率
 
 - [常用视频标准尺寸和码率 - CSDN](https://blog.csdn.net/qq_38769551/article/details/106349191)
 
@@ -312,12 +315,12 @@ CLMT 的数据：
 与本工程的直方图测试对比：
 
 - 影响小的因素：TF 卡跑在 HS 速度，FATFS 最大 IO/SZIE 64KB，当前写入任务概率发起 30.0-52.1K 大小的写入，在允许范围内
-- 影响大的因素：当前写入任务是单缓冲的，那么FATFS + TF卡实时性不确定的固有属性就被直方图反映出了，这个固有属性应该是无法消除的，解决方法可以参考云台系统加大缓冲区对冲掉（H750VB不能外挂SRAM，片内再开几个层缓冲区有点紧张啊，明明都已经竭尽全力...）
+- 影响大的因素：当前写入任务是单缓冲的，那么 FATFS + TF 卡实时性不确定的固有属性就被直方图反映出了，这个固有属性应该是无法消除的，解决方法可以参考云台系统加大缓冲区对冲掉（ H750VB 不能外挂SRAM，片内再开几个层缓冲区有点紧张啊，明明都已经竭尽全力...）
 
 拟解决思路：
 
 - 层缓冲区越多越好，但多少个层缓冲区才可以将这个因素的影响减少到几乎没有，需要测试决定
-- 当前帧处理器即实时瓦片切片也执行 TF卡写入，将 TF 卡的写入操作从帧处理器任务分离到一个单独的 TF 卡写入任务，开辟多个层缓冲区，帧处理器向消息队列写入当前应写入层缓冲区的编号，TF 卡写入任务从消息队列尾端取消息，执行写入操作，改变缓冲区大小测试，观察消息队列是否会满，依此确认需要的层缓冲区数量
+- 当前帧处理器即实时瓦片切片也执行  TF 卡写入，将 TF 卡的写入操作从帧处理器任务分离到一个单独的 TF 卡写入任务，开辟多个层缓冲区，帧处理器向消息队列写入当前应写入层缓冲区的编号，TF 卡写入任务从消息队列尾端取消息，执行写入操作，改变缓冲区大小测试，观察消息队列是否会满，依此确认需要的层缓冲区数量
 
 ## 2周目工程
 
@@ -325,13 +328,13 @@ CLMT 的数据：
 
 ## 附
 
-### 2次幂层缓冲区同步写入4byte帧数据@100Ksps
+### 2的幂层缓冲区同步写入4byte帧数据@100Ksps
 
-保持触发ADC采样的定时器频率100KHz不变，将 ADC DMA 缓冲区从 8000 点增大到 8192 点，这样帧处理器的调度频率就会变小，具从 100KHz / 4000 = 25Hz 变小为  100KHz / 4096 ≈ 24.4Hz，那么当 ADC DMA 传输半满或满中断时，帧处理器处理 一半的缓冲区 4096 点，每点 4B，2次幂就是 16384B，刚好等于第14层的瓦片缓冲区大小
+保持触发ADC采样的定时器频率 100KHz 不变，将 ADC DMA 缓冲区从 8000 点增大到 8192 点，这样帧处理器的调度频率就会变小，具从 100KHz / 4000 = 25Hz 变小为  100KHz / 4096 ≈ 24.4Hz，那么当 ADC DMA 传输半满或满中断时，帧处理器处理 一半的缓冲区 4096 点，每点 4B，2次幂就是 16384B，刚好等于第 14 层的瓦片缓冲区大小
 
 ### 任务实际调度的单次和平均频率计算
 
-TIleWave 类的成员函数 writeTileBuffer() 中有以下代码用于此计算：
+`TIleWave` 类的成员函数 `writeTileBuffer()` 中有以下代码用于此计算：
 
 ```c
 void writeTileBuffer(uint8_t* pulData) {
