@@ -367,7 +367,7 @@ uint32_t writeTileBuffer(uint8_t* pulData) {
 }
 ```
 
-其中以静态成员需要在每次开始切片前归 ：
+其中以静态成员需要在每次开始切片前归 0 ：
 
 ```c++
 TileWave::fRealWrittenFreqAvg = 0;
