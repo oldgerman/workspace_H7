@@ -35,8 +35,11 @@
 
 #include <functional>
 /* 使用using 定义成员函数指针的别名 */
-using mf_malloc = void*(osRtxMemory::*)(uint32_t);
-using mf_free = void(osRtxMemory::*)(void*);
+using mf_malloc 			= void* (osRtxMemory::*)(size_t);
+using mf_free 				= void  (osRtxMemory::*)(void*);
+using mf_aligned_malloc 	= void* (osRtxMemory::*)(size_t, size_t);
+using mf_aligned_free 		= void  (osRtxMemory::*)(void*);
+using mf_aligned_detect 	= void  (osRtxMemory::*)(void*, size_t);
 
 TileWave::Config_t xConfig = {
 		/* IO Size */
@@ -118,15 +121,31 @@ void Main()
     ledUpdateInit();
 
     /* 闭包 */
-    TileWave::init(
+    TileWave::initMemoryHeapAPI
+	(
     		std::bind(
     			(mf_malloc)&osRtxMemory::malloc, 	// 对象的成员函数的指针
     			DRAM_SRAM1,							// 对象
     			std::placeholders::_1),				// 参数占位符
     		std::bind(
-    			(mf_free)&osRtxMemory::free, 		// 对象的成员函数的指针
-    			DRAM_SRAM1,							// 对象
-    			std::placeholders::_1));			// 参数占位符
+    			(mf_free)&osRtxMemory::free,
+    			DRAM_SRAM1,
+    			std::placeholders::_1),
+			std::bind(
+				(mf_aligned_malloc)&osRtxMemory::aligned_malloc,
+				DRAM_SRAM1,
+				std::placeholders::_1,
+				std::placeholders::_2),
+			std::bind(
+				(mf_aligned_free)&osRtxMemory::aligned_free,
+				DRAM_SRAM1,
+				std::placeholders::_1),
+			std::bind(
+				(mf_aligned_detect)&osRtxMemory::aligned_detect,
+				DRAM_SRAM1,
+				std::placeholders::_1,
+				std::placeholders::_2)
+	);
 
     xTileWave.createTileBufferList();
 

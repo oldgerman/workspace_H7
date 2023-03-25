@@ -33,29 +33,18 @@
 /* Exported constants --------------------------------------------------------*/
 /* Private constants ---------------------------------------------------------*/
 /* Exported variables --------------------------------------------------------*/
-std::function<void*(size_t size)> 	TileWave::malloc;
-std::function<void(void* ptr)>		TileWave::free;
-
-__attribute__((section(".RAM_D1_Array"))) ALIGN_32BYTES(uint8_t TxBuffer [64 *1024]);
-__attribute__((section(".RAM_D1_Array"))) ALIGN_32BYTES(uint8_t RxBuffer [10 *1024]);
-
-void* TileWave::ucpTxBuffer = TxBuffer;
-void* TileWave::ucpRxBuffer = RxBuffer;
+std::function<void* (size_t size)> 		TileWave::malloc;
+std::function<void  (void* ptr)>		TileWave::free;
+std::function<void* (size_t size, size_t alignment)>	TileWave::aligned_malloc;
+std::function<void  (void* ptr_aligned)>				TileWave::aligend_free;
+std::function<void  (void* ptr, size_t alignment)> 		TileWave::aligned_detect;
 
 std::function<uint32_t (uint32_t addr, uint32_t size, uint8_t* pData)> 		TileWave::write;
 std::function<uint32_t (uint32_t addr, uint32_t size, uint8_t* pData)>		TileWave::read;
 
-/* 暂存初始化层链表时输出的信息 */
-char TileWave::ucStrBuffer[20][64] = {0};
+__attribute__((section(".RAM_D1_Array"))) ALIGN_32BYTES(uint8_t TxBuffer [64 *1024]);
+__attribute__((section(".RAM_D1_Array"))) ALIGN_32BYTES(uint8_t RxBuffer [10 *1024]);
 
-uint32_t TileWave::ulPeriod = 0;
-uint32_t TileWave::ulTxBufferOffsetOld = 0;
-double 	TileWave::fRealWrittenFreqSum = 0;
-double 	TileWave::fRealWrittenFreqAvg = 0;
-double 	TileWave::fRealWrittenFreqNum = 0;
-
-uint32_t TileWave::ulPrintSliceDetail = 0;		//默认打印切片的详情信息
-uint32_t TileWave::ulSliceButNotWrite = 0;		//默认切片时写入文件
 /* Private variables ---------------------------------------------------------*/
 /* Private function prototypes -----------------------------------------------*/
 /* Function implementations --------------------------------------------------*/
@@ -123,8 +112,8 @@ uint32_t TileWave::createTileBufferList()
 	}
 
 	// malloc未实现申请32字节对齐的内存
-//		ucpTxBuffer = malloc(ulIOSizeMax);
-//		ucpRxBuffer = malloc(5*ulIOSizeMin); //先随便给5个最小IO缓冲区
+	ucpTxBuffer = TxBuffer;
+	ucpRxBuffer = RxBuffer;
 
 	return 0U;
 }
@@ -245,6 +234,15 @@ TileWave::TileWave(Config_t &xConfig) {
 	ulWaveDispTileBufferSize = xConfig.ulWaveDispTileBufferSize;
 
 	ulLayersTileBufferSize = 0;
+
+	memset(ucStrBuffer, 0, sizeof(ucStrBuffer));
+	ulPeriod = 0;
+	ulTxBufferOffsetOld = 0;
+	fRealWrittenFreqSum = 0;
+	fRealWrittenFreqAvg = 0;
+	fRealWrittenFreqNum = 0;
+	ulPrintSliceDetail = 0;		//默认打印切片的详情信息
+	ulSliceButNotWrite = 0;		//默认切片时写入文件
 }
 
 /**
@@ -253,11 +251,18 @@ TileWave::TileWave(Config_t &xConfig) {
   * @free  	Free	function object
   * @retval None
   */
-void TileWave::init(std::function<void*(size_t)> Malloc,
-		std::function<void(void*)> Free)
+void TileWave::initMemoryHeapAPI(
+		std::function<void* (size_t)> 	Malloc,
+		std::function<void  (void*)>	Free,
+		std::function<void* (size_t size, size_t alignment)>	Aligned_malloc,
+		std::function<void  (void* ptr_aligned)>				Aligend_free,
+		std::function<void  (void* ptr, size_t alignment)> 		Aligned_detect)
 {
 	malloc = Malloc;
 	free = Free;
+	aligned_malloc = Aligned_malloc;
+	aligend_free = Aligend_free;
+	aligned_detect = Aligned_detect;
 }
 
 /**
@@ -311,7 +316,8 @@ void TileWave::vTestMallocFree(uint32_t ulTimes, uint32_t ulStartSize)
 	uint32_t ulDynamicSize;
 	void  *SRAM1_Addr[ulTimes];
 
-	printf("\r\n【测试动态内存分配 %ld 次，起始大小 %ld ，每次大小翻倍，单位byte】\r\n", ulTimes, ulStartSize);
+	printf("\r\n【测试动态内存分配 %ld 次，起始大小 %ld ，每次大小翻倍，单位 byte 】\r\n",
+			ulTimes, ulStartSize);
 	printf("【从DRAM申请空间】\r\n");
 	printf("| 已申请次数 | 内存池大小 |  申请大小  |  申请地址  |   共使用   |    剩余    | 历史最少可用 |\r\n");
 	printf("| ---------- | ---------- | ---------- | ---------- | ---------- | ---------- | ------------ |\r\n");
@@ -319,8 +325,12 @@ void TileWave::vTestMallocFree(uint32_t ulTimes, uint32_t ulStartSize)
 		ulDynamicSize = ulStartSize << i;
 		SRAM1_Addr[i] = DRAM_SRAM1.malloc(ulDynamicSize);
 		printf("| %10ld | %10ld | %10ld | %10p | %10ld | %10ld | %12ld |\r\n",
-				i + 1, DRAM_SRAM1.getMemSize(), ulDynamicSize, SRAM1_Addr[i],
-				DRAM_SRAM1.getMemUsed(), DRAM_SRAM1.getMemFree(), DRAM_SRAM1.getMemFreeMin());
+				i + 1,
+				DRAM_SRAM1.getMemSize(),
+				ulDynamicSize, SRAM1_Addr[i],
+				DRAM_SRAM1.getMemUsed(),
+				DRAM_SRAM1.getMemFree(),
+				DRAM_SRAM1.getMemFreeMin());
 	}
 
 	printf("\r\n【释放从DRAM申请的空间】\r\n");
@@ -330,7 +340,58 @@ void TileWave::vTestMallocFree(uint32_t ulTimes, uint32_t ulStartSize)
 		ulDynamicSize = ulStartSize << i;
 		DRAM_SRAM1.free(SRAM1_Addr[i]);
 		printf("| %10ld | %10ld | %10ld | %10p | %10ld | %10ld | %12ld |\r\n",
-				i + 1, DRAM_SRAM1.getMemSize(), ulDynamicSize, SRAM1_Addr[i],
-				DRAM_SRAM1.getMemUsed(), DRAM_SRAM1.getMemFree(), DRAM_SRAM1.getMemFreeMin());
+				i + 1,
+				DRAM_SRAM1.getMemSize(),
+				ulDynamicSize, SRAM1_Addr[i],
+				DRAM_SRAM1.getMemUsed(),
+				DRAM_SRAM1.getMemFree(),
+				DRAM_SRAM1.getMemFreeMin());
+	}
+}
+
+/**
+  * @brief  测试字节对齐动态内存API
+  * @param  ulTimes		申请的次数
+  * @param  ulStartSize	起始申请大小，单位B
+  * @param	ulAlignment	地址对齐的大小
+  * @retval None
+  */
+void TileWave::vTestAlignedMallocFree(uint32_t ulTimes, uint32_t ulStartSize, uint32_t ulAlignment)
+{
+	uint32_t ulDynamicSize;
+	void  *SRAM1_Addr[ulTimes];
+
+	printf("\r\n【测试 %ld 字节对齐的动态内存分配 %ld 次，起始大小 %ld ，每次大小翻倍，单位 byte 】\r\n",
+			ulAlignment, ulTimes, ulStartSize);
+	printf("【从DRAM申请空间】\r\n");
+	printf("| 已申请次数 | 内存池大小 |  申请大小  |  申请地址  |  字节对齐  |   共使用   |    剩余    | 历史最少可用 |\r\n");
+	printf("| ---------- | ---------- | ---------- | ---------- | ---------- | ---------- | ---------- |------------ |\r\n");
+	for(uint32_t i = 0; i < ulTimes; i++) {
+		ulDynamicSize = ulStartSize << i;
+		SRAM1_Addr[i] = DRAM_SRAM1.aligned_malloc(ulDynamicSize, ulAlignment);
+		printf("| %10ld | %10ld | %10ld | %10p | %10s | %10ld | %10ld | %12ld |\r\n",
+				i + 1,
+				DRAM_SRAM1.getMemSize(),
+				ulDynamicSize, SRAM1_Addr[i],
+				(DRAM_SRAM1.aligned_detect(SRAM1_Addr[i], ulAlignment) == 0)?("Yes"):("No"),
+				DRAM_SRAM1.getMemUsed(),
+				DRAM_SRAM1.getMemFree(),
+				DRAM_SRAM1.getMemFreeMin());
+	}
+
+	printf("\r\n【释放从DRAM申请的空间】\r\n");
+	printf("|  释放次数  | 内存池大小 |  释放大小  |  释放地址  |  字节对齐  |   共使用   |    剩余    | 历史最少可用 |\r\n");
+	printf("| ---------- | ---------- | ---------- | ---------- | ---------- | ---------- | ---------- | ------------ |\r\n");
+	for(uint32_t i = 0; i < ulTimes; i++) {
+		ulDynamicSize = ulStartSize << i;
+		DRAM_SRAM1.aligned_free(SRAM1_Addr[i]);
+		printf("| %10ld | %10ld | %10ld | %10p | %10s | %10ld | %10ld | %12ld |\r\n",
+				i + 1,
+				DRAM_SRAM1.getMemSize(),
+				ulDynamicSize, SRAM1_Addr[i],
+				(DRAM_SRAM1.aligned_detect(SRAM1_Addr[i], ulAlignment) == 0)?("Yes"):("No"),
+				DRAM_SRAM1.getMemUsed(),
+				DRAM_SRAM1.getMemFree(),
+				DRAM_SRAM1.getMemFreeMin());
 	}
 }

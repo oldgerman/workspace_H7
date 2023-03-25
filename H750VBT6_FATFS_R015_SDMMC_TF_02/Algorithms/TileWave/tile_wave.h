@@ -79,15 +79,20 @@ public:
 
 	TileWave(Config_t &xConfig);
 
-	uint32_t createTileBufferList();
-	void resetTileBufferOffset();
-	uint32_t writeTileBuffer(uint8_t* pulData);
-	void vPrintLayerInfo();
+	uint32_t 	createTileBufferList();
+	void 		resetTileBufferOffset();
+	uint32_t 	writeTileBuffer(uint8_t* pulData);
+	void 		vPrintLayerInfo();
 
-	static void init(std::function<void*(size_t)> Malloc,
-			std::function<void(void*)> Free);
+	static void initMemoryHeapAPI(
+			std::function<void* (size_t)> 	Malloc,
+			std::function<void  (void*)>	Free,
+			std::function<void* (size_t size, size_t alignment)>	Aligned_malloc,
+			std::function<void  (void* ptr_aligned)>				Aligend_free,
+			std::function<void  (void* ptr, size_t alignment)> 		Aligned_detect);
+
 	static void vTestMallocFree(uint32_t ulTimes = 5, uint32_t ulStartSize = 256);
-
+	static void vTestAlignedMallocFree(uint32_t ulTimes = 5, uint32_t ulStartSize = 256, uint32_t ulAlignment = 8);
 	/** @brief  一次可以读取或写入的最小数据块，单位B
 	  * @notice 不要与储存介质的最小 IO/SIZE 混淆
 	  *         此参数应根据诸多参数综合设置
@@ -130,31 +135,34 @@ public:
 	std::list<Layer_t>::reverse_iterator xRit; 	// 层链表的反向迭代器
 
 	/* 层缓冲区的读写缓冲区 */
-	static void *ucpTxBuffer;					// 给64KB
-	static void *ucpRxBuffer; 					// 暂时随便给5个2KB
+	void *ucpTxBuffer;					// 给64KB
+	void *ucpRxBuffer; 					// 暂时随便给5个2KB
 
 	/* 层缓冲区读写API */
     static std::function<uint32_t (uint32_t addr, uint32_t size, uint8_t* pData)> 	write;
     static std::function<uint32_t (uint32_t addr, uint32_t size, uint8_t* pData)>	read;
 
     /* 以下变量在停止切片后在下次切片前需要归 0 */
-	static uint32_t ulPeriod;	//周期计数器
-	static uint32_t ulTxBufferOffsetOld;
-	static double	fRealWrittenFreqSum; 		// 写入频率的总和
-	static double 	fRealWrittenFreqAvg;		// 写入频率的平均值
-	static double 	fRealWrittenFreqNum;		// 写入频率的个数
+	uint32_t ulPeriod;	//周期计数器
+	uint32_t ulTxBufferOffsetOld;
+	double	fRealWrittenFreqSum; 		// 写入频率的总和
+	double 	fRealWrittenFreqAvg;		// 写入频率的平均值
+	double 	fRealWrittenFreqNum;		// 写入频率的个数
 
 	/* 以下是在协议解析程序中可更改的标志 */
-	static uint32_t ulPrintSliceDetail;			// 打印实时切片信息
-	static uint32_t ulSliceButNotWrite;			// 实时切片时不写入数据
+	uint32_t ulPrintSliceDetail;			// 打印实时切片信息
+	uint32_t ulSliceButNotWrite;			// 实时切片时不写入数据
 
 private:
 	/* 动态内存API */
-    static std::function<void*(size_t size)> 	malloc;
-    static std::function<void(void* ptr)>		free;
+    static std::function<void* (size_t size)> 		malloc;
+    static std::function<void  (void* ptr)>		free;
+    static std::function<void* (size_t size, size_t alignment)>		aligned_malloc;
+    static std::function<void  (void* ptr_aligned)>				aligend_free;
+    static std::function<void  (void* ptr, size_t alignment)> 		aligned_detect;
 
 	/* 暂存初始化层链表时输出的信息 */
-	static char ucStrBuffer[20][64];
+	char ucStrBuffer[20][64];
 
     static uint32_t ulCalculateSmallestPowerOf2GreaterThan(uint32_t ulValue);
 };

@@ -62,11 +62,11 @@ static void frameProcessorTask(void* argument);
 /* Function implementations --------------------------------------------------*/
 void resetTileWaveTxRxVariables()
 {
-	TileWave::ulPeriod = 0;
-	TileWave::ulTxBufferOffsetOld = 0;
-	TileWave::fRealWrittenFreqAvg = 0;
-	TileWave::fRealWrittenFreqSum = 0;
-	TileWave::fRealWrittenFreqNum = 0;
+	xTileWave.ulPeriod = 0;
+	xTileWave.ulTxBufferOffsetOld = 0;
+	xTileWave.fRealWrittenFreqAvg = 0;
+	xTileWave.fRealWrittenFreqSum = 0;
+	xTileWave.fRealWrittenFreqNum = 0;
 
 	xTileWave.resetTileBufferOffset();
 }
@@ -92,7 +92,7 @@ static void frameProcessorTask(void* argument)
 			resetTileWaveTxRxVariables();
 		}
 
-		sprintf((char*)&(frame[0].ctrl_u8[0]), "%4ld", TileWave::ulPeriod);
+		sprintf((char*)&(frame[0].ctrl_u8[0]), "%4ld", xTileWave.ulPeriod);
 
 		if(frame_writeTileBuffer)
 		{

@@ -4,7 +4,11 @@
   * @modify      OldGerman
   * @created on  Mar 20, 2023
   * @brief
+  *    2023-03-21  打包到 osRtxMemory 类
+  *    2023-03-22  修复在构造函数中初始化内存池进hardfault的问题
+  *    2023-03-26  添加 aligned_malloc、aligned_free、aligned_detect
   *
+  ******************************************************************************
   * 模块名称 : 动态内存管理
   * 文件名称 : rtx_memory.h
   * 版    本 : V1.0
@@ -13,8 +17,6 @@
   * 修改记录 :
   * 	版本号   日期         作者        说明
   * 	V1.0    2018-04-09   Eric2013   将RTX5的动态内存管理整理出来
-  *             2023-03-21   OldGerman  打包到 osRtxMemory 类
-  *             2023-03-22   OldGerman  修复在构造函数中初始化内存池进hardfault的问题
   *
   * Copyright (C), 2018-2030, 安富莱电子 www.armfly.com
   *
@@ -92,6 +94,7 @@ public:
 	typedef struct mem_block_s {
 	  struct mem_block_s *next;		// Next Memory Block in list
 	  uint32_t            info;		// Block Info or max used Memory (in last block)
+	  	  	  	  	  	  	  	  	// 块信息或最大使用内存（在最后一个块中）
 	} mem_block_t;
 
 	/* Constructor */
@@ -100,8 +103,11 @@ public:
 	uint32_t init();
 
 	/* Memory Heap Library functions */
-	void      *malloc(size_t size, uint32_t type = 0);
-	uint32_t   free(void *block);
+	void*		malloc(size_t size, uint32_t type = 0);
+	uint32_t	free(void *block);
+	void*		aligned_malloc(size_t size, size_t alignment = 8);
+	uint32_t 	aligned_free(void* ptr_aligned);
+	uint32_t 	aligned_detect(void* ptr, size_t alignment);
 
 	/* Memory Head Pointer */
 	__STATIC_INLINE mem_head_t *MemHeadPtr (void *mem) {
@@ -144,7 +150,6 @@ public:
 private:
 	void      *mem;					// Pointer to memory pool.
 	uint32_t   sizePool;			// Size of a memory pool in bytes.
-	uint32_t   statusConstructor;	// Status of Constuctor
 	mem_head_t *memHead;			// Memory head structer
 	uint32_t   sizeFreeMin;			// Historical minimum free memory size
 };

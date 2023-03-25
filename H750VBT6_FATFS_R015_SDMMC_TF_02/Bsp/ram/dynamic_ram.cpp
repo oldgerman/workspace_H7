@@ -33,8 +33,8 @@
 /* Exported constants --------------------------------------------------------*/
 /* Private constants ---------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
-/*       Memory Pool        Size [KB  *1024/8]                  Section       */
-uint64_t MEMPOOL_D2_SRAM1        [128 *1024/8]  __attribute__((section(".RAM_D2_Array")));
+/* 8B ALIGN     Memory Pool         Size [KB  *1024/8]    Section             */
+uint64_t        MEMPOOL_D2_SRAM1         [256 *1024/8]    __attribute__((section(".RAM_D2_Array")));
 //uint64_t MEMPOOL_D2_SRAM2        [128 *1024/8]  __attribute__((section(".RAM_D2_Array")));
 /* Exported variables --------------------------------------------------------*/
 /* Create dynamic memory objects */

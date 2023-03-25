@@ -111,19 +111,25 @@ void OnAsciiCmd(const char* _cmd, size_t _len, StreamSink &_responseChannel)
         else if(s.find("TEST_DRAM=") != std::string::npos)
         {
             uint32_t times, startSize;
-            sscanf(&_cmd[13], "%ld", &times);
-            sscanf(&_cmd[15], "%ld", &startSize);
-        	TileWave::vTestMallocFree(times, startSize);
+            sscanf(&_cmd[13], "%ld+%ld", &times, &startSize);
+        	xTileWave.vTestMallocFree(times, startSize);
+        }
+        /* TW+TEST_ALIGNED_DRAM=5+256+32*/
+        else if(s.find("TEST_ALIGNED_DRAM=") != std::string::npos)
+        {
+            uint32_t times, startSize, alignment;
+            sscanf(&_cmd[21], "%ld+%ld+%ld", &times, &startSize, &alignment);
+        	xTileWave.vTestAlignedMallocFree(times, startSize, alignment);
         }
         else if (s.find("START_SLICE") != std::string::npos)
         {
-        	uint32_t value = TileWave::ulSliceButNotWrite;
+        	uint32_t value = xTileWave.ulSliceButNotWrite;
         	frame_writeTileBuffer = 1;
         	Respond(_responseChannel, false, "波形文件 开始切片%s", (value == 1)?("不写入"):("并写入"));
         }
         else if (s.find("STOP_SLICE") != std::string::npos)
         {
-        	uint32_t value = TileWave::ulSliceButNotWrite;
+        	uint32_t value = xTileWave.ulSliceButNotWrite;
         	frame_writeTileBuffer = 0;
         	Respond(_responseChannel, false, "波形文件 停止切片%s", (value == 1)?("不写入"):("并写入"));
         }
@@ -131,7 +137,7 @@ void OnAsciiCmd(const char* _cmd, size_t _len, StreamSink &_responseChannel)
         {
             uint32_t value;
             sscanf(&_cmd[23], "%ld", &value);
-            TileWave::ulSliceButNotWrite = value;
+            xTileWave.ulSliceButNotWrite = value;
             Respond(_responseChannel, false, "波形文件 设置切片时%s", (value == 1)?("不写入"):("并写入"));
         }
         else if (s.find("DELETE_THE_CREATE_WAVE_FILE") != std::string::npos)
@@ -153,7 +159,7 @@ void OnAsciiCmd(const char* _cmd, size_t _len, StreamSink &_responseChannel)
         {
             uint32_t value;
             sscanf(&_cmd[23], "%ld", &value);
-            TileWave::ulPrintSliceDetail = value;
+            xTileWave.ulPrintSliceDetail = value;
             Respond(_responseChannel, false, "波形文件 %s写入详情", (value == 1)?("显示"):("隐藏"));
         }
     }
