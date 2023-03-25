@@ -65,6 +65,8 @@ void resetTileWaveTxRxVariables()
 	TileWave::ulPeriod = 0;
 	TileWave::ulTxBufferOffsetOld = 0;
 	TileWave::fRealWrittenFreqAvg = 0;
+	TileWave::fRealWrittenFreqSum = 0;
+	TileWave::fRealWrittenFreqNum = 0;
 
 	xTileWave.resetTileBufferOffset();
 }

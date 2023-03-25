@@ -45,9 +45,11 @@ void* TileWave::ucpRxBuffer = RxBuffer;
 std::function<uint32_t (uint32_t addr, uint32_t size, uint8_t* pData)> 		TileWave::write;
 std::function<uint32_t (uint32_t addr, uint32_t size, uint8_t* pData)>		TileWave::read;
 
-uint32_t TileWave::ulPeriod = 0;				//周期计数器
+uint32_t TileWave::ulPeriod = 0;
 uint32_t TileWave::ulTxBufferOffsetOld = 0;
-float TileWave::fRealWrittenFreqAvg = 0;
+double 	TileWave::fRealWrittenFreqSum = 0;
+double 	TileWave::fRealWrittenFreqAvg = 0;
+double 	TileWave::fRealWrittenFreqNum = 0;
 
 uint32_t TileWave::ulPrintSliceDetail = 0;		//默认打印切片的详情信息
 uint32_t TileWave::ulSliceButNotWrite = 0;		//默认切片时写入文件

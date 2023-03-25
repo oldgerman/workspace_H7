@@ -337,58 +337,41 @@ CLMT 的数据：
 `TIleWave` 类的成员函数 `writeTileBuffer()` 中有以下代码用于此计算：
 
 ```c
-void writeTileBuffer(uint8_t* pulData) {
+uint32_t writeTileBuffer(uint8_t* pulData) {
+    ...
+
     /* 用于计算本函数被调用的实时频率的单次和平均值 */
-    static float fRealWrittenFreq = 0;
+    static double fRealWrittenFreq = 0;
     static uint32_t ulWrittenCount = 0;
     static uint32_t ulTickCountOld =  xTaskGetTickCount();
-    uint32_t ulTickCount;	
+    uint32_t ulTickCount;
     ...
+
     /* 计算实时频率的单次和平均值 */
     ++ulWrittenCount;
     ulTickCount = xTaskGetTickCount();	/* 获取当前的系统时间 */
     uint32_t ulTickOffest = ulTickCount - ulTickCountOld;
     ulTickCountOld = ulTickCount;
-    fRealWrittenFreq = (float)1000 / ((float)ulTickOffest / ulWrittenCount);
-    if(isnormal(fRealWrittenFreq))	{ // 是一个正常的浮点数
-        fRealWrittenFreqAvg = (fRealWrittenFreqAvg + fRealWrittenFreq ) / 2;
+    fRealWrittenFreq = (double)1000 / ((double)ulTickOffest / ulWrittenCount);
+
+    // 第一次 fRealWrittenFreq 肯定是 inf，需要舍弃
+    // fRealWrittenFreq 是一个正常的浮点数才会计算
+    if(isnormal(fRealWrittenFreq))	{
+        ++fRealWrittenFreqNum;
+        fRealWrittenFreqSum += fRealWrittenFreq;
+        fRealWrittenFreqAvg = fRealWrittenFreqSum / fRealWrittenFreqNum;
     }
     ulWrittenCount = 0;
     printf("freq: %3.3f, %3.3f\r\n", fRealWrittenFreq, fRealWrittenFreqAvg);
-    ...
+	...
 }
 ```
 
-其中 fRealWrittenFreqAvg 需要在每次开始切片前 归 0，测试：
+其中以静态成员需要在每次开始切片前归 ：
 
-```c
-[18:19:18.228] 波形文件 设置切片时不写入
-[18:19:21.547] [led_task] sysTick 20002 ms
-[18:19:23.326] 波形文件 写入频率 100Hz
-[18:19:25.528] 波形文件 开始切片不写入
-[18:19:25.537] freq: inf, 0.000
-[18:19:25.548] freq: 100.000, 50.000
-[18:19:25.558] freq: 100.000, 75.000
-[18:19:25.567] freq: 100.000, 87.500
-[18:19:25.577] freq: 100.000, 93.750
-[18:19:25.587] freq: 100.000, 96.875
-[18:19:25.597] freq: 100.000, 98.438
-[18:19:25.607] freq: 100.000, 99.219
-[18:19:25.617] freq: 100.000, 99.609
-[18:19:25.627] freq: 100.000, 99.805
-[18:19:25.637] freq: 100.000, 99.902
-[18:19:25.647] freq: 100.000, 99.951
-[18:19:25.657] freq: 100.000, 99.976
-[18:19:25.667] freq: 100.000, 99.988
-[18:19:25.677] freq: 100.000, 99.994
-[18:19:25.687] freq: 100.000, 99.997
-[18:19:25.697] freq: 100.000, 99.998
-[18:19:25.707] freq: 100.000, 99.999
-[18:19:25.717] freq: 100.000, 100.000
-[18:19:25.727] freq: 100.000, 100.000
-[18:19:25.737] freq: 100.000, 100.000
-[18:19:25.747] freq: 100.000, 100.000
-[18:19:25.757] freq: 100.000, 100.000
-... // 之后单次和平均频率都是100.000Hz
+```c++
+TileWave::fRealWrittenFreqAvg = 0;
+TileWave::fRealWrittenFreqSum = 0;
+TileWave::fRealWrittenFreqNum = 0;
 ```
 

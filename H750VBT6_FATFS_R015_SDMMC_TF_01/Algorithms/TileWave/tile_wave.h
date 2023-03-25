@@ -173,12 +173,12 @@ public:
 	}
 
 	/* 切片瓦片缓冲区并写入 */
-	void writeTileBuffer(uint8_t* pulData) {
+	uint32_t writeTileBuffer(uint8_t* pulData) {
 		/* FATFS 返回值 */
 		uint32_t ret = 0;
 
 		/* 用于计算本函数被调用的实时频率的单次和平均值 */
-		static float fRealWrittenFreq = 0;
+		static double fRealWrittenFreq = 0;
 		static uint32_t ulWrittenCount = 0;
 		static uint32_t ulTickCountOld =  xTaskGetTickCount();
 		uint32_t ulTickCount;
@@ -235,9 +235,14 @@ public:
 		ulTickCount = xTaskGetTickCount();	/* 获取当前的系统时间 */
 		uint32_t ulTickOffest = ulTickCount - ulTickCountOld;
 		ulTickCountOld = ulTickCount;
-		fRealWrittenFreq = (float)1000 / ((float)ulTickOffest / ulWrittenCount);
-		if(isnormal(fRealWrittenFreq))	{ // 是一个正常的浮点数
-			fRealWrittenFreqAvg = (fRealWrittenFreqAvg + fRealWrittenFreq ) / 2;
+		fRealWrittenFreq = (double)1000 / ((double)ulTickOffest / ulWrittenCount);
+
+		// 第一次 fRealWrittenFreq 肯定是 inf，需要舍弃
+		// fRealWrittenFreq 是一个正常的浮点数才会计算
+		if(isnormal(fRealWrittenFreq))	{
+			++fRealWrittenFreqNum;
+			fRealWrittenFreqSum += fRealWrittenFreq;
+			fRealWrittenFreqAvg = fRealWrittenFreqSum / fRealWrittenFreqNum;
 		}
 		ulWrittenCount = 0;
 		printf("freq: %3.3f, %3.3f\r\n", fRealWrittenFreq, fRealWrittenFreqAvg);
@@ -245,6 +250,8 @@ public:
 		/* 下次瓦片切片前需要处理的变量 */
 		ulPeriod %= ulPeriodMax;
 		ulTxBufferOffsetOld += ulTxBufferOffset;
+
+		return ret;
 	}
 
 	/* 构造函数 */
@@ -381,7 +388,9 @@ public:
     /* 以下变量在停止切片后在下次切片前需要归 0 */
 	static uint32_t ulPeriod;	//周期计数器
 	static uint32_t ulTxBufferOffsetOld;
-	static float 	fRealWrittenFreqAvg; 		// 配合 fRealWrittenFreq 计算平均频率
+	static double	fRealWrittenFreqSum; 		// 写入频率的总和
+	static double 	fRealWrittenFreqAvg;		// 写入频率的平均值
+	static double 	fRealWrittenFreqNum;		// 写入频率的个数
 
 	/* 以下是在协议解析程序中可更改的标志 */
 	static uint32_t ulPrintSliceDetail;			// 打印实时切片信息
