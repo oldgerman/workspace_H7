@@ -121,7 +121,6 @@ void Main()
     ledUpdateInit();
 
     /* 闭包 */
-//    TileWave::initMemoryHeapAPI
 	xTileWave.initMemoryHeapAPI(
 			std::bind(
 				(mf_aligned_malloc)&osRtxMemory::aligned_malloc,	// 对象的成员函数的指针
@@ -138,7 +137,7 @@ void Main()
 				std::placeholders::_1,
 				std::placeholders::_2));
 	/* 绑定读写API */
-	xTileWave.initReadWriteAPI(readWaveFile, writeWaveFile);
+	xTileWave.initReadWriteAPI(writeWaveFile, readWaveFile);
 
     xTileWave.createTileBufferList();
 

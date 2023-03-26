@@ -153,5 +153,25 @@
 ## 附
 
 - [为什么 std::function 不能绑定到 C 风格的可变参数函数？](https://stackoverflow.com/questions/18370396/why-cant-stdfunction-bind-to-c-style-variadic-functions)
+
 - [C function pointer to function with varying number of arguments](https://www.lemoda.net/c/function-pointer-ellipsis/)
+
 - [gcc warning "will be initialized after [-Wreorder]](https://stackoverflow.com/questions/1564937/gcc-warning-will-be-initialized-after)
+
+- [用malloc申请一个二维数组的三种方法](https://blog.csdn.net/fengxinlinux/article/details/51541003)
+
+  > TileWave 类从动态内存申请字符串缓冲区，使用此文的方法一，示例代码如下：
+  >
+  > ```c
+  > char** ucppStrBuffer_;
+  > 
+  > ucppStrBuffer_ = (char**)aligned_malloc(sizeof(char**)* ulStrBufferRowCount, 8);
+  > for(uint32_t i = 0; i < ulLayerNumMax; i++) {
+  >     ucppStrBuffer_[i] = (char*)aligned_malloc(sizeof(char*) * ulLayerNumMax, 8);
+  > }
+  > ...
+  > for(uint8_t i = 0; i < ulLayerNumMax; i++) {
+  > 	printf("%s", &ucppStrBuffer_[i][0]);
+  > }
+  > ```
+

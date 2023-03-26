@@ -129,7 +129,7 @@ static void CreateNewFile(void);
 static void ReadFileData(void);
 static void CreateDir(void);
 static void DeleteDirFile(void);
-static void WriteFileTest(file_verify_t file_verify);
+//static void WriteFileTest(file_verify_t file_verify);
 
 /* Function implementations --------------------------------------------------*/
 
@@ -227,7 +227,7 @@ uint32_t initExistingWaveFile()
 	}
 
 	/* 慢速搜索模式下 */
-	res += f_lseek (&file, WAVE_FILE_SIZE); 					/* 使用f_lseek() 拓展文件大小（集群预分配）为 128MB */
+	res += f_lseek (&file, WAVE_FILE_SIZE); 			/* 使用f_lseek() 拓展文件大小（集群预分配）为 128MB */
     if (res || f_tell(&file) != WAVE_FILE_SIZE)	{	 	/* 检查文件大小增加是否成功 *//* 检查文件是否扩展成功 */
     	printf("%s 扩展文件大小（集群预分配）%dMB 失败\r\n", filename, WAVE_FILE_SIZE / 1024 / 1024);
     }

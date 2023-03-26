@@ -87,6 +87,10 @@ static void frameProcessorTask(void* argument)
 		{
 			xTileWave.sliceTileBuffer(frame[0].ctrl_u8);
 		}
+		else
+		{
+			xTileWave.resetVariablesBeforeSlice();
+		}
 
 		xTaskPeriod = 1000 / frame_freq;	/* 调度周期，单位ms */
 		vTaskDelayUntil(&xLastWakeTime, xTaskPeriod);

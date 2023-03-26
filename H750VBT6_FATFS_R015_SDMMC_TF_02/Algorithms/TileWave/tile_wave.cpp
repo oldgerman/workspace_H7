@@ -33,14 +33,11 @@
 /* Exported constants --------------------------------------------------------*/
 /* Private constants ---------------------------------------------------------*/
 /* Exported variables --------------------------------------------------------*/
-__attribute__((section(".RAM_D1_Array"))) ALIGN_32BYTES(uint8_t TxBuffer [64 *1024]);
-__attribute__((section(".RAM_D1_Array"))) ALIGN_32BYTES(uint8_t RxBuffer [10 *1024]);
-
 /* Private variables ---------------------------------------------------------*/
 /* Private function prototypes -----------------------------------------------*/
 /* Function implementations --------------------------------------------------*/
 /**
-  * @brief	初始化瓦片缓冲区链表
+  * @brief	创建瓦片缓冲区链表
   * @param	None
   * @retval	0 - success, 1 - failure
   */
@@ -65,27 +62,33 @@ uint32_t TileWave::createTileBufferList()
 		ulWaveDispBufferSize = ulIOSizeMin;
 	}
 
+	/** 申请字符串缓冲区的内存，非频繁操作的缓冲区，8 字节对齐即可
+	  * reference: blog.csdn.net/fengxinlinux/article/details/51541003
+	  */
+	ucppStrBuffer_ = (char**)aligned_malloc(sizeof(char**) * ulStrBufferRowCount, 8);
+	for(uint32_t i = 0; i < ulLayerNumMax; i++) {
+		ucppStrBuffer_[i] = (char*)aligned_malloc(sizeof(char*) * ulLayerNumMax, 8);
+	}
+
 	/* 创建层并申请每层的动态内存 */
-	uint32_t ulLayerNum;
 	uint32_t ulLayerTileBufferSize = ulWaveDispBufferSize;	//4KB
 	uint32_t ulLayerTileSize = ulLayerTileBufferSize / ulLayerTilesNumMax; // 2B = 4K / 2048
 	void *pucLayerTileBuffer;
-	for(ulLayerNum = 0; ulLayerNum < ulLayerNumMax; ulLayerNum++)
+	for(uint32_t i = 0; i < ulLayerNumMax; i++)
 	{
-		/* 申请层瓦片缓冲区的动态内存 */
 		if(ulLayerTileSize < ulIOSizeMin)
 			ulLayerTileBufferSize = ulIOSizeMin;
 		else
 			ulLayerTileBufferSize = ulLayerTileSize;
 
-		/* 申请 32 字节对齐的动态内存 */
-		pucLayerTileBuffer = aligned_malloc(ulLayerTileBufferSize, 32);
+		/* 申请层瓦片缓冲区的动态内存 */
+		pucLayerTileBuffer = aligned_malloc(ulLayerTileBufferSize, alignment_);
 
-		sprintf(&(ucStrBuffer[ulLayerNum][0]), "| %15ld | %13ld | %17ld |\r\n",
+		sprintf(&ucppStrBuffer_[i][0], "| %15ld | %13ld | %17ld |\r\n",
 				DRAM_SRAM1.getMemUsed(), DRAM_SRAM1.getMemFree(), DRAM_SRAM1.getMemFreeMin());
 
 		Layer_t xLayer = {
-				.ulLayerNum = ulLayerNum,
+				.ulLayerNum = i,
 				.ulTileSize = ulLayerTileSize,
 				.ulTileBufferSize = ulLayerTileBufferSize,
 				.ulTileBufferOffset = 0,
@@ -96,18 +99,36 @@ uint32_t TileWave::createTileBufferList()
 		/* 尾插入，链表正向遍历越往后层编号越大 */
 		xLayersList.push_back(xLayer);
 
+		/* 更新所有层的瓦片缓冲区的总大小 */
 		ulLayersTileBufferSize += ulLayerTileBufferSize;
 
-		/* 倍增大小 */
+		/* 倍增一些瓦片参数大小 */
 		ulLayerTileBufferSize = ulLayerTileBufferSize << 1;
 		ulLayerTileSize = ulLayerTileSize << 1;
 	}
 
-	// malloc未实现申请32字节对齐的内存
-	ucpTxBuffer = TxBuffer;
-	ucpRxBuffer = RxBuffer;
+	/* 申请读写缓冲区的动态内存 */
+	// 写缓冲区等于瓦片缓冲区大小的总和，暂不考虑.dsppk 文件格式开头自定义的文件信息预留大小
+	ucpTxBuffer = aligned_malloc(ulLayersTileBufferSize *1024, alignment_);
+	// 读缓冲区暂时分 5 个 ulIOSizeMin
+	ucpRxBuffer = aligned_malloc(5 * ulIOSizeMin, alignment_);
 
 	return 0U;
+}
+
+/**
+  * @brief	切片前重置一些变量
+  * @param	None
+  * @retval	Nnoe
+  */
+void TileWave::resetVariablesBeforeSlice()
+{
+	// 每次重新开始切片后需要重置
+	ulPeriod = 0;
+	ulTxBufferOffsetOld = 0;
+	fRealWrittenFreqSum = 0;
+	fRealWrittenFreqAvg = 0;
+	fRealWrittenFreqNum = 0;
 }
 
 /**
@@ -126,13 +147,6 @@ uint32_t TileWave::sliceTileBuffer(uint8_t* pulData)
 		(*xRit).ulTileBufferOffset = 0;
 		++xRit;
 	}
-
-	/* 重置一些变量 */
-	ulPeriod = 0;
-	ulTxBufferOffsetOld = 0;
-	fRealWrittenFreqSum = 0;
-	fRealWrittenFreqAvg = 0;
-	fRealWrittenFreqNum = 0;
 
 	/* 用于计算本函数被调用的实时频率的单次和平均值 */
 	static double fRealWrittenFreq = 0;
@@ -230,8 +244,6 @@ TileWave::TileWave(Config_t &xConfig)
 
 	ulLayersTileBufferSize = 0;
 
-	memset(ucStrBuffer, 0, sizeof(ucStrBuffer));
-
 	ulPeriod = 0;
 	ulTxBufferOffsetOld = 0;
 	fRealWrittenFreqSum = 0;
@@ -290,7 +302,7 @@ void TileWave::vPrintLayerInfo()
 				(*xIt).pucTileBuffer,
 				(*xIt).ulBufferSize,
 				(*xIt).ulTileBufferTxPeriod,
-				&(ucStrBuffer[i][0]));
+				&ucppStrBuffer_[i][0]);
 		++xIt;
 	}
 }
