@@ -112,14 +112,14 @@ void OnAsciiCmd(const char* _cmd, size_t _len, StreamSink &_responseChannel)
         {
             uint32_t times, startSize;
             sscanf(&_cmd[13], "%ld+%ld", &times, &startSize);
-        	xTileWave.vTestMallocFree(times, startSize);
+            DRAM_SRAM1.test_memory(times, startSize);
         }
         /* TW+TEST_ALIGNED_DRAM=5+256+32*/
         else if(s.find("TEST_ALIGNED_DRAM=") != std::string::npos)
         {
             uint32_t times, startSize, alignment;
             sscanf(&_cmd[21], "%ld+%ld+%ld", &times, &startSize, &alignment);
-        	xTileWave.vTestAlignedMallocFree(times, startSize, alignment);
+            DRAM_SRAM1.test_aligned_memory(times, startSize, alignment);
         }
         else if (s.find("START_SLICE") != std::string::npos)
         {

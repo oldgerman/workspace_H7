@@ -6,7 +6,9 @@
   * @brief
   *    2023-03-21  打包到 osRtxMemory 类
   *    2023-03-22  修复在构造函数中初始化内存池进hardfault的问题
-  *    2023-03-26  添加 aligned_malloc、aligned_free、aligned_detect
+  *    2023-03-26  添加 aligned_malloc、aligned_free、aligned_detect 函数
+  *                添加 test_memory、test_aligned_memory 函数，测试结果支持从
+  *                构造函数传入的自定义 printf 输出
   *
   ******************************************************************************
   * 模块名称 : 动态内存管理
@@ -74,58 +76,24 @@ extern "C" {
 class osRtxMemory
 {
 public:
-	/* funtion status */
-	typedef enum {
-		FUN_OK = 0,
-		FUN_ERROR,
-	}fun_status_t;
-
-	/* Memory Block Info: Length = <31:2>:'00', Type = <1:0> */
-	static const uint32_t MB_INFO_LEN_MASK  = 0xFFFFFFFCU;	// Length mask
-	static const uint32_t MB_INFO_TYPE_MASK = 0x00000003U;	// Type mask
-
-	/* Memory Pool Header structure */
-	typedef struct {
-	  uint32_t size;				// Memory Pool size
-	  uint32_t used;				// Used Memory
-	} mem_head_t;
-
-	/* Memory Block Header structure */
-	typedef struct mem_block_s {
-	  struct mem_block_s *next;		// Next Memory Block in list
-	  uint32_t            info;		// Block Info or max used Memory (in last block)
-	  	  	  	  	  	  	  	  	// 块信息或最大使用内存（在最后一个块中）
-	} mem_block_t;
+	typedef int (*fprintf_t) (const char * format, ...);
 
 	/* Constructor */
-	osRtxMemory(void *Mem, uint32_t SizePool);
+	osRtxMemory(void *Mem, uint32_t SizePool, fprintf_t Printf = nullptr);
+
 	/* Init memory pool */
 	uint32_t init();
 
 	/* Memory Heap Library functions */
 	void*		malloc(size_t size, uint32_t type = 0);
 	uint32_t	free(void *block);
-	void*		aligned_malloc(size_t size, size_t alignment = 8);
+	void*		aligned_malloc(size_t size, size_t alignment);
 	uint32_t 	aligned_free(void* ptr_aligned);
 	uint32_t 	aligned_detect(void* ptr, size_t alignment);
 
-	/* Memory Head Pointer */
-	__STATIC_INLINE mem_head_t *MemHeadPtr (void *mem) {
-	  //lint -e{9079} -e{9087} "conversion from pointer to void to pointer to other type" [MISRA Note 6]
-	  return ((mem_head_t *)mem);
-	}
-
-	/* Memory Block Pointer */
-	__STATIC_INLINE mem_block_t *MemBlockPtr (void *mem, uint32_t offset) {
-	  uint32_t     addr;
-	  mem_block_t *ptr;
-
-	  //lint --e{923} --e{9078} "cast between pointer and unsigned int" [MISRA Note 8]
-	  addr = (uint32_t)mem + offset;
-	  ptr  = (mem_block_t *)addr;
-
-	  return ptr;
-	}
+	/* Memory Heap Library test functions */
+	void test_memory(uint32_t times, uint32_t start_size);
+	void test_aligned_memory(uint32_t times, uint32_t start_size, uint32_t alignment);
 
 	/* Get memory info */
 	uint32_t getMemUsed() {
@@ -144,14 +112,56 @@ public:
 		if(getMemFree() < sizeFreeMin) {
 			sizeFreeMin = getMemFree();
 		}
-			return sizeFreeMin;
+		return sizeFreeMin;
 	}
 
 private:
-	void      *mem;					// Pointer to memory pool.
-	uint32_t   sizePool;			// Size of a memory pool in bytes.
-	mem_head_t *memHead;			// Memory head structer
-	uint32_t   sizeFreeMin;			// Historical minimum free memory size
+	/* funtion status */
+	typedef enum {
+		FUN_OK = 0,
+		FUN_ERROR,
+	}fun_status_t;
+
+	/* Memory Block Info: Length = <31:2>:'00', Type = <1:0> */
+	static const uint32_t MB_INFO_LEN_MASK  = 0xFFFFFFFCU;	// Length mask
+	static const uint32_t MB_INFO_TYPE_MASK = 0x00000003U;	// Type mask
+
+	/* Memory Pool Header structure */
+	typedef struct {
+		uint32_t size;				// Memory Pool size
+		uint32_t used;				// Used Memory
+	} mem_head_t;
+
+	/* Memory Block Header structure */
+	typedef struct mem_block_s {
+		struct mem_block_s *next;		// Next Memory Block in list
+		uint32_t            info;		// Block Info or max used Memory (in last block)
+		// 块信息或最大使用内存（在最后一个块中）
+	} mem_block_t;
+
+	/* Memory Head Pointer */
+	__STATIC_INLINE mem_head_t *MemHeadPtr (void *mem) {
+		//lint -e{9079} -e{9087} "conversion from pointer to void to pointer to other type" [MISRA Note 6]
+		return ((mem_head_t *)mem);
+	}
+
+	/* Memory Block Pointer */
+	__STATIC_INLINE mem_block_t *MemBlockPtr (void *mem, uint32_t offset) {
+		uint32_t     addr;
+		mem_block_t *ptr;
+
+		//lint --e{923} --e{9078} "cast between pointer and unsigned int" [MISRA Note 8]
+		addr = (uint32_t)mem + offset;
+		ptr  = (mem_block_t *)addr;
+
+		return ptr;
+	}
+
+	void       *mem;			// Pointer to memory pool.
+	uint32_t    sizePool;		// Size of a memory pool in bytes.
+	fprintf_t   printf;			// User-defined printf
+	mem_head_t *memHead;		// Memory head structer
+	uint32_t    sizeFreeMin;	// Historical minimum free memory size
 };
 
 }

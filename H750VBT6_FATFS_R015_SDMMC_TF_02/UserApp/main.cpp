@@ -121,21 +121,13 @@ void Main()
     ledUpdateInit();
 
     /* 闭包 */
-    TileWave::initMemoryHeapAPI
-	(
-    		std::bind(
-    			(mf_malloc)&osRtxMemory::malloc, 	// 对象的成员函数的指针
-    			DRAM_SRAM1,							// 对象
-    			std::placeholders::_1),				// 参数占位符
-    		std::bind(
-    			(mf_free)&osRtxMemory::free,
-    			DRAM_SRAM1,
-    			std::placeholders::_1),
+//    TileWave::initMemoryHeapAPI
+	xTileWave.initMemoryHeapAPI(
 			std::bind(
-				(mf_aligned_malloc)&osRtxMemory::aligned_malloc,
-				DRAM_SRAM1,
-				std::placeholders::_1,
-				std::placeholders::_2),
+				(mf_aligned_malloc)&osRtxMemory::aligned_malloc,	// 对象的成员函数的指针
+				DRAM_SRAM1,											// 对象
+				std::placeholders::_1,								// 参数1占位符
+				std::placeholders::_2),								// 参数2占位符
 			std::bind(
 				(mf_aligned_free)&osRtxMemory::aligned_free,
 				DRAM_SRAM1,
@@ -144,13 +136,11 @@ void Main()
 				(mf_aligned_detect)&osRtxMemory::aligned_detect,
 				DRAM_SRAM1,
 				std::placeholders::_1,
-				std::placeholders::_2)
-	);
+				std::placeholders::_2));
+	/* 绑定读写API */
+	xTileWave.initReadWriteAPI(readWaveFile, writeWaveFile);
 
     xTileWave.createTileBufferList();
-
-    TileWave::read = readWaveFile;
-    TileWave::write = writeWaveFile;
 
     frame_processor_init();
 }

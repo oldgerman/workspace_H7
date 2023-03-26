@@ -60,16 +60,6 @@ extern TileWave xTileWave;
 static void frameProcessorTask(void* argument);
 
 /* Function implementations --------------------------------------------------*/
-void resetTileWaveTxRxVariables()
-{
-	xTileWave.ulPeriod = 0;
-	xTileWave.ulTxBufferOffsetOld = 0;
-	xTileWave.fRealWrittenFreqAvg = 0;
-	xTileWave.fRealWrittenFreqSum = 0;
-	xTileWave.fRealWrittenFreqNum = 0;
-
-	xTileWave.resetTileBufferOffset();
-}
 /**
  * @brief  帧处理器任务函数
  * @param  argument Pointer to a void
@@ -89,19 +79,15 @@ static void frameProcessorTask(void* argument)
 		{
 			frame_initExistingWaveFile = 0;
 			initExistingWaveFile();
-			resetTileWaveTxRxVariables();
 		}
 
 		sprintf((char*)&(frame[0].ctrl_u8[0]), "%4ld", xTileWave.ulPeriod);
 
 		if(frame_writeTileBuffer)
 		{
-			xTileWave.writeTileBuffer(frame[0].ctrl_u8);
+			xTileWave.sliceTileBuffer(frame[0].ctrl_u8);
 		}
-		else
-		{
-			resetTileWaveTxRxVariables();
-		}
+
 		xTaskPeriod = 1000 / frame_freq;	/* 调度周期，单位ms */
 		vTaskDelayUntil(&xLastWakeTime, xTaskPeriod);
 	}

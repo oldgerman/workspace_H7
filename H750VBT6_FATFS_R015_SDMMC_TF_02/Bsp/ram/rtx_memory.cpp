@@ -6,7 +6,9 @@
   * @brief
   *    2023-03-21  打包到 osRtxMemory 类
   *    2023-03-22  修复在构造函数中初始化内存池进hardfault的问题
-  *    2023-03-26  添加 aligned_malloc、aligned_free、aligned_detect
+  *    2023-03-26  添加 aligned_malloc、aligned_free、aligned_detect 函数
+  *                添加 test_memory、test_aligned_memory 函数，测试结果支持从
+  *                构造函数传入的自定义 printf 输出
   *
   ******************************************************************************
   * 模块名称 : 动态内存管理
@@ -63,12 +65,13 @@
 /* Function implementations --------------------------------------------------*/
 /**
  * @brief  The constructor of the memory pool object
- * @param  Mem             pointer to memory pool.
- * @param  SizePool        size of a memory pool in bytes.
+ * @param  Mem		pointer to memory pool.
+ * @param  SizePool	size of a memory pool in bytes.
+ * @param  Printf	function pointer
  * @retval N/A
  */
-osRtxMemory::osRtxMemory(void *Mem, uint32_t SizePool)
-	:mem(Mem), sizePool(SizePool), sizeFreeMin(sizePool)
+osRtxMemory::osRtxMemory(void *Mem, uint32_t SizePool, fprintf_t Printf)
+	:mem(Mem), sizePool(SizePool), printf(Printf), sizeFreeMin(sizePool)
 {}
 
 /**
@@ -194,15 +197,12 @@ void* osRtxMemory::malloc(size_t size, uint32_t type)
 /**
  * @brief  Allocates a byte-aligned memory from a memory pool.
  * @param  size            size of a memory block in bytes.
- * @param  alignment       byte-aligned size, must be at least 8 bytes
+ * @param  alignment       byte-aligned size
  * @retval allocated memory block or NULL in case of no memory is available.
  * @reference blog.csdn.net/jin739738709/article/details/122992753
  */
 void* osRtxMemory::aligned_malloc(size_t size, size_t alignment)
 {
-	if(alignment < 8)
-		return NULL;
-
 	/* 分配足够的内存, 这里的算法很经典, 早期的STL中使用的就是这个算法 */
 
 	/* 首先维护FreeBlock指针占用的内存大小 */
@@ -333,4 +333,101 @@ uint32_t osRtxMemory::free(void *block)
 	//EvrRtxMemoryFree(mem, block, 1U);
 
 	return FUN_OK;
+}
+
+/**
+  * @brief  测试动态内存API
+  * @param  times		申请的次数
+  * @param  start_size	起始申请大小，单位B
+  * @retval None
+  */
+void osRtxMemory::test_memory(uint32_t times, uint32_t start_size)
+{
+	if(printf == nullptr)
+		return;
+
+	uint32_t mem_size;
+	void*   SRAM1_Addr[times];
+
+	printf("\r\n【测试动态内存分配 %ld 次，起始大小 %ld ，每次大小翻倍，单位 byte 】\r\n",
+			times, start_size);
+	printf("【从DRAM申请空间】\r\n");
+	printf("| 已申请次数 | 内存池大小 |  申请大小  |  申请地址  |   共使用   |    剩余    | 历史最少可用 |\r\n");
+	printf("| ---------- | ---------- | ---------- | ---------- | ---------- | ---------- | ------------ |\r\n");
+	for(uint32_t i = 0; i < times; i++) {
+		mem_size = start_size << i;
+		SRAM1_Addr[i] = malloc(mem_size);
+		printf("| %10ld | %10ld | %10ld | %10p | %10ld | %10ld | %12ld |\r\n",
+				i + 1,
+				getMemSize(),
+				mem_size, SRAM1_Addr[i],
+				getMemUsed(),
+				getMemFree(),
+				getMemFreeMin());
+	}
+
+	printf("\r\n【释放从DRAM申请的空间】\r\n");
+	printf("|  释放次数  | 内存池大小 |  释放大小  |  释放地址  |   共使用   |    剩余    | 历史最少可用 |\r\n");
+	printf("| ---------- | ---------- | ---------- | ---------- | ---------- | ---------- | ------------ |\r\n");
+	for(uint32_t i = 0; i < times; i++) {
+		mem_size = start_size << i;
+		free(SRAM1_Addr[i]);
+		printf("| %10ld | %10ld | %10ld | %10p | %10ld | %10ld | %12ld |\r\n",
+				i + 1,
+				getMemSize(),
+				mem_size, SRAM1_Addr[i],
+				getMemUsed(),
+				getMemFree(),
+				getMemFreeMin());
+	}
+}
+
+/**
+  * @brief  测试字节对齐动态内存API
+  * @param  times		申请的次数
+  * @param  start_size	起始申请大小，单位B
+  * @param	alignment	地址对齐的大小
+  * @retval None
+  */
+void osRtxMemory::test_aligned_memory(uint32_t times, uint32_t start_size, uint32_t alignment)
+{
+	if(printf == nullptr)
+		return;
+
+	uint32_t mem_size;
+	void*   SRAM1_Addr[times];
+
+	printf("\r\n【测试 %ld 字节对齐的动态内存分配 %ld 次，起始大小 %ld ，每次大小翻倍，单位 byte 】\r\n",
+			alignment, times, start_size);
+	printf("【从DRAM申请空间】\r\n");
+	printf("| 已申请次数 | 内存池大小 |  申请大小  |  申请地址  |  字节对齐  |   共使用   |    剩余    | 历史最少可用 |\r\n");
+	printf("| ---------- | ---------- | ---------- | ---------- | ---------- | ---------- | ---------- |------------ |\r\n");
+	for(uint32_t i = 0; i < times; i++) {
+		mem_size = start_size << i;
+		SRAM1_Addr[i] = aligned_malloc(mem_size, alignment);
+		printf("| %10ld | %10ld | %10ld | %10p | %10s | %10ld | %10ld | %12ld |\r\n",
+				i + 1,
+				getMemSize(),
+				mem_size, SRAM1_Addr[i],
+				(aligned_detect(SRAM1_Addr[i], alignment) == 0)?("Yes"):("No"),
+				getMemUsed(),
+				getMemFree(),
+				getMemFreeMin());
+	}
+
+	printf("\r\n【释放从DRAM申请的空间】\r\n");
+	printf("|  释放次数  | 内存池大小 |  释放大小  |  释放地址  |  字节对齐  |   共使用   |    剩余    | 历史最少可用 |\r\n");
+	printf("| ---------- | ---------- | ---------- | ---------- | ---------- | ---------- | ---------- | ------------ |\r\n");
+	for(uint32_t i = 0; i < times; i++) {
+		mem_size = start_size << i;
+		aligned_free(SRAM1_Addr[i]);
+		printf("| %10ld | %10ld | %10ld | %10p | %10s | %10ld | %10ld | %12ld |\r\n",
+				i + 1,
+				getMemSize(),
+				mem_size, SRAM1_Addr[i],
+				(aligned_detect(SRAM1_Addr[i], alignment) == 0)?("Yes"):("No"),
+				getMemUsed(),
+				getMemFree(),
+				getMemFreeMin());
+	}
 }

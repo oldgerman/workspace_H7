@@ -26,6 +26,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "dynamic_ram.h"
+#include "common_inc.h"
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
@@ -38,7 +39,7 @@ uint64_t        MEMPOOL_D2_SRAM1         [256 *1024/8]    __attribute__((section
 //uint64_t MEMPOOL_D2_SRAM2        [128 *1024/8]  __attribute__((section(".RAM_D2_Array")));
 /* Exported variables --------------------------------------------------------*/
 /* Create dynamic memory objects */
-osRtxMemory DRAM_SRAM1   (MEMPOOL_D2_SRAM1,   sizeof(MEMPOOL_D2_SRAM1));
+osRtxMemory DRAM_SRAM1   (MEMPOOL_D2_SRAM1, sizeof(MEMPOOL_D2_SRAM1), printf);
 //osRtxMemory DRAM_SRAM2   (MEMPOOL_D2_SRAM2,   sizeof(MEMPOOL_D2_SRAM2));
 
 /* Private function prototypes -----------------------------------------------*/

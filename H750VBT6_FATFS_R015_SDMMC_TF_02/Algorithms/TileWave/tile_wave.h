@@ -80,19 +80,18 @@ public:
 	TileWave(Config_t &xConfig);
 
 	uint32_t 	createTileBufferList();
-	void 		resetTileBufferOffset();
-	uint32_t 	writeTileBuffer(uint8_t* pulData);
+	uint32_t 	sliceTileBuffer(uint8_t* pulData);
 	void 		vPrintLayerInfo();
 
-	static void initMemoryHeapAPI(
-			std::function<void* (size_t)> 	Malloc,
-			std::function<void  (void*)>	Free,
+	void initReadWriteAPI(
+		    std::function<uint32_t (uint32_t addr, uint32_t size, uint8_t* pData)> 	Write,
+		    std::function<uint32_t (uint32_t addr, uint32_t size, uint8_t* pData)>	Read);
+
+	void initMemoryHeapAPI(
 			std::function<void* (size_t size, size_t alignment)>	Aligned_malloc,
 			std::function<void  (void* ptr_aligned)>				Aligend_free,
 			std::function<void  (void* ptr, size_t alignment)> 		Aligned_detect);
 
-	static void vTestMallocFree(uint32_t ulTimes = 5, uint32_t ulStartSize = 256);
-	static void vTestAlignedMallocFree(uint32_t ulTimes = 5, uint32_t ulStartSize = 256, uint32_t ulAlignment = 8);
 	/** @brief  一次可以读取或写入的最小数据块，单位B
 	  * @notice 不要与储存介质的最小 IO/SIZE 混淆
 	  *         此参数应根据诸多参数综合设置
@@ -139,12 +138,12 @@ public:
 	void *ucpRxBuffer; 					// 暂时随便给5个2KB
 
 	/* 层缓冲区读写API */
-    static std::function<uint32_t (uint32_t addr, uint32_t size, uint8_t* pData)> 	write;
-    static std::function<uint32_t (uint32_t addr, uint32_t size, uint8_t* pData)>	read;
+    std::function<uint32_t (uint32_t addr, uint32_t size, uint8_t* pData)> 	write;
+    std::function<uint32_t (uint32_t addr, uint32_t size, uint8_t* pData)>	read;
 
     /* 以下变量在停止切片后在下次切片前需要归 0 */
-	uint32_t ulPeriod;	//周期计数器
-	uint32_t ulTxBufferOffsetOld;
+	uint32_t ulPeriod;					// 周期计数器
+	uint32_t ulTxBufferOffsetOld;		// 前一次写入层缓存的偏移地址
 	double	fRealWrittenFreqSum; 		// 写入频率的总和
 	double 	fRealWrittenFreqAvg;		// 写入频率的平均值
 	double 	fRealWrittenFreqNum;		// 写入频率的个数
@@ -154,12 +153,14 @@ public:
 	uint32_t ulSliceButNotWrite;			// 实时切片时不写入数据
 
 private:
-	/* 动态内存API */
-    static std::function<void* (size_t size)> 		malloc;
-    static std::function<void  (void* ptr)>		free;
-    static std::function<void* (size_t size, size_t alignment)>		aligned_malloc;
-    static std::function<void  (void* ptr_aligned)>				aligend_free;
-    static std::function<void  (void* ptr, size_t alignment)> 		aligned_detect;
+	/**
+	  * 字节对齐的动态内存 API
+	  * 由于实时采样数据数据需要频繁以2次幂进行缩小等计算，M7 内核的 Cahce 可以缓存
+	  * 一部分正在计算的数据，访问粒度是 4 字节，那么使用32字节对齐的动态内存能显著减少访问次数
+	  */
+    std::function<void* (size_t size, size_t alignment)>	aligned_malloc;
+    std::function<void  (void* ptr_aligned)>				aligend_free;
+    std::function<void  (void* ptr, size_t alignment)> 		aligned_detect;
 
 	/* 暂存初始化层链表时输出的信息 */
 	char ucStrBuffer[20][64];

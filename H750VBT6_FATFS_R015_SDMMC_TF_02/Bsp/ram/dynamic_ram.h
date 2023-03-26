@@ -28,6 +28,8 @@
 #ifndef RAM_DYNAMIC_RAM_H_
 #define RAM_DYNAMIC_RAM_H_
 
+#include "rtx_memory.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -43,8 +45,6 @@ extern "C" {
 /* Exported functions --------------------------------------------------------*/
 
 #ifdef __cplusplus
-
-#include "rtx_memory.h"
 
 extern osRtxMemory DRAM_SRAM1;
 
