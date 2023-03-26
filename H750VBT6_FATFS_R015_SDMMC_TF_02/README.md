@@ -17,15 +17,11 @@
 
 ### TileWave 类
 
-- 函数整理到 .cpp
-- 移除所有 static 成员
-- 修复 `writeTileBuffer()` 中计算平均频率的 BUG，`writeTileBuffer()` 重命名为 `sliceTileBuffer()`
-- 新添加 functional object： `aligned_malloc`、`aligned_free`、`aligned_detect` 
+- 详见 [tile_wave.h](https://github.com/oldgerman/workspace_H7/blob/master/H750VBT6_FATFS_R015_SDMMC_TF_01/Algorithms/TileWave/tile_wave.h) 头部注释的 @brief
 
 ### osRtxMemory 类
 
-- 添加 aligned_malloc、aligned_free、aligned_detect 函数
-- 添加 test_memory、test_aligned_memory 函数，测试结果支持从构造函数传入的自定义 printf 输出
+- 详见 [rtx_memory.h](https://github.com/oldgerman/workspace_H7/blob/master/H750VBT6_FATFS_R015_SDMMC_TF_01/Bsp/ram/rtx_memory.h) 头部注释的 @brief
 
 ## 任意字节对齐的动态内存分配
 
@@ -156,6 +152,6 @@
 
 ## 附
 
-- [[为什么 std::function 不能绑定到 C 风格的可变参数函数？](https://stackoverflow.com/questions/18370396/why-cant-stdfunction-bind-to-c-style-variadic-functions)]
-- [[C function pointer to function with varying number of arguments](https://www.lemoda.net/c/function-pointer-ellipsis/)
-- [[gcc warning "will be initialized after [-Wreorder]](https://stackoverflow.com/questions/1564937/gcc-warning-will-be-initialized-after)
+- [为什么 std::function 不能绑定到 C 风格的可变参数函数？](https://stackoverflow.com/questions/18370396/why-cant-stdfunction-bind-to-c-style-variadic-functions)
+- [C function pointer to function with varying number of arguments](https://www.lemoda.net/c/function-pointer-ellipsis/)
+- [gcc warning "will be initialized after [-Wreorder]](https://stackoverflow.com/questions/1564937/gcc-warning-will-be-initialized-after)

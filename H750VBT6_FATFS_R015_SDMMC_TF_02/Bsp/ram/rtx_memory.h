@@ -1,6 +1,6 @@
 ﻿/**
   ******************************************************************************
-  * @file        rtx_memory.hpp
+  * @file        rtx_memory.h
   * @modify      OldGerman
   * @created on  Mar 20, 2023
   * @brief

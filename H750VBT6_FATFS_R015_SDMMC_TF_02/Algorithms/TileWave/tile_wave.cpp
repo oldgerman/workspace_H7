@@ -3,7 +3,7 @@
   * @file        tile_wave.cpp
   * @author      OldGerman
   * @created on  Mar 20, 2023
-  * @brief       
+  * @brief       See tile_wave.h for details
   ******************************************************************************
   * @attention
   *
@@ -117,7 +117,7 @@ uint32_t TileWave::createTileBufferList()
   */
 uint32_t TileWave::sliceTileBuffer(uint8_t* pulData)
 {
-	/* FATFS 返回值 */
+	/* 保存 write() 的返回值并返回 */
 	uint32_t ret = 0;
 
 	/* 重置向瓦片缓冲区写入地址的偏移 */

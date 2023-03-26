@@ -4,6 +4,15 @@
   * @author      OldGerman
   * @created on  Mar 20, 2023
   * @brief       
+  *    2023-03-23  - 实现从动态内存创建层链表
+  *                - 实现瓦片波形切片算法并写入存储器
+  *    2023-03-26  - 将 .h 中的函数定义整理到 .cpp，添加详细注释
+  *                - 修复 writeTileBuffer() 中计算平均频率的 BUG
+  *                  将 writeTileBuffer() 重命名为 `sliceTileBuffer()
+  *                - 移除所有 static 成员，使得每个 TileWave 对象的资源完全独立
+  *                - 添加函数包装器 aligned_malloc、aligned_free、aligned_detect
+  *                  此后使用的所有动态内存的都是 32 字节对齐的，方便 Cache 操作
+  *
   ******************************************************************************
   * @attention
   *

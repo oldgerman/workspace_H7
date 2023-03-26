@@ -1,15 +1,9 @@
 /**
   ******************************************************************************
-  * @file        rtx_memory.hpp
+  * @file        rtx_memory.cpp
   * @modify      OldGerman
   * @created on  Mar 20, 2023
-  * @brief
-  *    2023-03-21  打包到 osRtxMemory 类
-  *    2023-03-22  修复在构造函数中初始化内存池进hardfault的问题
-  *    2023-03-26  添加 aligned_malloc、aligned_free、aligned_detect 函数
-  *                添加 test_memory、test_aligned_memory 函数，测试结果支持从
-  *                构造函数传入的自定义 printf 输出
-  *
+  * @brief       See rtx_memory.h for details
   ******************************************************************************
   * 模块名称 : 动态内存管理
   * 文件名称 : rtx_memory.h
