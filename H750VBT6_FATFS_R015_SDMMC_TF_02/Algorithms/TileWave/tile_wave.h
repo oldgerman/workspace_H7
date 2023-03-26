@@ -11,7 +11,7 @@
   *                  将 writeTileBuffer() 重命名为 `sliceTileBuffer()
   *                - 移除所有 static 成员，使得每个 TileWave 对象的资源完全独立
   *                - 添加函数包装器 aligned_malloc、aligned_free、aligned_detect
-  *                  此后使用的所有动态内存的都是 32 字节对齐的，方便 Cache 操作
+  *                  此后使用的所有动态内存都是 32 字节对齐的，方便 Cache 操作
   *
   ******************************************************************************
   * @attention

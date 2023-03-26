@@ -17,11 +17,11 @@
 
 ### TileWave 类
 
-- 详见 [tile_wave.h](https://github.com/oldgerman/workspace_H7/blob/master/H750VBT6_FATFS_R015_SDMMC_TF_01/Algorithms/TileWave/tile_wave.h) 头部注释的 @brief
+- 详见 [tile_wave.h](https://github.com/oldgerman/workspace_H7/blob/master/H750VBT6_FATFS_R015_SDMMC_TF_02/Algorithms/TileWave/tile_wave.h) 头部注释的 @brief
 
 ### osRtxMemory 类
 
-- 详见 [rtx_memory.h](https://github.com/oldgerman/workspace_H7/blob/master/H750VBT6_FATFS_R015_SDMMC_TF_01/Bsp/ram/rtx_memory.h) 头部注释的 @brief
+- 详见 [rtx_memory.h](https://github.com/oldgerman/workspace_H7/blob/master/H750VBT6_FATFS_R015_SDMMC_TF_02/Bsp/ram/rtx_memory.h) 头部注释的 @brief
 
 ## 任意字节对齐的动态内存分配
 
