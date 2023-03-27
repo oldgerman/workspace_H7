@@ -85,7 +85,7 @@
   > 		xTaskPeriod = 1000 / frame_freq;	/* 调度周期，单位ms */
   >       /* 结束函数保存时间戳 */
   >       xTimeStampBeforePutMsg = xTaskGetTickCount();
-  >      /* 向消息队列存放缓冲区的消息，并判断是否成功在给定时间内将消息放入队列*/ */
+  >      /* 向消息队列存放缓冲区的消息，并判断是否成功在给定时间内将消息放入队列*/
   >      if(osMessageQueuePut(	osMessageQueueId_t 	mq_id,
   >          const void * msg_ptr,
   >          uint8_t      msg_prio,
@@ -125,11 +125,13 @@
 
 ## 测试
 
-### 消息队列放满但未溢出的瞬间
+### fatfsSDTask实时性抽风瞬间
 
-配置消息队列深度为 3 ，以 25Hz 实时切片并写入SD卡，大多部分时间下，都是 frameTask 和 fatfsSDTask 交替调度
+> 配置存放事件的消息队列深度为 5 ，以固定频率调度 frameProcessorTask 实时切片并写消息解除 fatfsSDTask 的阻塞，大多部分情况下，都是 frameTask 和 fatfsSDTask 交替调度，当fatfsSDTask 的实时性抽风时，一会儿又会会补回调度
 
-![](Images/fatfs调度抽风的瞬间.png)
+100Hz
+
+> ![fatfsSDTask实时性抽风瞬间100Hz](Images/fatfsSDTask实时性抽风瞬间100Hz.png)
 
 ## 附
 

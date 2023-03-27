@@ -144,9 +144,12 @@ void TileWave::resetVariablesBeforeSlice()
 			aligend_free(pxEvent);
 		pxEvent = aligned_malloc(sizeof(Event_t) * ulEventNum, 8);
 #endif
-		/* 删除并创建新的消息队列 */
-		osMessageQueueDelete(xMsgQueue);	// 第一次执行时会返回 osErrorParameter
-		xMsgQueue = osMessageQueueNew(ulEventNum, sizeof(Event_t) * ulEventNum, NULL);
+		/* 当消息队列的剩余消息数是0才可 */
+		if(osMessageQueueGetCount(xMsgQueue) == 0) {
+			/* 删除并创建新的消息队列 */
+			osMessageQueueDelete(xMsgQueue);	// 第一次执行时会返回 osErrorParameter
+			xMsgQueue = osMessageQueueNew(ulEventNum, sizeof(Event_t), NULL);
+		}
 	}
 }
 
@@ -300,7 +303,7 @@ TileWave::TileWave(Config_t &xConfig)
 	ulSliceButNotWrite = 0;		// 默认切片时写文件
 
 	pxEvent = NULL;
-	ulEventNum = 3;				// 事件深度 3，影响环形缓冲区申请的个数
+	ulEventNum = 5;				// 事件深度 5，影响环形缓冲区申请的个数
 }
 
 /**
