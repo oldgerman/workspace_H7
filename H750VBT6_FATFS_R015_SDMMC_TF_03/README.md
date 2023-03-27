@@ -70,31 +70,31 @@
   > 	TickType_t xTaskPeriod;
   > 	xLastWakeTime = xTaskGetTickCount();	/* 获取当前的系统时间 */
   > 	TickType_t xTimeStampStartFun;     // 任务函数被调度时在for(;;)最开始记录的时间戳
-  >     TickType_t xTimeStampBeforePutMsg; // 存放消息队列之前的时间戳
-  >     TickType_t xTimeStampOffset = 1;  // 时间偏移，这个值需要看情况调整
-  >     bool isMsgQueueOverflow;  // 标记消息队列是否溢出
-  >     
+  >  TickType_t xTimeStampBeforePutMsg; // 存放消息队列之前的时间戳
+  >  TickType_t xTimeStampOffset = 1;  // 时间偏移，这个值需要看情况调整
+  >  bool isMsgQueueOverflow;  // 标记消息队列是否溢出
+  > 
   > 	for (;;)
   > 	{
-  >         /* 进入函数立即保存时间戳 */
-  >         xTimeStampStartFun = xTaskGetTickCount();
-  >         
-  >         /* 数据处理 */
-  >         ... 
+  >      /* 进入函数立即保存时间戳 */
+  >      xTimeStampStartFun = xTaskGetTickCount();
+  > 
+  >      /* 数据处理 */
+  >      ... 
   > 
   > 		xTaskPeriod = 1000 / frame_freq;	/* 调度周期，单位ms */
-  >          /* 结束函数保存时间戳 */
-  >          xTimeStampBeforePutMsg = xTaskGetTickCount();
-  >         /* 向消息队列存放缓冲区的消息，并判断是否成功在给定时间内将消息放入队列*/ */
-  >         if(osMessageQueuePut(	osMessageQueueId_t 	mq_id,
-  >             const void * msg_ptr,
-  >             uint8_t      msg_prio,
-  >             uint32_t     timeout //写阻塞时间 给 xTaskPeriod - (xTimeStampBeforePutMsg - xTimeStampStartFun) - xTimeStampOffset  当被写队列已满时，存放消息的任务进入阻塞态等待队列空间的最长时间
-  >         	) == osErrorTimeout) {
-  >             isMsgQueueOverflow = true; //消息队列溢出
-  >             printf("消息队列溢出\r\n");
-  >        }
-  >          /* 等待绝对时间的下次调度 */
+  >       /* 结束函数保存时间戳 */
+  >       xTimeStampBeforePutMsg = xTaskGetTickCount();
+  >      /* 向消息队列存放缓冲区的消息，并判断是否成功在给定时间内将消息放入队列*/ */
+  >      if(osMessageQueuePut(	osMessageQueueId_t 	mq_id,
+  >          const void * msg_ptr,
+  >          uint8_t      msg_prio,
+  >          uint32_t     timeout //写阻塞时间 给 xTaskPeriod - (xTimeStampBeforePutMsg - xTimeStampStartFun) - xTimeStampOffset  当被写队列已满时，存放消息的任务进入阻塞态等待队列空间的最长时间
+  >      	) == osErrorTimeout) {
+  >          isMsgQueueOverflow = true; //消息队列溢出
+  >          printf("消息队列溢出\r\n");
+  >     }
+  >       /* 等待绝对时间的下次调度 */
   > 		vTaskDelayUntil(&xLastWakeTime, xTaskPeriod);
   > 	}
   > };
@@ -104,21 +104,46 @@
   >
   > **osMessageQueuePut** 可能的 **osStatus_t** 返回值：
   >
-  > ```c
-  > osOK：消息已放入队列。
-  > osErrorTimeout：无法在给定时间内将消息放入队列（等待时间语义）。
-  > osErrorResource：队列中空间不足（尝试语义）。
-  > osErrorParameter：参数mq_id为NULL或无效，ISR 中指定的非零超时。
-  > ```
+  > - osOK：消息已放入队列。
+  > - osErrorTimeout：无法在给定时间内将消息放入队列（等待时间语义）。
+  > - osErrorResource：队列中空间不足（尝试语义）。
+  > - osErrorParameter：参数mq_id为NULL或无效，ISR 中指定的非零超时。
   >
-  > 
+  > ```c
+  > /// Status code values returned by CMSIS-RTOS functions.
+  > typedef enum {
+  >   osOK                      =  0,         ///< Operation completed successfully.
+  >   osError                   = -1,         ///< Unspecified RTOS error: run-time error but no other error message fits.
+  >   osErrorTimeout            = -2,         ///< Operation not completed within the timeout period.
+  >   osErrorResource           = -3,         ///< Resource not available.
+  >   osErrorParameter          = -4,         ///< Parameter error.
+  >   osErrorNoMemory           = -5,         ///< System is out of memory: it was impossible to allocate or reserve memory for the operation.
+  >   osErrorISR                = -6,         ///< Not allowed in ISR context: the function cannot be called from interrupt service routines.
+  >   osStatusReserved          = 0x7FFFFFFF  ///< Prevents enum down-size compiler optimization.
+  > } osStatus_t;
+  > ```
 
+## 测试
 
-## 写入环形缓冲区的线程安全
+### 消息队列放满但未溢出的瞬间
+
+配置消息队列深度为 3 ，以 25Hz 实时切片并写入SD卡，大多部分时间下，都是 frameTask 和 fatfsSDTask 交替调度
+
+![](Images/fatfs调度抽风的瞬间.png)
+
+## 附
+
+### 消息队列传指针的问题
+
+消息队列传了事件结构的地址，里面含有多缓冲区的地址信息
+
+若 fatfsSDTask 取的是消息队列满时的一个消息，并用指针变量保存了这个消息，且还未或正在通过这个指针访问事件地址上的参数数据时，被 frameProcessorTask 抢占调度，紧接着 frameProcessorTask 在下一个掉事件结构的地址上设置新的数据，这时是可以向消息队列最后一个消息空位里放消息的（新事件结构的地址），切回 fatfsSDTask 调度时，继续根据指针访问前一个事件结构的地址上设置的数据
+
+### 写入环形缓冲区的线程安全
 
 本工程不需要保证环形缓冲的线程安全，当消息队列溢出，就表明失败，消息队列只要没有溢出，那环形缓冲区必定是安全的
 
-### 参考
+参考
 
 - [线程安全的环形缓冲区实现](https://blog.csdn.net/lezhiyong/article/details/7879558)
 
@@ -129,33 +154,3 @@
   > > **和本工程的应用场景很相似：**
   > >
   > > frameProcessorTask 以固定的调度周期将固定的数量采样点写入环形缓冲区，向消息队列里写带有本次缓冲区信息的消息。fatfsSDTask 从消息队列里取消息，以不确定的调度周期每次将将固定数量的采样点写入SD卡。frameProcessorTask 和 fatfsSDTask 任务在平均时间内的调度次数和读写数据量相等，但调度周期一个确定，一个不确定。
-  >
-  > 该环形缓冲区借鉴CoolPlayer音频播放器中的环形缓冲区代码实现，在读写操作函数中加了锁，允许多线程同时操作。CPs_CircleBuffer基于内存段的读写，比用模板实现的环形缓冲队列适用的数据类型更广些, CPs_CircleBuffer修改成C++中基于对象的实现，加上详细注释，m_csCircleBuffer锁变量为自用的lock类型（将CRITICAL_SECTION封装起来），调用lock()加锁，调用unlock()解锁。CPs_CircleBuffer环形缓冲还不具备当待写数据量超出空余缓冲时自动分配内存的功能
-
-
-
-## 附
-
-- [为什么 std::function 不能绑定到 C 风格的可变参数函数？](https://stackoverflow.com/questions/18370396/why-cant-stdfunction-bind-to-c-style-variadic-functions)
-
-- [C function pointer to function with varying number of arguments](https://www.lemoda.net/c/function-pointer-ellipsis/)
-
-- [gcc warning "will be initialized after [-Wreorder]](https://stackoverflow.com/questions/1564937/gcc-warning-will-be-initialized-after)
-
-- [用malloc申请一个二维数组的三种方法](https://blog.csdn.net/fengxinlinux/article/details/51541003)
-
-  > TileWave 类从动态内存申请字符串缓冲区，使用此文的方法一，示例代码如下：
-  >
-  > ```c
-  > char** ppucStrBuffer_;
-  > 
-  > ppucStrBuffer_ = (char**)aligned_malloc(sizeof(char**)* ulStrBufferRowCount, 8);
-  > for(uint32_t i = 0; i < ulLayerNumMax; i++) {
-  >     ppucStrBuffer_[i] = (char*)aligned_malloc(sizeof(char*) * ulLayerNumMax, 8);
-  > }
-  > ...
-  > for(uint8_t i = 0; i < ulLayerNumMax; i++) {
-  > 	printf("%s", &ppucStrBuffer_[i][0]);
-  > }
-  > ```
-

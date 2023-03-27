@@ -72,7 +72,7 @@ uint32_t TileWave::createTileBufferList()
 
 	/* 创建层并申请每层的动态内存 */
 	uint32_t ulLayerTileBufferSize = ulWaveDispBufferSize;	//4KB
-	uint32_t ulLayerTileSize = ulLayerTileBufferSize / ulLayerTilesNumMax; // 2B = 4K / 2048
+	uint32_t ulLayerTileSize = 1; // 1B
 	void *pucLayerTileBuffer;
 	for(uint32_t i = 0; i < ulLayerNumMax; i++)
 	{
@@ -109,7 +109,7 @@ uint32_t TileWave::createTileBufferList()
 
 	/* 申请读写缓冲区的动态内存 */
 	// 写缓冲区等于瓦片缓冲区大小的总和，暂不考虑.dsppk 文件格式开头自定义的文件信息预留大小
-	pcuTxBuffer = aligned_malloc(ulLayersTileBufferSize *1024, alignment_);
+	pcuTxBuffer = aligned_malloc(64 *1024, alignment_);
 	// 读缓冲区暂时分 5 个 ulIOSizeMin
 	pcuRxBuffer = aligned_malloc(5 * ulIOSizeMin, alignment_);
 

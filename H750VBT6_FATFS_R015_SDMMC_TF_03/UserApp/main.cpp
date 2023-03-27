@@ -29,8 +29,8 @@
 #include "arm_math.h"
 #include "tim.h"
 
-#include "tile_wave.h"
 #include "frame_processor.h"
+#include "interface_fatfs_sd.h"
 #include "demo_sd_fatfs.h"
 
 #include <functional>
@@ -54,6 +54,8 @@ TileWave::Config_t xConfig = {
 	    .ulWaveFrameSize = 4,
 	    .ulWaveDispWidth = 400,
 	    .ulWaveDispTileBufferSize = 4096,
+		/* Buffer */
+		.ulWriteRingBufferNum = 4,
 };
 TileWave xTileWave(xConfig);
 
@@ -141,5 +143,6 @@ void Main()
 
     xTileWave.createTileBufferList();
 
+    fatfsSDInit();
     frame_processor_init();
 }

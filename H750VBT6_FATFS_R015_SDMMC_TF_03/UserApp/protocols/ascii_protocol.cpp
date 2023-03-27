@@ -121,16 +121,15 @@ void OnAsciiCmd(const char* _cmd, size_t _len, StreamSink &_responseChannel)
             sscanf(&_cmd[21], "%ld+%ld+%ld", &times, &startSize, &alignment);
             DRAM_SRAM1.test_aligned_memory(times, startSize, alignment);
         }
-#if 0
         else if (s.find("START_SLICE") != std::string::npos)
         {
-//        	uint32_t value = xTileWave.ulSliceButNotWrite;
+        	uint32_t value = xTileWave.ulSliceButNotWrite;
         	frame_writeTileBuffer = 1;
         	Respond(_responseChannel, false, "波形文件 开始切片%s", (value == 1)?("不写入"):("并写入"));
         }
         else if (s.find("STOP_SLICE") != std::string::npos)
         {
-//        	uint32_t value = xTileWave.ulSliceButNotWrite;
+        	uint32_t value = xTileWave.ulSliceButNotWrite;
         	frame_writeTileBuffer = 0;
         	Respond(_responseChannel, false, "波形文件 停止切片%s", (value == 1)?("不写入"):("并写入"));
         }
@@ -138,10 +137,9 @@ void OnAsciiCmd(const char* _cmd, size_t _len, StreamSink &_responseChannel)
         {
             uint32_t value;
             sscanf(&_cmd[23], "%ld", &value);
-//            xTileWave.ulSliceButNotWrite = value;
+            xTileWave.ulSliceButNotWrite = value;
             Respond(_responseChannel, false, "波形文件 设置切片时%s", (value == 1)?("不写入"):("并写入"));
         }
-#endif
         else if (s.find("DELETE_THE_CREATE_WAVE_FILE") != std::string::npos)
         {
         	delectThenCreateWaveFile();
@@ -163,6 +161,13 @@ void OnAsciiCmd(const char* _cmd, size_t _len, StreamSink &_responseChannel)
             sscanf(&_cmd[23], "%ld", &value);
             xTileWave.ulPrintSliceDetail = value;
             Respond(_responseChannel, false, "波形文件 %s写入详情", (value == 1)?("显示"):("隐藏"));
+        }
+        else if(s.find("RING_BUFFER_NUM=") != std::string::npos)
+        {
+            uint32_t value;
+            sscanf(&_cmd[19], "%ld", &value);
+        	xTileWave.ulEventNum = value;
+            Respond(_responseChannel, false, "设置事件队列深度 %ld", value);
         }
     }
     else if(_cmd[0] == 'F' && _cmd[1] == 'S' && _cmd[2] == '+')

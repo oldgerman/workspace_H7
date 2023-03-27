@@ -5,7 +5,7 @@
   * @created on  Mar 20, 2023
   * @brief       
   *    2023-03-23  - 实现从动态内存创建层链表
-  *                - 实现瓦片波形切片算法并写入存储器
+  *                - 实现瓦片波形切片算法并写存储器
   *    2023-03-26  - 将 .h 中的函数定义整理到 .cpp，添加详细注释
   *                - 修复 writeTileBuffer() 中计算平均频率的 BUG
   *                  将 writeTileBuffer() 重命名为 sliceTileBuffer()
@@ -74,33 +74,42 @@ public:
 		uint32_t ulWaveFrameSize;
 		uint32_t ulWaveDispWidth;
 		uint32_t ulWaveDispTileBufferSize;
-	}Config_t;
+		/* Buffer */
+		uint32_t ulWriteRingBufferNum;
+	} Config_t;
 
 	/* 层结构体 */
 	typedef struct {
 		uint32_t ulLayerNum;			// 层编号
 		uint32_t ulTileSize;			// 瓦片大小，单位B
 		uint32_t ulTileBufferSize;		// RAM：瓦片缓冲区大小，单位B
-		uint32_t ulTileBufferOffset;	// 向瓦片缓冲区写入地址的偏移，每次写入瓦片数据，都向后偏移一个瓦片大小
+		uint32_t ulTileBufferOffset;	// 向瓦片缓冲区写地址的偏移，每次写瓦片数据，都向后偏移一个瓦片大小
 		uint8_t* pucTileBuffer;			// 瓦片缓冲区地址
 		uint32_t ulBufferSize;			// ROM：缓冲区大小，单位B
 		uint32_t ulTileBufferWritePeriod;	// 缓冲区发送周期，单位，调度周期的倍数
-	}Layer_t;
+	} Layer_t;
 
-	/* 写入缓冲区的信息 */
+	/* 写缓冲区的信息 */
 	typedef struct {
 		uint32_t ulAddr;
 		uint32_t ulSize;
 		uint8_t* pucData;
 		uint32_t ulPeriod;
 		uint32_t ulMark;
-	}WriteBufferParam_t;
+	} WriteRingBufferParam_t;
+
+	/* 读缓冲区信息 */
+	typedef struct {
+		uint32_t ulAddr;
+		uint32_t ulSize;
+		uint8_t* pucData;
+	} ReadBufferParam_t;
 
 	TileWave(Config_t &xConfig);
 
 	uint32_t 			createTileBufferList();
 	void 				resetVariablesBeforeSlice();
-	WriteBufferParam_t 	sliceTileBuffer(uint8_t* pulData);
+	WriteRingBufferParam_t 	sliceTileBuffer(uint8_t* pulData);
 	void 				vPrintLayerInfo();
 
 	void initReadWriteAPI(
@@ -112,7 +121,7 @@ public:
 			std::function<void  (void* ptr_aligned)>				Aligend_free,
 			std::function<void  (void* ptr, size_t alignment)> 		Aligned_detect);
 
-	/** @brief  一次可以读取或写入的最小数据块，单位B
+	/** @brief  一次可以读取或写的最小数据块，单位B
 	  * @notice 不要与储存介质的最小 IO/SIZE 混淆
 	  *         此参数应根据诸多参数综合设置
 	  *         比如：
@@ -154,10 +163,10 @@ public:
 	std::list<Layer_t>::reverse_iterator xRit; 	// 层链表的反向迭代器
 
 	/* 读写缓冲区 */
-	uint8_t* pucWriteBuffer;					// 给64KB
+	uint8_t* pucWriteRingBuffer;				//
 	uint8_t* pucReadBuffer; 					// 暂时随便给5个2KB
-	uint32_t ulWriteRingBufferSizeMax;			// 写循环缓冲区的最大大小
-	uint32_t ulWriteBufferNum;					// 写缓冲的编号
+	uint32_t ulWriteRingBufferNum;				// 写环形缓冲区的个数
+//	uint32_t ulWriteRingBufferSizeMax;			// 写环形缓冲区的最大大小
 
 	/* 读写API */
 	std::function<uint32_t (uint32_t addr, uint32_t size, uint8_t* pData)> 	write;
@@ -166,16 +175,38 @@ public:
 	/* 以下变量在停止切片后在下次切片前需要归 0 */
 	uint32_t ulPeriod;					// 周期计数器
 	uint32_t ulPeriodMax;				// 周期计数器的最大值，到此值后从 0 重新开始计数
-	uint32_t ulWriteBufferOffsetOld;	// 前一次写入层缓存的偏移地址
-	double	fRealWrittenFreqSum; 		// 写入频率的总和
-	double 	fRealWrittenFreqAvg;		// 写入频率的平均值
-	double 	fRealWrittenFreqNum;		// 写入频率的个数
+	uint32_t ulWriteBufferOffsetOld;	// 前一次写层缓存的偏移地址
+	double	fRealWrittenFreqSum; 		// 写频率的总和
+	double 	fRealWrittenFreqAvg;		// 写频率的平均值
+	double 	fRealWrittenFreqNum;		// 写频率的个数
 
 	/* 以下是在协议解析程序中可更改的标志 */
 	uint32_t ulPrintSliceDetail;			// 打印实时切片信息
-//	uint32_t ulSliceButNotWrite;			// 实时切片时不写入数据
+	uint32_t ulSliceButNotWrite;			// 实时切片时不写数据，若为真，那么就不会在切片时申请环形缓冲区
 
-private:
+	/* cmsis rtos2 */
+	/**
+	 * @brief FATFS_SD event types used in the ring buffer
+	 */
+	typedef enum {
+		EVENT_WRITE_RING_BUFFER = 0,
+		EVENT_READ_BUFFER,
+		EVENT_TYPE_MAX
+	} EventType_t;
+	/**
+	 * @brief Event structure used in FATFS_SD event queue
+	 */
+	typedef struct {
+		EventType_t type; /* event type */
+	    union {
+	    	WriteRingBufferParam_t xWriteRingBufferParam;
+	    	ReadBufferParam_t 	   xReadBufferParam;
+	    };
+	} Event_t;
+
+	uint32_t ulEventNum;
+	Event_t* pxEvent;
+	osMessageQueueId_t xMsgQueue;
 	/**
 	  * 字节对齐的动态内存 API
 	  * 由于实时采样数据数据需要频繁以2次幂进行缩小等计算，M7 内核的 Cahce 可以缓存
@@ -185,6 +216,7 @@ private:
 	std::function<void  (void* ptr_aligned)>				aligend_free;
 	std::function<void  (void* ptr, size_t alignment)> 		aligned_detect;
 
+private:
 	static uint32_t ulCalculateSmallestPowerOf2GreaterThan(uint32_t ulValue);
 
 	static const size_t alignment_ = 32;				// 内存 32 字节对齐

@@ -41,12 +41,12 @@ const uint32_t fatfsSDTaskStackSize = 512 * 4;
 const osThreadAttr_t fatfsSDTask_attributes = {
 		.name = "fatfsSDTask",
 		.stack_size = fatfsSDTaskStackSize,
-		.priority = (osPriority_t) osPriorityLow,
+		.priority = (osPriority_t) osPriorityNormal,
 };
 /* Exported variables --------------------------------------------------------*/
 osThreadId_t fatfsSDTaskHandle;
-osMessageQueueId_t fatfs_sd_msg_queue;
-
+extern TileWave xTileWave;
+__attribute__((section(".RAM_D1_Array"))) ALIGN_32BYTES(uint8_t TxBuffer [64 *1024]);
 /* Private variables ---------------------------------------------------------*/
 /* Private function prototypes -----------------------------------------------*/
 /* Function implementations --------------------------------------------------*/
@@ -57,11 +57,52 @@ osMessageQueueId_t fatfs_sd_msg_queue;
  */
 static void fatfsSDTask(void* argument)
 {
+	osStatus_t osStatus;
+	TileWave::Event_t msg;
 	for(;;)
 	{
+		osStatus = osMessageQueueGet(xTileWave.xMsgQueue, &msg, 0U, 0U);   // wait for message
+		if (osStatus == osOK) {
+			// process data
+			uint32_t ret = 0; // FATFS 函数的返回状态
 
+			if(msg.type == TileWave::EVENT_WRITE_RING_BUFFER ) {
+				/* 将缓冲区的数据写入SD卡 */
+				if(msg.xWriteRingBufferParam.pucData != NULL) {
+
+					memcpy(TxBuffer, msg.xWriteRingBufferParam.pucData, msg.xWriteRingBufferParam.ulSize);
+					ret = xTileWave.write(
+							msg.xWriteRingBufferParam.ulAddr,
+							msg.xWriteRingBufferParam.ulSize,
+							TxBuffer);
+//					ret = xTileWave.write(
+//							msg.xWriteRingBufferParam.ulAddr,
+//							msg.xWriteRingBufferParam.ulSize,
+//							msg.xWriteRingBufferParam.pucData);
+//					ret = xTileWave.write(
+//							xTileWave.ulPeriod,
+//							32,
+//							testBuf);
+					/* 释放缓冲区的内存 */
+					xTileWave.aligend_free(msg.xWriteRingBufferParam.pucData);
+				}
+				/* 打印本次详情 */
+				printf("| fatfsSDTask | osStatus = %d | ulPeriod = %4ld | ret = %2ld | addr = %10ld | size = %9ld | mark = %2ld | history free = %ld | \r\n",
+						osStatus,
+						msg.xWriteRingBufferParam.ulPeriod,
+						ret,
+						msg.xWriteRingBufferParam.ulAddr,
+						msg.xWriteRingBufferParam.ulSize,
+						msg.xWriteRingBufferParam.ulMark,
+						DRAM_SRAM1.getMemFreeMin());
+
+			} else if (msg.type == TileWave::EVENT_WRITE_RING_BUFFER ) {
+				;
+			}
+		}
 	}
 }
+
 /**
  * @brief  初始化 FATFS SD 卡任务函数
  * @param  None

@@ -72,7 +72,7 @@ uint32_t TileWave::createTileBufferList()
 
 	/* 创建层并申请每层的动态内存 */
 	uint32_t ulLayerTileBufferSize = ulWaveDispBufferSize;	//4KB
-	uint32_t ulLayerTileSize = 1;	//1B
+	uint32_t ulLayerTileSize = 1;	// 1B
 	uint8_t *pucLayerTileBuffer;
 	for(uint32_t i = 0; i < ulLayerNumMax; i++)
 	{
@@ -96,7 +96,7 @@ uint32_t TileWave::createTileBufferList()
 				.ulBufferSize = ulLayerTileSize * ulLayerTilesNumMax,
 				.ulTileBufferWritePeriod = ulLayerTileBufferSize / ulLayerTileSize
 		};
-		/* 尾插入，链表正向遍历越往后层编号越大 */
+		/* 尾插，链表正向遍历越往后层编号越大 */
 		xLayersList.push_back(xLayer);
 
 		/* 更新所有层的瓦片缓冲区的总大小 */
@@ -110,9 +110,9 @@ uint32_t TileWave::createTileBufferList()
 	ulPeriodMax = (*xLayersList.begin()).ulTileBufferWritePeriod;
 
 	/* 申请读写缓冲区的动态内存 */
-	// 写缓冲区等于瓦片缓冲区大小的总和，暂不考虑.dsppk 文件格式开头自定义的文件信息预留大小
-//	pucWriteBuffer = (uint8_t*)aligned_malloc(ulLayersTileBufferSize, alignment_);
-	pucWriteBuffer = (uint8_t*)aligned_malloc(ulLayersTileBufferSize, alignment_);
+	// 改为实时切片时分配
+	// pucWriteRingBuffer = (uint8_t*)aligned_malloc(ulLayersTileBufferSize, alignment_);
+	// 但先分配指针数组
 
 	// 读缓冲区暂时分 5 个 ulIOSizeMin
 	pucReadBuffer = (uint8_t*)aligned_malloc(5 * ulIOSizeMin, alignment_);
@@ -133,6 +133,21 @@ void TileWave::resetVariablesBeforeSlice()
 	fRealWrittenFreqSum = 0;
 	fRealWrittenFreqAvg = 0;
 	fRealWrittenFreqNum = 0;
+
+	static uint32_t ulEventNumOld = 0;
+	if(ulEventNum != ulEventNumOld) {
+		ulEventNumOld = ulEventNum;
+
+#if 0	// 不搞地址传递了，改为交给osMessageQueuePut 拷贝值传递
+		/* 释放并申请新的事件数组内存 */
+		if(pxEvent != NULL) // 第一次执行时初始值是 NULL
+			aligend_free(pxEvent);
+		pxEvent = aligned_malloc(sizeof(Event_t) * ulEventNum, 8);
+#endif
+		/* 删除并创建新的消息队列 */
+		osMessageQueueDelete(xMsgQueue);	// 第一次执行时会返回 osErrorParameter
+		xMsgQueue = osMessageQueueNew(ulEventNum, sizeof(Event_t) * ulEventNum, NULL);
+	}
 }
 
 /**
@@ -140,9 +155,9 @@ void TileWave::resetVariablesBeforeSlice()
   * @param	pulData 	Pointer to data buffer
   * @retval	0 - success, 1 - failure
   */
-TileWave::WriteBufferParam_t TileWave::sliceTileBuffer(uint8_t* pulData)
+TileWave::WriteRingBufferParam_t TileWave::sliceTileBuffer(uint8_t* pulData)
 {
-	/* 重置向瓦片缓冲区写入地址的偏移 */
+	/* 重置向瓦片缓冲区写地址的偏移 */
 	xRit = xLayersList.rbegin();
 	for(uint8_t i = 0; i < ulLayerNumMax; i++) {
 		(*xRit).ulTileBufferOffset = 0;
@@ -162,43 +177,64 @@ TileWave::WriteBufferParam_t TileWave::sliceTileBuffer(uint8_t* pulData)
 	/* 瓦片切片 */
 	++ulPeriod;	// = 1、2、3...2048;
 	xRit = xLayersList.rbegin();
-	for(uint8_t i = 0; i < ulLayerNumMax; i++) {
-		/** 从帧缓冲区中复制瓦片大小的数据到瓦片缓冲区
-		  * TODO: 从帧缓冲区计算2幂缩放倍率的瓦片大小数据
-		  */
-		memcpy((*xRit).pucTileBuffer + (*xRit).ulTileBufferOffset, 	// 注意加上偏移地址
-				pulData, (*xRit).ulTileSize);
 
-		/* 更新写入瓦片缓冲区的偏移地址 */
-		(*xRit).ulTileBufferOffset += (*xRit).ulTileSize;
+	/** 从帧缓冲区中复制瓦片大小的数据到瓦片缓冲区
+	  * TODO: 从帧缓冲区计算2幂缩放倍率的瓦片大小数据
+	  */
+	for(uint8_t i = 0; i < ulLayerNumMax; i++) {
+		memcpy((*xRit).pucTileBuffer + (*xRit).ulTileBufferOffset, 	// 瓦片缓冲区的地址注意加上地址的偏移
+				pulData, (*xRit).ulTileSize); 						// 瓦片大小
+		(*xRit).ulTileBufferOffset += (*xRit).ulTileSize; 			// 更新向瓦片缓冲区写地址的偏移
 
 		/** 若 计数器周期 整除 层瓦片缓冲区周期
 		  * 说明该层需要向缓冲区发送瓦片缓冲区的所有数据
 		  */
-		if(ulPeriod % (*xRit).ulTileBufferWritePeriod == 0 ) // 从缓冲区最大的层迭代到最小的
+		if(ulPeriod % (*xRit).ulTileBufferWritePeriod == 0 )		// 从缓冲区最大的层迭代到最小的
 		{
-			/* 归零瓦片缓冲区的偏移地址 */
-			(*xRit).ulTileBufferOffset = 0;
-
-			// 将DRAM中的 非连续储存 的 瓦片缓冲区数据 复制 到 发送缓冲区 以变为连续储存的
-			memcpy(pucWriteBuffer + ulWriteBufferOffset, (*xRit).pucTileBuffer, (*xRit).ulTileBufferSize);
-			// 更新向缓冲区写入的起始地址偏移
-			ulWriteBufferOffset += (*xRit).ulTileBufferSize;
-
-			++ulWriteMark;
+			(*xRit).ulTileBufferOffset = 0;							// 归零瓦片缓冲区的偏移地址
+			ulWriteBufferOffset += (*xRit).ulTileBufferSize;		// 更新向缓冲区写地址的偏移
+			++ulWriteMark;											// 更新标记记
 		}
-		++xRit;
+		++xRit;														// 从最大的层迭代到最小的
 	}
 
-	/* 向层缓冲区写入数据 */
+    /* 👆 先计算出本周期发送的瓦片缓冲区总大小 ulWriteBufferOffset
+     * 然后根据这个总大小才能申请本周期的环形缓冲区的内存 */
+
+	/* 释放上个周期的环形缓冲区的动态内存在 fatfsSDtask 写完成后 ret 返回 0 时释放 */
+	// aligned_free
+
+	/* pucWriteRingBuffer 每次的地址会不一样，由 aligned_malloc 从找到的 hole 分配的地址决定
+	 * 这些地址不会记录在对象成员中，而是记录在外部消息队列 */
+	if(ulSliceButNotWrite == 0) {
+		pucWriteRingBuffer = (uint8_t*)aligned_malloc(ulWriteBufferOffset, alignment_);
+	} else {
+		pucWriteRingBuffer = NULL;
+	}
+	ulWriteBufferOffset = 0;
+	xRit = xLayersList.rbegin();
+
+	for(uint8_t i = 0; i < ulLayerNumMax; i++) {
+		if(ulPeriod % (*xRit).ulTileBufferWritePeriod == 0 )
+		{
+			// 将DRAM中的 非连续储存 的 瓦片缓冲区数据 复制 到 写缓冲区 以变为连续储存的
+			if(pucWriteRingBuffer != NULL) {
+				memcpy(pucWriteRingBuffer + ulWriteBufferOffset,
+						(*xRit).pucTileBuffer, (*xRit).ulTileBufferSize);
+			}
+			// 更新向缓冲区写地址的偏移
+			ulWriteBufferOffset += (*xRit).ulTileBufferSize;
+		}
+		++xRit; // 从最大的层迭代到最小的
+	}
+	/* 保存需要写缓冲区的信息 */
 //	if(ulSliceButNotWrite == 0) {
-//		ret = write(ulWriteBufferOffsetOld, ulWriteBufferOffset, pucWriteBuffer);
+//		ret = write(ulTxBufferOffsetOld, ulTxBufferOffset, (uint8_t *)pcuTxBuffer);
 //	}
-	/* 保存需要写入缓冲区的信息 */
-	WriteBufferParam_t writeBufferParam = {
+	WriteRingBufferParam_t WriteRingBufferParam = {
 			.ulAddr   = ulWriteBufferOffsetOld,
 			.ulSize   = ulWriteBufferOffset,
-			.pucData  = pucWriteBuffer,
+			.pucData  = pucWriteRingBuffer,
 			.ulPeriod = ulPeriod,
 			.ulMark   = ulWriteMark
 	};
@@ -230,7 +266,7 @@ TileWave::WriteBufferParam_t TileWave::sliceTileBuffer(uint8_t* pulData)
 	ulPeriod %= ulPeriodMax;
 	ulWriteBufferOffsetOld += ulWriteBufferOffset;
 
-	return writeBufferParam;
+	return WriteRingBufferParam;
 }
 
 /**
@@ -249,6 +285,7 @@ TileWave::TileWave(Config_t &xConfig)
     ulWaveFrameSize = xConfig.ulWaveFrameSize;
     ulWaveDispWidth = xConfig.ulWaveDispWidth;
 	ulWaveDispTileBufferSize = xConfig.ulWaveDispTileBufferSize;
+	ulWriteRingBufferNum = xConfig.ulWriteRingBufferNum;
 
 	ulLayersTileBufferSize = 0;
 
@@ -259,8 +296,11 @@ TileWave::TileWave(Config_t &xConfig)
 	fRealWrittenFreqAvg = 0;
 	fRealWrittenFreqNum = 0;
 
-	ulPrintSliceDetail = 0;		//默认打印切片的详情信息
-//	ulSliceButNotWrite = 0;		//默认切片时写入文件
+	ulPrintSliceDetail = 1;		// 默认打印切片的详情信息
+	ulSliceButNotWrite = 0;		// 默认切片时写文件
+
+	pxEvent = NULL;
+	ulEventNum = 3;				// 事件深度 3，影响环形缓冲区申请的个数
 }
 
 /**
@@ -334,7 +374,7 @@ uint32_t TileWave::ulCalculateSmallestPowerOf2GreaterThan(uint32_t ulValue)
 }
 
 /**
-  * @brief  计算写入循环缓冲区的最大大小
+  * @brief  计算写环形缓冲区的最大大小
   * @param  ulValue	calculated reference value
   * @retval calculated value
   */

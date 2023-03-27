@@ -51,6 +51,8 @@ osThreadId_t frameProcessorTaskHandle;
 
 bool frame_writeTileBuffer = false;
 bool frame_initExistingWaveFile= false;
+uint32_t sliceButNotWrite = 0;
+
 uint16_t frame_freq = 1; /* 每秒调度频率，单位Hz */
 
 extern TileWave xTileWave;
@@ -72,6 +74,12 @@ static void frameProcessorTask(void* argument)
 	xLastWakeTime = xTaskGetTickCount();	/* 获取当前的系统时间 */
 	/* 帧缓冲区全部归'.'*/
 	memset(frame, '.', sizeof(frame));
+
+	/* 切片前复位一些变量 */
+	xTileWave.resetVariablesBeforeSlice();
+
+	osStatus_t osStatus;
+	TileWave::Event_t msg;
 	for (;;)
 	{
 		if(frame_initExistingWaveFile)
@@ -85,17 +93,31 @@ static void frameProcessorTask(void* argument)
 
 		if(frame_writeTileBuffer)
 		{
-
-			xTileWave.sliceTileBuffer(frame[0].ctrl_u8); // 切片瓦片缓冲区暂存到多缓冲区
-			// 向消息队列放写入消息
+			msg.type = TileWave::EVENT_WRITE_RING_BUFFER;
+			msg.xWriteRingBufferParam = xTileWave.sliceTileBuffer(frame[0].ctrl_u8); // 切片瓦片缓冲区暂存到多缓冲区
+			// 向消息队列写消息
+			osStatus = osMessageQueuePut(
+					xTileWave.xMsgQueue,
+					&msg, 	// 指向消息的指针，会使用 memcpy 拷贝消息地址上的数据，不是直接传递地址
+					0U, 	// 消息优先级 0
+					0U);	// 写阻塞时间
+			printf("| frameTask | osStatus = %d | Queue Count = %ld | \r\n" ,
+					osStatus,
+					osMessageQueueGetCount(xTileWave.xMsgQueue));
 		}
 		else
 		{
-			xTileWave.resetVariablesBeforeSlice();
+			/* 当消息队列的剩余消息数是0才可以,切片前复位一些变量 */
+			if(osMessageQueueGetCount(xTileWave.xMsgQueue) == 0) {
+				xTileWave.resetVariablesBeforeSlice();
+			}
 		}
 
 		xTaskPeriod = 1000 / frame_freq;	/* 调度周期，单位ms */
-//		osMessagePut(queue_id, info, millisec);
+
+		if(xTileWave.ulSliceButNotWrite == 0) // 若切片但不写入是假，那么就需要放写入消息
+			//		osMessagePut(queue_id, info, millisec);
+
 		vTaskDelayUntil(&xLastWakeTime, xTaskPeriod);
 	}
 };

@@ -62,6 +62,7 @@ typedef union{
 /* Exported variables --------------------------------------------------------*/
 extern bool frame_writeTileBuffer;
 extern bool frame_initExistingWaveFile;
+extern uint32_t sliceButNotWrite;
 extern uint16_t frame_freq;
 
 /* Exported functions --------------------------------------------------------*/

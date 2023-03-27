@@ -36,40 +36,15 @@ extern "C" {
 #include <stdint.h>
 
 /* Exported types ------------------------------------------------------------*/
-typedef enum {
-	init_existing_wave_file,
-    write,
-
-} fatfs_sd_msg_t;
-/**
- * @brief FATFS_SD event types used in the ring buffer
- */
-typedef enum {
-    FATFS_SD_DATA,              /* FATFS_SD data event */
-    FATFS_SD_BREAK,             /* FATFS_SD break event */
-    FATFS_SD_BUFFER_FULL,       /* FATFS_SD RX buffer full event */
-    FATFS_SD_FIFO_OVF,          /* FATFS_SD FIFO overflow event */
-    FATFS_SD_FRAME_ERR,         /* FATFS_SD RX frame error event */
-    FATFS_SD_DATA_BREAK,        /* FATFS_SD TX data and break event */
-} fatfs_sd_event_type_t;
-
-/**
- * @brief Event structure used in FATFS_SD event queue
- */
-typedef struct {
-    fatfs_sd_event_type_t type; /* FATFS_SD event type */
-    uint8_t* pucWriteBuffer;
-    uint32_t size;            /* FATFS_SD data size for FATFS_SD_DATA event */
-} fatfs_sd_event_t;
-
 /* Exported define -----------------------------------------------------------*/
 /* Exported macro ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
 /* Exported variables --------------------------------------------------------*/
 /* Exported functions --------------------------------------------------------*/
+void fatfsSDInit();
 
 #ifdef __cplusplus
 }
+#include "tile_wave.h"
 #endif
-
 #endif /* INTERFACE_FATFS_SD_H_ */
