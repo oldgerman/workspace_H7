@@ -145,8 +145,8 @@ public:
 	std::list<Layer_t>::reverse_iterator xRit; 	// 层链表的反向迭代器
 
 	/* 层缓冲区的读写缓冲区 */
-	void *ucpTxBuffer;					// 给64KB
-	void *ucpRxBuffer; 					// 暂时随便给5个2KB
+	void *pcuTxBuffer;					// 给64KB
+	void *pcuRxBuffer; 					// 暂时随便给5个2KB
 
 	/* 层缓冲区读写API */
 	std::function<uint32_t (uint32_t addr, uint32_t size, uint8_t* pData)> 	write;
@@ -177,7 +177,7 @@ private:
 
 	static const size_t alignment_ = 32;				// 内存 32 字节对齐
 
-	char** ucppStrBuffer_;								// 字符串缓冲区暂存创建层链表时输出的信息
+	char** ppcuStrBuffer_;								// 字符串缓冲区暂存创建层链表时输出的信息
 	static const uint32_t ulStrBufferRowCount = 64;		// 字符串缓冲区每行 64 个 char 字符
 };
 

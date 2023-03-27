@@ -65,9 +65,9 @@ uint32_t TileWave::createTileBufferList()
 	/** 申请字符串缓冲区的内存，非频繁操作的缓冲区，8 字节对齐即可
 	  * reference: blog.csdn.net/fengxinlinux/article/details/51541003
 	  */
-	ucppStrBuffer_ = (char**)aligned_malloc(sizeof(char**) * ulStrBufferRowCount, 8);
+	ppcuStrBuffer_ = (char**)aligned_malloc(sizeof(char**) * ulStrBufferRowCount, 8);
 	for(uint32_t i = 0; i < ulLayerNumMax; i++) {
-		ucppStrBuffer_[i] = (char*)aligned_malloc(sizeof(char*) * ulLayerNumMax, 8);
+		ppcuStrBuffer_[i] = (char*)aligned_malloc(sizeof(char*) * ulLayerNumMax, 8);
 	}
 
 	/* 创建层并申请每层的动态内存 */
@@ -84,7 +84,7 @@ uint32_t TileWave::createTileBufferList()
 		/* 申请层瓦片缓冲区的动态内存 */
 		pucLayerTileBuffer = aligned_malloc(ulLayerTileBufferSize, alignment_);
 
-		sprintf(&ucppStrBuffer_[i][0], "| %15ld | %13ld | %17ld |\r\n",
+		sprintf(&ppcuStrBuffer_[i][0], "| %15ld | %13ld | %17ld |\r\n",
 				DRAM_SRAM1.getMemUsed(), DRAM_SRAM1.getMemFree(), DRAM_SRAM1.getMemFreeMin());
 
 		Layer_t xLayer = {
@@ -109,9 +109,9 @@ uint32_t TileWave::createTileBufferList()
 
 	/* 申请读写缓冲区的动态内存 */
 	// 写缓冲区等于瓦片缓冲区大小的总和，暂不考虑.dsppk 文件格式开头自定义的文件信息预留大小
-	ucpTxBuffer = aligned_malloc(ulLayersTileBufferSize *1024, alignment_);
+	pcuTxBuffer = aligned_malloc(ulLayersTileBufferSize *1024, alignment_);
 	// 读缓冲区暂时分 5 个 ulIOSizeMin
-	ucpRxBuffer = aligned_malloc(5 * ulIOSizeMin, alignment_);
+	pcuRxBuffer = aligned_malloc(5 * ulIOSizeMin, alignment_);
 
 	return 0U;
 }
@@ -181,7 +181,7 @@ uint32_t TileWave::sliceTileBuffer(uint8_t* pulData)
 			(*xRit).ulTileBufferOffset = 0;
 
 			// 将DRAM中的 非连续储存 的 瓦片缓冲区数据 复制 到 发送缓冲区 以变为连续储存的
-			memcpy((uint8_t*)ucpTxBuffer + ulTxBufferOffset, (*xRit).pucTileBuffer, (*xRit).ulTileBufferSize);
+			memcpy((uint8_t*)pcuTxBuffer + ulTxBufferOffset, (*xRit).pucTileBuffer, (*xRit).ulTileBufferSize);
 			// 更新向缓冲区写入的起始地址偏移
 			ulTxBufferOffset += (*xRit).ulTileBufferSize;
 
@@ -192,7 +192,7 @@ uint32_t TileWave::sliceTileBuffer(uint8_t* pulData)
 
 	/* 向层缓冲区写入数据 */
 	if(ulSliceButNotWrite == 0) {
-		ret = write(ulTxBufferOffsetOld, ulTxBufferOffset, (uint8_t *)ucpTxBuffer);
+		ret = write(ulTxBufferOffsetOld, ulTxBufferOffset, (uint8_t *)pcuTxBuffer);
 	}
 
 	/* 打印本次切片详情 */
@@ -302,7 +302,7 @@ void TileWave::vPrintLayerInfo()
 				(*xIt).pucTileBuffer,
 				(*xIt).ulBufferSize,
 				(*xIt).ulTileBufferTxPeriod,
-				&ucppStrBuffer_[i][0]);
+				&ppcuStrBuffer_[i][0]);
 		++xIt;
 	}
 }
