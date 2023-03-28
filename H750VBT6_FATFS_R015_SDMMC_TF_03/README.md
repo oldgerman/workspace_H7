@@ -129,7 +129,7 @@
 
 ## FATFS 发送缓冲区无法使用 RAM_D2
 
-排查了好久，百思不得其解，最后发现原因是 开发板 使用的 SDMMC1 控制器的 IDMA 只能访问 RAM_D2（AXI SRAM）！我潜意识里却想着正在画的板子用的 SDMMC2...。看安富莱V7的教程时还特别标出了，实际测试时又忘了：
+排查了好久，百思不得其解，最后发现原因是 开发板 使用的 SDMMC1 控制器的 IDMA 只能访问 RAM_D1（AXI SRAM）！我却想着画的板子用的 SDMMC2... 看安富莱V7的教程时还特别标出了，实际测试时又忘了：
 
 ![](Images/87.2.3_STM32H7_SDMMC1和SDMMC2支持的RAM空间区别.png)
 
@@ -253,7 +253,7 @@
 
 总结
 
-> FATFS + SD 卡的实时性不行不能一概而论，**使用高性能 SD 卡，可以提升一定的写入实时性**
+> FATFS + SD 卡的实时性不行不能一概而论，**使用高性能 SD 卡，可以提升很少的写入实时性，关键问题还是在 FAT 本身**
 
 ## 附
 
@@ -267,8 +267,6 @@
 
 本工程不需要保证环形缓冲的线程安全，当消息队列溢出，就表明失败，消息队列只要没有溢出，那环形缓冲区必定是安全的
 
-参考：
-
 - [线程安全的环形缓冲区实现](https://blog.csdn.net/lezhiyong/article/details/7879558)
 
   > 应用背景：
@@ -278,3 +276,12 @@
   > > **和本工程的应用场景很相似：**
   > >
   > > frameProcessorTask 以固定的调度周期将固定的数量采样点写入环形缓冲区，向消息队列里写带有本次缓冲区信息的消息。fatfsSDTask 从消息队列里取消息，以不确定的调度周期每次将将固定数量的采样点写入SD卡。frameProcessorTask 和 fatfsSDTask 任务在平均时间内的调度次数和读写数据量相等，但调度周期一个确定，一个不确定。
+
+### 参考
+
+[lfool.GitBook 操作系统——第四章](https://lfool.gitbook.io/operating-system/di-si-zhang-wen-jian-guan-li)
+
+2. [文件的逻辑结构](https://lfool.gitbook.io/operating-system/di-si-zhang-wen-jian-guan-li/2.-wen-jian-de-luo-ji-jie-gou)
+2. [文件的物理结构](https://lfool.gitbook.io/operating-system/di-si-zhang-wen-jian-guan-li/3.-wen-jian-de-wu-li-jie-gou)
+2. [文件的目录结构](https://lfool.gitbook.io/operating-system/di-si-zhang-wen-jian-guan-li/4.-wen-jian-de-mu-lu-jie-gou)
+2. [空闲分区管理](https://lfool.gitbook.io/operating-system/di-si-zhang-wen-jian-guan-li/5.-kong-xian-fen-qu-guan-li)
