@@ -6,6 +6,10 @@
 
 用于 [H750VBT6_FATFS_R015_SDMMC_TF_02](https://github.com/oldgerman/workspace_H7/tree/master/H750VBT6_FATFS_R015_SDMMC_TF_02) 工程的下阶段测试
 
+关键内存分布：
+
+![](Images/构建分析器：主要内存分布.png)
+
 ## 帧处理任务 与 FASFS+SD卡任务 之间的消息队列通信
 
 ### 参考
@@ -60,7 +64,7 @@
 
 消息队列的存放函数超时等待时间给多大？比较特殊：
 
-- 在本工程中，我一开始认为永远不能让消息队列存满，后来应该是可以存满的，但需要保证 存放消息的等待时间 + 本次任务运行到此的时间 < 任务的绝对调度周期，这个等待的时间可能需要动态调整：
+- 在本工程中，我一开始认为永远不能让消息队列存满，后来应该是可以存满的，但需要保证 存放消息的等待时间 + 本次任务运行到此的时间 < 任务的绝对调度周期，这个等待的时间可能需要动态调整（暂未写到代码中）
 
   > ```c
   > static void frameProcessorTask(void* argument)
@@ -123,15 +127,57 @@
   > } osStatus_t;
   > ```
 
+## FATFS 发送缓冲区无法使用 RAM_D2
+
+排查了好久，百思不得其解，最后发现原因是 开发板 使用的 SDMMC1 控制器的 IDMA 只能访问 RAM_D2（AXI SRAM）！我潜意识里却想着正在画的板子分配引脚用的是 SDMMC2...
+
+看安富莱V7的教程时还特别标出了，实际测试时又忘了：
+
+![](Images/87.2.3_STM32H7_SDMMC1和SDMMC2支持的RAM空间区别.png)
+
 ## 测试
 
-### fatfsSDTask实时性抽风瞬间
+### fatfsSDTask实时性抽风
 
-> 配置存放事件的消息队列深度为 5 ，以固定频率调度 frameProcessorTask 实时切片并写消息解除 fatfsSDTask 的阻塞，大多部分情况下，都是 frameTask 和 fatfsSDTask 交替调度，当fatfsSDTask 的实时性抽风时，一会儿又会会补回调度
+> 以固定频率调度 frameProcessorTask 实时切片并写消息解除 fatfsSDTask 的阻塞，大多部分情况下，都是 frameTask 和 fatfsSDTask 交替调度，当fatfsSDTask 的实时性抽风时，一会儿又会会补回调度，但当频率过快也会发生消息队列空间不足的情况
+
+25Hz
+
+> 设置事件消息队列深度为 10，fatfsSDTask 实时单次频率（粉色）和实时平均频率（绿色）的直方图：
+>
+> ![25Hz_4096次覆盖写入_fatfsSDTask的实时单次频率直方图](Images/25Hz_4096次覆盖写入_fatfsSDTask的实时单次频率直方图.png)
+>
+> ![25Hz_4096次覆盖写入_fatfsSDTask的实时平均频率直方图](Images/25Hz_4096次覆盖写入_fatfsSDTask的实时平均频率直方图.png)
+>
+> 从实时单次频率直方图中串口消息可知：在本次测试中，消息队列的消息数历史最大值为 4，内存池最少可用 282216B，使用的态内存峰值为 492KB - 282216B ≈ 216KB，环形缓冲区使用的态内存峰值为  216KB - 55464B ≈ 162KB（55464B 为层瓦片缓冲和字符串缓冲区使用的内存，使用`TW+LAYER_INFO\r`命令即可获取）
+>
+> 经过十多次测试，极少数情况出现消息队列消息数是 5：概率约10000 次写入难碰到一次
+>
+> ![](Images/25Hz_fatfsSDTask实时性抽风瞬间_消息队列放了5个.png)
+>
+> 消息队列消息数是 5 时，环形写缓冲区占用的动态内存： 492KB - 55464B - 251448B ≈ 192.3KB
+>
+> 为了保险起见，对于本工程的应用，将消息队列深度给 6 ，根据下面的 100Hz 测得的 history free min = 222728B，这时环形写缓冲区占用的动态内存： 492KB - 55464B - 222728B ≈ 220.3KB。通过将 AXI SRAM 的 256KB 作为动态内存给环形写缓冲区使用，就足够消除 FATFS + SD卡 以 25Hz 不定长度写入 30K~52KB 的时间不确定性的影响
 
 100Hz
 
-> ![fatfsSDTask实时性抽风瞬间100Hz](Images/fatfsSDTask实时性抽风瞬间100Hz.png)
+> 设置事件消息队列深度为 15，此频率下消息队列很容易溢出，测试内存池可以支持的最大消息数为 11
+>
+> ```shell
+> | frameTask | osStatus = 0 | queue count = 1 | queue count hisrotry max = 1 | history free min = 372472 | 
+> | frameTask | osStatus = 0 | queue count = 2 | queue count hisrotry max = 2 | history free min = 353992 | 
+> | frameTask | osStatus = 0 | queue count = 3 | queue count hisrotry max = 3 | history free min = 317080 | 
+> | frameTask | osStatus = 0 | queue count = 4 | queue count hisrotry max = 4 | history free min = 286312 | 
+> | frameTask | osStatus = 0 | queue count = 5 | queue count hisrotry max = 5 | history free min = 253496 | 
+> | frameTask | osStatus = 0 | queue count = 6 | queue count hisrotry max = 6 | history free min = 222728 | 
+> | frameTask | osStatus = 0 | queue count = 7 | queue count hisrotry max = 7 | history free min = 187864 | 
+> | frameTask | osStatus = 0 | queue count = 8 | queue count hisrotry max = 8 | history free min = 157096 | 
+> | frameTask | osStatus = 0 | queue count = 9 | queue count hisrotry max = 9 | history free min = 124280 | 
+> | frameTask | osStatus = 0 | queue count = 10 | queue count hisrotry max = 10 | history free min =  93512 | 
+> | frameTask | osStatus = 0 | queue count = 11 | queue count hisrotry max = 11 | history free min =  54552 | 
+> | frameTask | osStatus = 0 | queue count = 12 | queue count hisrotry max = 12 | history free min =  23784 | 
+> | frameTask | osStatus = 0 | queue count = 13 | queue count hisrotry max = 13 | history free min =  23784 | 
+> ```
 
 ## 附
 
@@ -145,7 +191,7 @@
 
 本工程不需要保证环形缓冲的线程安全，当消息队列溢出，就表明失败，消息队列只要没有溢出，那环形缓冲区必定是安全的
 
-参考
+参考：
 
 - [线程安全的环形缓冲区实现](https://blog.csdn.net/lezhiyong/article/details/7879558)
 

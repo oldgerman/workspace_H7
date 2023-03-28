@@ -159,7 +159,7 @@ void OnAsciiCmd(const char* _cmd, size_t _len, StreamSink &_responseChannel)
         {
             uint32_t value;
             sscanf(&_cmd[23], "%ld", &value);
-            xTileWave.ulPrintSliceDetail = value;
+//            xTileWave.ulPrintSliceDetail = value;
             Respond(_responseChannel, false, "波形文件 %s写入详情", (value == 1)?("显示"):("隐藏"));
         }
         else if(s.find("RING_BUFFER_NUM=") != std::string::npos)

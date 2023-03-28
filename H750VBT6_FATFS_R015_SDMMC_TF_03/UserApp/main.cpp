@@ -54,8 +54,8 @@ TileWave::Config_t xConfig = {
 	    .ulWaveFrameSize = 4,
 	    .ulWaveDispWidth = 400,
 	    .ulWaveDispTileBufferSize = 4096,
-		/* Buffer */
-		.ulWriteRingBufferNum = 4,
+		/* Event */
+		.ulEventNum = 10,
 };
 TileWave xTileWave(xConfig);
 

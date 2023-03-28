@@ -80,6 +80,11 @@ static void frameProcessorTask(void* argument)
 
 	osStatus_t osStatus;
 	TileWave::Event_t msg;
+	uint32_t ulPeriodCount = 0;
+	uint32_t ulQueueCount = 0;		// 当前消息队列消息数
+	uint32_t ulQueueCountHistoryMax = 0;	// 历史消息队列最大消息数
+	uint32_t ulMemoryMin = 0;
+	uint32_t ulHistoryMemoryMin = 0;
 	for (;;)
 	{
 		if(frame_initExistingWaveFile)
@@ -92,9 +97,21 @@ static void frameProcessorTask(void* argument)
 		{
 			/* 切片前复位一些变量 */
 			xTileWave.resetVariablesBeforeSlice();
+			ulMemoryMin = DRAM_SRAM1.getMemFree();
+			ulHistoryMemoryMin = ulMemoryMin;
+			ulPeriodCount = 0;
+			ulQueueCountHistoryMax = 0;
+			/* 通知 fatfsSDTask 停止 */
+			msg.type = TileWave::EVENT_STOP;
+			osMessageQueuePut(xTileWave.xMsgQueue, &msg, 0U, 0U);
 		}
 		else
 		{
+			/* 4096次后停止 */
+			if(ulPeriodCount == xTileWave.ulLayerTilesNumMax - 1) {
+				frame_writeTileBuffer = 0;
+			}
+
 			/* 采样缓冲区第一个元素写入当前切片周期数 */
 			sprintf((char*)&(frame[0].ctrl_u8[0]), "%4ld", xTileWave.ulPeriod);
 
@@ -106,9 +123,18 @@ static void frameProcessorTask(void* argument)
 					&msg, 	// 指向消息的指针，会使用 memcpy 拷贝消息地址上的数据，不是直接传递地址
 					0U, 	// 消息优先级 0
 					0U);	// 写阻塞时间
-			printf("| frameTask | osStatus = %d | Queue Count = %ld | \r\n" ,
-					osStatus,
-					osMessageQueueGetCount(xTileWave.xMsgQueue));
+			ulQueueCount = osMessageQueueGetCount(xTileWave.xMsgQueue);
+			if(ulQueueCountHistoryMax < ulQueueCount) {
+				ulQueueCountHistoryMax = ulQueueCount;
+			}
+			ulMemoryMin = DRAM_SRAM1.getMemFree();
+			if(ulHistoryMemoryMin > ulMemoryMin) {
+				ulHistoryMemoryMin = ulMemoryMin;
+			}
+			printf("|  frameTask  | osStatus = %1d | queue count = %1ld | queue count hisrotry max = %1ld | history free min = %6ld | \r\n" ,
+					osStatus, ulQueueCount, ulQueueCountHistoryMax, ulHistoryMemoryMin);
+
+			ulPeriodCount++;
 		}
 
 		xTaskPeriod = 1000 / frame_freq;	/* 调度周期，单位ms */

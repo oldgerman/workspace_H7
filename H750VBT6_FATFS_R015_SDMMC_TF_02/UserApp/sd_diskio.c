@@ -122,6 +122,10 @@ See BSP_SD_ErrorCallback() and BSP_SD_AbortCallback() below
 /* Private variables ---------------------------------------------------------*/
 #if defined(ENABLE_SCRATCH_BUFFER)
 #if defined (ENABLE_SD_DMA_CACHE_MAINTENANCE)
+/** 将 512B 暂存缓冲区编译到指定 RAM
+  * 注意：STM32H750 的 SDMMC1 仅支持 RAM_D1，而 SDMMC2 支持 RAM_D1、RAM_D2
+  * 当前使用 SDMMC1，所以编译到 RAM_D1
+  */
 __attribute__((section(".RAM_D1_Array")))
 ALIGN_32BYTES(static uint8_t scratch[BLOCKSIZE]); // 32-Byte aligned for cache maintenance
 #else

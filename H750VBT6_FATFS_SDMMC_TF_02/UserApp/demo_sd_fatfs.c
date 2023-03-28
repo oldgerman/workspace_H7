@@ -53,9 +53,12 @@ typedef enum{
 #define BUF_SIZE				(64*1024)		/* 每次读写SD卡的最大数据长度: 64KB*/
 
 /* Private macro -------------------------------------------------------------*/
-/* 将缓冲区编译到指定RAM的宏 */
+/** 将一些 FATFS 变量和缓冲区编译到指定 RAM
+  * 注意：STM32H750 的 SDMMC1 仅支持 RAM_D1，而 SDMMC2 支持 RAM_D1、RAM_D2
+  */
 #ifndef  RAM_D1
-#define  RAM_D1	 __attribute__((section(".RAM_D1_Array"))) 	// 放在 .RAM_D1 (AXI SRAM)
+#define  RAM_D1	__attribute__((section(".RAM_D1_Array"))) 		// 放在 .RAM_D1 (AXI SRAM)，SDMMC1 和 SDMMC2 都支持
+//#define  RAM_D1	__attribute__((section(".RAM_D2_Array"))) 	// 放在 .RAM_D2 (SRAM1~3)，仅 SDMMC2 支持，SDMMC1 不支持
 #endif
 #ifndef RAM_D1
 #error "macro 'RAM_D1' not defined"

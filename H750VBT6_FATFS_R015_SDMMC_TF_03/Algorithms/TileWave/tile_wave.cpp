@@ -110,12 +110,10 @@ uint32_t TileWave::createTileBufferList()
 	ulPeriodMax = (*xLayersList.begin()).ulTileBufferWritePeriod;
 
 	/* 申请读写缓冲区的动态内存 */
-	// 改为实时切片时分配
-	// pucWriteRingBuffer = (uint8_t*)aligned_malloc(ulLayersTileBufferSize, alignment_);
-	// 但先分配指针数组
+	// 实时切片时分配
 
 	// 读缓冲区暂时分 5 个 ulIOSizeMin
-	pucReadBuffer = (uint8_t*)aligned_malloc(5 * ulIOSizeMin, alignment_);
+//	pucReadBuffer = (uint8_t*)aligned_malloc(5 * ulIOSizeMin, alignment_);
 
 	return 0U;
 }
@@ -127,7 +125,7 @@ uint32_t TileWave::createTileBufferList()
   */
 void TileWave::resetVariablesBeforeSlice()
 {
-	// 每次重新开始切片后需要重置
+	/* 每次重新开始切片后需要重置 */
 	ulPeriod = 0;
 	ulWriteBufferOffsetOld = 0;
 	fRealWrittenFreqSum = 0;
@@ -137,16 +135,8 @@ void TileWave::resetVariablesBeforeSlice()
 	static uint32_t ulEventNumOld = 0;
 	if(ulEventNum != ulEventNumOld) {
 		ulEventNumOld = ulEventNum;
-
-#if 0	// 不搞地址传递了，改为交给osMessageQueuePut 拷贝值传递
-		/* 释放并申请新的事件数组内存 */
-		if(pxEvent != NULL) // 第一次执行时初始值是 NULL
-			aligend_free(pxEvent);
-		pxEvent = aligned_malloc(sizeof(Event_t) * ulEventNum, 8);
-#endif
-		/* 当消息队列的剩余消息数是0才可 */
+		/* 当消息队列的剩余消息数是 0，才可删除并创建新的消息队列 */
 		if(osMessageQueueGetCount(xMsgQueue) == 0) {
-			/* 删除并创建新的消息队列 */
 			osMessageQueueDelete(xMsgQueue);	// 第一次执行时会返回 osErrorParameter
 			xMsgQueue = osMessageQueueNew(ulEventNum, sizeof(Event_t), NULL);
 		}
@@ -169,7 +159,6 @@ TileWave::WriteRingBufferParam_t TileWave::sliceTileBuffer(uint8_t* pulData)
 
 	/* 用于计算本函数被调用的实时频率的单次和平均值 */
 	static double fRealWrittenFreq = 0;
-	static uint32_t ulWrittenCount = 0;
 	static uint32_t ulTickCountOld =  xTaskGetTickCount();
 	uint32_t ulTickCount;
 
@@ -178,7 +167,6 @@ TileWave::WriteRingBufferParam_t TileWave::sliceTileBuffer(uint8_t* pulData)
 	uint32_t ulWriteMark = 0;
 
 	/* 瓦片切片 */
-	++ulPeriod;	// = 1、2、3...2048;
 	xRit = xLayersList.rbegin();
 
 	/** 从帧缓冲区中复制瓦片大小的数据到瓦片缓冲区
@@ -230,10 +218,7 @@ TileWave::WriteRingBufferParam_t TileWave::sliceTileBuffer(uint8_t* pulData)
 		}
 		++xRit; // 从最大的层迭代到最小的
 	}
-	/* 保存需要写缓冲区的信息 */
-//	if(ulSliceButNotWrite == 0) {
-//		ret = write(ulTxBufferOffsetOld, ulTxBufferOffset, (uint8_t *)pcuTxBuffer);
-//	}
+	/* 保存需要写缓冲区时的参数配置 */
 	WriteRingBufferParam_t WriteRingBufferParam = {
 			.ulAddr   = ulWriteBufferOffsetOld,
 			.ulSize   = ulWriteBufferOffset,
@@ -244,16 +229,15 @@ TileWave::WriteRingBufferParam_t TileWave::sliceTileBuffer(uint8_t* pulData)
 
 	/* 打印本次切片详情 */
 	if(ulPrintSliceDetail) {
-		printf("| sliceTileBuffer | ulPeriod = %4ld | addr = %10ld | size = %9ld | mark = %2ld | \r\n",
+		printf("| sliceTileBuffer | ulPeriod = %4ld | addr = %9ld | size = %5ld | mark = %2ld | \r\n",
 			ulPeriod, ulWriteBufferOffsetOld, ulWriteBufferOffset, ulWriteMark);
 	}
 
 	/* 计算实时频率的单次和平均值 */
-	++ulWrittenCount;
 	ulTickCount = xTaskGetTickCount();	/* 获取当前的系统时间 */
 	uint32_t ulTickOffest = ulTickCount - ulTickCountOld;
 	ulTickCountOld = ulTickCount;
-	fRealWrittenFreq = (double)1000 / ((double)ulTickOffest / ulWrittenCount);
+	fRealWrittenFreq = (double)1000 / ((double)ulTickOffest);
 
 	// 第一次 fRealWrittenFreq 肯定是 inf，需要舍弃
 	// fRealWrittenFreq 是一个正常的浮点数才会计算
@@ -262,10 +246,10 @@ TileWave::WriteRingBufferParam_t TileWave::sliceTileBuffer(uint8_t* pulData)
 		fRealWrittenFreqSum += fRealWrittenFreq;
 		fRealWrittenFreqAvg = fRealWrittenFreqSum / fRealWrittenFreqNum;
 	}
-	ulWrittenCount = 0;
-	printf("freq: %3.3f, %3.3f\r\n", fRealWrittenFreq, fRealWrittenFreqAvg);
+//	printf("sliceFreq: %3.3f, %3.3f\r\n", fRealWrittenFreq, fRealWrittenFreqAvg);
 
 	/* 下次瓦片切片前需要处理的变量 */
+	++ulPeriod;	// = 1、2、3...2048;
 	ulPeriod %= ulPeriodMax;
 	ulWriteBufferOffsetOld += ulWriteBufferOffset;
 
@@ -279,16 +263,20 @@ TileWave::WriteRingBufferParam_t TileWave::sliceTileBuffer(uint8_t* pulData)
   */
 TileWave::TileWave(Config_t &xConfig)
 {
+	/* IO Size */
 	ulIOSize = xConfig.ulIOSize;
 	ulIOSizeMin = xConfig.ulIOSizeMin;
 	ulIOSizeMax = xConfig.ulIOSizeMax;
+    /* Layer */
 	ulLayerNum = xConfig.ulLayerNum;
 	ulLayerNumMax = xConfig.ulLayerNumMax;
 	ulLayerTilesNumMax = xConfig.ulLayerTilesNumMax;
+	/* WaveForm */
     ulWaveFrameSize = xConfig.ulWaveFrameSize;
     ulWaveDispWidth = xConfig.ulWaveDispWidth;
 	ulWaveDispTileBufferSize = xConfig.ulWaveDispTileBufferSize;
-	ulWriteRingBufferNum = xConfig.ulWriteRingBufferNum;
+	/* Event */
+	ulEventNum = xConfig.ulEventNum;
 
 	ulLayersTileBufferSize = 0;
 
@@ -299,11 +287,8 @@ TileWave::TileWave(Config_t &xConfig)
 	fRealWrittenFreqAvg = 0;
 	fRealWrittenFreqNum = 0;
 
-	ulPrintSliceDetail = 1;		// 默认打印切片的详情信息
+	ulPrintSliceDetail = 0;		// 默认不打印切片的详情信息
 	ulSliceButNotWrite = 0;		// 默认切片时写文件
-
-	pxEvent = NULL;
-	ulEventNum = 5;				// 事件深度 5，影响环形缓冲区申请的个数
 }
 
 /**

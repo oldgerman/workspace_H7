@@ -53,7 +53,9 @@ typedef enum{
 #define BUF_SIZE				(64*1024)		/* 每次读写SD卡的最大数据长度: 64KB*/
 
 /* Private macro -------------------------------------------------------------*/
-/* 将缓冲区编译到指定RAM的宏 */
+/** 将一些 FATFS 变量和缓冲区编译到指定 RAM
+  * 注意：STM32H750 的 SDMMC1 仅支持 RAM_D1，而 SDMMC2 支持 RAM_D1、RAM_D2
+  */
 #ifndef  RAM_D1
 #define  RAM_D1	 __attribute__((section(".RAM_D1_Array"))) 	// 放在 .RAM_D1 (AXI SRAM)
 #endif
@@ -254,18 +256,18 @@ uint32_t initExistingWaveFile()
 uint32_t writeWaveFile(uint32_t addr, uint32_t size, uint8_t* pData)
 {
 	FRESULT res = FR_OK;
-	char path[32];
 	uint32_t bw;
 
-	sprintf(path, "%sWAVE.txt", DiskPath);
+//	char path[32];
+//	sprintf(path, "%sWAVE.txt", DiskPath);
 //	res += f_open(&file, path, FA_WRITE | FA_READ);
-
 //	fp->cltbl = clmt;
 
 	res += f_lseek(fp, addr);
 	res += f_write(&file, pData, size, (UINT* )&bw);
-//	res += f_close(fp);
 	res += f_sync(fp);
+
+//	res += f_close(fp);
 
 	return res;
 }
