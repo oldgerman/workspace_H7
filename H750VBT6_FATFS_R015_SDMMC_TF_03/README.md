@@ -255,6 +255,26 @@
 
 > FATFS + SD 卡的实时性不行不能一概而论，**使用高性能 SD 卡，可以提升很少的写入实时性，关键问题还是在 FAT 本身**
 
+最后一次写入
+
+> 偏移地址 134182912B + 写入大小 30720B = 134213632B，128MB - 134213632B = 4096B，剩余4KB，没有超过 128MB，这4KB可以当作自定义波形数据文件格式的头部信息
+>
+> ```c
+> |  frameTask  | osStatus = 0 | queue count = 1 | queue count hisrotry max = 1 | history free min = 395048 | 
+> fatfsSDTaskFreq: 25.000, 24.994
+> | fatfsSDTask | osStatus = 0 | ulPeriod = 2045 | ret =  0 | addr =  134119424 | size =  30720 | mark =  4 | 
+> |  frameTask  | osStatus = 0 | queue count = 1 | queue count hisrotry max = 1 | history free min = 395048 | 
+> fatfsSDTaskFreq: 25.000, 24.994
+> | fatfsSDTask | osStatus = 0 | ulPeriod = 2046 | ret =  0 | addr =  134150144 | size =  32768 | mark =  5 | 
+> |  frameTask  | osStatus = 0 | queue count = 1 | queue count hisrotry max = 1 | history free min = 395048 | 
+> fatfsSDTaskFreq: 25.000, 24.994
+> | fatfsSDTask | osStatus = 0 | ulPeriod = 2047 | ret =  0 | addr =  134182912 | size =  30720 | mark =  4 | 
+> [led_task] sysTick 9545002 ms
+> [led_task] sysTick 9550002 ms
+> [led_task] sysTick 9555002 ms
+> [led_task] sysTick 9560002 ms
+> ```
+
 ## 附
 
 ### 消息队列传指针的问题
@@ -314,7 +334,7 @@
 >
 > [内存池- 维基百科，自由的百科全书](https://zh.wikipedia.org/zh-cn/記憶池)
 >
-> > **内存池**（Memory Pool），又被称为**固定大小区块规划（fixed-size-blocks allocation）**，允许程序员以类似 [C语言](https://zh.wikipedia.org/wiki/C語言) 的 [malloc](https://zh.wikipedia.org/w/index.php?title=Malloc&action=edit&redlink=1) 或是 [C++](https://zh.wikipedia.org/wiki/C%2B%2B) 的 new 操作数进行动态的存储器规划。对于其它动态存储器规划的实践来说，因为会变动存储器区块大小导致的碎片问题，导致在[实时系统](https://zh.wikipedia.org/w/index.php?title=實時系統&action=edit&redlink=1)上受限于性能因此，根本无法使用。**内存池**提供了一个更有效率的解决方案：预先规划一定数量的存储器区块，使得整个程序可以在执行期规划 (allocate)、使用 (access)、归还 (free) 存储器区块
+> > **内存池**（Memory Pool），又被称为**固定大小区块规划（fixed-size-blocks allocation）**，允许程序员以类似 [C语言](https://zh.wikipedia.org/wiki/C語言) 的 [malloc](https://zh.wikipedia.org/w/index.php?title=Malloc&action=edit&redlink=1) 或是 [C++](https://zh.wikipedia.org/wiki/C%2B%2B) 的 new 操作数进行动态的存储器规划。对于其它动态存储器规划的实践来说，因为会变动存储器区块大小导致的碎片问题，导致在**实时系统**上受限于性能，甚至根本无法使用。**内存池**提供了一个更有效率的解决方案：预先规划一定数量的存储器区块，使得整个程序可以在执行期规划 (allocate)、使用 (access)、归还 (free) 存储器区块
 
 [RT-Thread分析-静态内存池管理](https://blog.csdn.net/u011638175/article/details/122540229)
 
