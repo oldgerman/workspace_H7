@@ -4,7 +4,7 @@
 
 ## 关于
 
-用于 [H750VBT6_FATFS_R015_SDMMC_TF_01](https://github.com/oldgerman/workspace_H7/tree/master/H750VBT6_FATFS_R015_SDMMC_TF_01) 工程的下阶段测试
+本工程只做了一些动态内存有关的事情，在前一个工程 [H750VBT6_FATFS_R015_SDMMC_TF_01](https://github.com/oldgerman/workspace_H7/tree/master/H750VBT6_FATFS_R015_SDMMC_TF_01) 中提到的消息队列的实现，在下阶段的 [H750VBT6_FATFS_R015_SDMMC_TF_03](https://github.com/oldgerman/workspace_H7/tree/master/H750VBT6_FATFS_R015_SDMMC_TF_03) 工程
 
 - 开发环境：STM32CubeIDE v1.11.2 + STM32CubeMX v6.6
 - 包版本：STM32CubeH7 V1.11.0 / 04-Nov-2022

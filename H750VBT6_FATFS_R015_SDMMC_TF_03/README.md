@@ -29,7 +29,7 @@
 假设 RTOS 对象情况如下：
 
 - frameProcessorTask（帧处理器任务）是 RealTime 优先级，向消息队列放数据，每秒固定频率执行（取 25Hz，每 40 ms 系统时间戳被调度一次）
-- fatfsSDTask（FATFS SD卡任务）是 Low 优先级，从消息队列取数据，需要消息队列里有消息才会解除阻塞态，然后在运行态时从消息队列取数据（由事件驱动）
+- fatfsSDTask（FATFS SD卡任务）是 Normal 优先级，从消息队列取数据，需要消息队列里有消息才会解除阻塞态，然后在运行态时从消息队列取数据（由事件驱动）
 - 消息队列采用 FIFO 方式的存取
 - 有 3 个写入 SD 卡的缓冲区（3 个看作一个循环缓冲区）分别对应三种消息：msg_write_buf_1、msg_write_buf_2、msg_write_buf_3，frameProcessorTask 每次调用会循环发送这三种消息
 
@@ -157,7 +157,7 @@
 
 注：根据瓦片缓冲区大小可知，不定长度写入的范围是 30KB ~ 52KB
 
-### fatfsSDTask实时性抽风
+### fatfsSDTask 执行时间抽风
 
 25Hz
 
@@ -199,7 +199,7 @@
 
 > 以固定频率调度 frameProcessorTask 实时切片并写消息解除 fatfsSDTask 的阻塞，大多部分情况下，都是 frameTask 和 fatfsSDTask 交替调度，当fatfsSDTask 的实时性抽风时，稍后会补回调度，当频率过快，消息队列还是会空间不足
 >
-> 为了保险起见，对于本工程实际的 25Hz 应用，将消息队列深度给 6 ，根据上面 100Hz 测得的 history free min = 222728B，这时环形写缓冲区占用的动态内存： 492KB - 55464B - 222728B ≈ 220.3KB。通过将 AXI SRAM 的 256KB 作为动态内存给环形写缓冲区使用，就足够消除 FATFS + SD卡 以 25Hz 不定长度写入 30K~52KB 的时间不确定性的影响
+> 为了保险起见，对于本工程实际的 25Hz 应用，将消息队列深度给 6 ，根据在100Hz 测得的 history free min = 222728B，这时环形写缓冲区占用的动态内存： 492KB - 55464B - 222728B ≈ 220.3KB。**通过将 AXI SRAM 的 256KB 作为动态内存给环形写缓冲区使用，就足够消除 FATFS + SD卡 以 25Hz 不定长度写入 30K~52KB 时间不确定的影响**
 
 ## 附
 
