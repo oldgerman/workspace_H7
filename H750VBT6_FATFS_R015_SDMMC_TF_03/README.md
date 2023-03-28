@@ -201,29 +201,29 @@
 
 > 以固定频率调度 frameProcessorTask 实时切片并写消息解除 fatfsSDTask 的阻塞，大多部分情况下，都是 frameTask 和 fatfsSDTask 交替调度，当fatfsSDTask 的实时性抽风时，稍后会补回调度，当频率过快，消息队列还是会空间不足
 >
-> 为了保险起见，将消息队列深度给 6 ，根据在100Hz 测得的 history free min = 222728B，这时环形写缓冲区占用的动态内存： 492KB - 55464B - 222728B ≈ 220.3KB。**通过将 AXI SRAM 的 256KB 作为动态内存给环形写缓冲区使用，就足够消除 FATFS + SD卡 以 25Hz 不定长度写入 30K~52KB 时间不确定的影响**
+> 为了保险起见，将消息队列深度给 6 ，根据在100Hz 测得的 history free min = 222728B，这时环形写缓冲区占用的动态内存： 492KB - 55464B - 222728B ≈ 220.3KB。**通过将 AXI SRAM 的 256KB 作为动态内存给环形写缓冲区使用，可以显著减少 FATFS + SD卡 以 25Hz 不定长度写入 30K~52KB 时间不确定的影响**
 
 50Hz（补充）
 
 > 格式化为 32KB 簇大小，用于对比三星64G EVO Plus 50Hz 下的测试
 >
-> 写入新建后预分配128MB的波形文件，fatfsSDTask 实时单次频率（粉色）和实时平均频率（绿色）的直方图：
+> 写入新建后预分配128MB的波形文件
 >
-> ![闪迪64G_Ultra_50Hz_4096次新文件写入_fatfsSDTask的实时单次频率直方图](Images/闪迪64G_Ultra_50Hz_4096次新文件写入_fatfsSDTask的实时单次频率直方图.png)
+> ![](Images/闪迪64G_Ultra_50Hz_4096次新文件写入_fatfsSDTask的实时单次频率直方图.png)
 
 ## 测试（三星64G EVO Plus）
 
-三星 64G EVO Plus（约）格式化为 FAT32 + 32KB 簇大小，在刚刚格式化后测试
+三星 64G EVO Plus 格式化为 FAT32 + 32KB 簇大小，在刚刚格式化后测试
 
 ### fatfsSDTask 执行周期
 
 25Hz
 
-> 写入新建后预分配128MB的波形文件，fatfsSDTask 实时单次频率（粉色）和实时平均频率（绿色）的直方图：
+> 写入新建后预分配128MB的波形文件
 >
-> ![三星64G_EVO_25Hz_4096次新文件写入_fatfsSDTask的实时单次频率直方图](Images/三星64G_EVO_25Hz_4096次新文件写入_fatfsSDTask的实时单次频率直方图.png)
+> ![](Images/三星64G_EVO_25Hz_4096次新文件写入_fatfsSDTask的实时单次频率直方图.png)
 >
-> ![三星64G_EVO_25Hz_4096次新文件写入_fatfsSDTask的实时平均频率直方图](Images/三星64G_EVO_25Hz_4096次新文件写入_fatfsSDTask的实时平均频率直方图.png)
+> ![](Images/三星64G_EVO_25Hz_4096次新文件写入_fatfsSDTask的实时平均频率直方图.png)
 >
 > 全程很稳定
 
@@ -239,11 +239,11 @@
 
 100Hz
 
-> 覆盖写入波形文件，fatfsSDTask 实时单次频率（粉色）和实时平均频率（绿色）的直方图：
+> 覆盖写入波形文件
 >
-> ![三星64G_EVO_100Hz_4096次覆盖写入_fatfsSDTask的实时单次频率直方图](Images/三星64G_EVO_100Hz_4096次覆盖写入_fatfsSDTask的实时单次频率直方图.png)
+> ![](Images/三星64G_EVO_100Hz_4096次覆盖写入_fatfsSDTask的实时单次频率直方图.png)
 >
-> ![三星64G_EVO_100Hz_4096次覆盖写入_fatfsSDTask的实时平均频率直方图](Images/三星64G_EVO_100Hz_4096次覆盖写入_fatfsSDTask的实时平均频率直方图.png)
+> ![](Images/三星64G_EVO_100Hz_4096次覆盖写入_fatfsSDTask的实时平均频率直方图.png)
 >
 > 4096次的 ( 4096 - ( 12 + 24 + 7 + 7 + 24 + 12 ) ) / 4096 = 97.9% 落在 100Hz，消息队列的消息数全程没有超过 1 个（经过多次测试，还是没有超过 1 个），以 100Hz 发起不定长度的写入，平均速度超过 4MB/s，每次写的时间都不超过 10ms，相当逆天（对比前文测试闪迪 64G Ultra 即使格式化后，50Hz 甚至会出现消息个数为 7...）
 >
