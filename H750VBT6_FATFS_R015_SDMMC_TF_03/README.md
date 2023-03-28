@@ -275,7 +275,7 @@
   >
   > > **和本工程的应用场景很相似：**
   > >
-  > > frameProcessorTask 以固定的调度周期将固定的数量采样点写入环形缓冲区，向消息队列里写带有本次缓冲区信息的消息。fatfsSDTask 从消息队列里取消息，以不确定的调度周期每次将将固定数量的采样点写入SD卡。frameProcessorTask 和 fatfsSDTask 任务在平均时间内的调度次数和读写数据量相等，但调度周期一个确定，一个不确定。
+  > > frameProcessorTask 以固定的调度周期将固定的数量采样点写入环形缓冲区，向消息队列里写带有本次缓冲区信息的消息。fatfsSDTask 从消息队列里取消息，以不确定的调度周期每次将将固定数量的采样点写入SD卡。frameProcessorTask 和 fatfsSDTask 任务在平均时间内的调度次数和读写数据量相等，但调度周期一个确定，一个不确定
 
 ### 参考
 
@@ -285,3 +285,43 @@
 2. [文件的物理结构](https://lfool.gitbook.io/operating-system/di-si-zhang-wen-jian-guan-li/3.-wen-jian-de-wu-li-jie-gou)
 2. [文件的目录结构](https://lfool.gitbook.io/operating-system/di-si-zhang-wen-jian-guan-li/4.-wen-jian-de-mu-lu-jie-gou)
 2. [空闲分区管理](https://lfool.gitbook.io/operating-system/di-si-zhang-wen-jian-guan-li/5.-kong-xian-fen-qu-guan-li)
+
+[STM32串口驱动：环形队列+内存动态分配+DMA](https://www.amobbs.com/thread-4516795-1-1.html)
+
+> ::point_up: 此帖子作者写于10多年前，那个时候互联网的教程还没有这么普及，居然能展开讨论这么多，可见其功力十分深厚
+>
+> 文章中的一些剖析，直到今天仍然是值得学习的：
+>
+> 环形发送缓冲区在DMA发送过程中，无法让头指针到达缓冲区终点后，自动将指针调整到起点位置，所以对于头指针和尾指针就得做出一些修改（这个我已经在 [H750VBT6_usart_rx_idle_line_irq_ringbuff_tx_04](https://github.com/oldgerman/workspace_H7/tree/master/H750VBT6_usart_rx_idle_line_irq_ringbuff_tx_04) 玩明白了）
+>
+> ### 动态内存堆管理
+>
+> 上位机的开发通常使用malloc() 和 free() 对内存管理。相对嵌入式系统而言，上位机的内存非常大，而且Windows提供了很好的内存管理接口，所以不存在问题。但是在嵌入式系统中，大量使用上述函数会出现两个问题：
+>
+> 1. 产生内存碎片
+>
+>    > 在运行的过程中，各个任务频繁的调用内存分配和释放，会导致原本一整块空间地址连续的区域分散成一堆物理地址上相互独立的区域，这样有可能导致一个程序需要一个较大的内存，空余的内存块没有一个连续的地址，无法分配给任务。久而久之，最后系统可能连一个很小的物理地址都分配不到，最后导致系统的崩溃
+>
+> 2. 运行的时间不确定
+>
+>    > 在某些内存管理策略中（例如FreeRTOS的 heap1、heap2、heap3、heap4、heap5），可能存在着一些内存合并等功能，free() 在释放内存后，还会将空间上相近的两个空白区域合并为同一个，将存在内存碎片的区域重新整合，可能使用了二叉树等数据结构，那么导致所耗费的时间无法确定
+>
+> 在实际应用中，如果多个任务都要使用堆内存这种全局变量，为了避免重入，必须采用信号同步或暂时关闭中断，但这样会导致系统死区时间的增加，响应速度的变慢，不确定性增加
+>
+> ### 静态内存块池管理
+>
+> 因此，在大多数嵌入式系统中，通常采用静态内存块池的方法。将系统空余的内存统一管理，生成一系列的大小固定的内存块池，在实际的操作中，以这一整个内存块进行操作。
+>
+> [内存池- 维基百科，自由的百科全书](https://zh.wikipedia.org/zh-cn/記憶池)
+>
+> > **内存池**（Memory Pool），又被称为**固定大小区块规划（fixed-size-blocks allocation）**，允许程序员以类似 [C语言](https://zh.wikipedia.org/wiki/C語言) 的 [malloc](https://zh.wikipedia.org/w/index.php?title=Malloc&action=edit&redlink=1) 或是 [C++](https://zh.wikipedia.org/wiki/C%2B%2B) 的 new 操作数进行动态的存储器规划。对于其它动态存储器规划的实践来说，因为会变动存储器区块大小导致的碎片问题，导致在[实时系统](https://zh.wikipedia.org/w/index.php?title=實時系統&action=edit&redlink=1)上受限于性能因此，根本无法使用。**内存池**提供了一个更有效率的解决方案：预先规划一定数量的存储器区块，使得整个程序可以在执行期规划 (allocate)、使用 (access)、归还 (free) 存储器区块
+
+[RT-Thread分析-静态内存池管理](https://blog.csdn.net/u011638175/article/details/122540229)
+
+> RT-Thread 的内存管理模块的算法总体上可分为两类：**动态内存堆管理**和**静态内存池管理**
+>
+> 其中动态内存堆管理又根据具体设备内存大小划分为三种情况：
+>
+> - 针对小内存块的分配管理（小内存管理算法）
+> - 针对大内存块的分配管理（slab 管理算法）
+> - 针对多内存堆的分配情况（memheap 管理算法）
