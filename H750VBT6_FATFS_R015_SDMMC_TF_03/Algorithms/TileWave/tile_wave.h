@@ -20,10 +20,8 @@
   *                  例如 FATFS + SD 卡。
   *                  示例工程和测试：https://github.com/oldgerman/workspace_H7/
   *                  tree/master/H750VBT6_FATFS_R015_SDMMC_TF_03
-  *                - 写环形缓冲区并不符合狭义的环形缓冲区定义，它是从内存池申请
-  *                  释放的多个写缓冲区，只不过其在内存中分布变化有时像环形
-  *                  缓冲区的数据区在游走。实时瓦片切片任务申请该缓冲区，
-  *                  读写瓦片数据任务释放该缓冲区。
+  *                - 写层缓冲区是从内存池申请释放的多个缓冲区，实时瓦片切片任务
+  *                  申请该缓冲区， 读写瓦片数据任务释放该缓冲区。
   *
   ******************************************************************************
   * @attention
@@ -107,7 +105,7 @@ public:
 		uint8_t* pucData;
 		uint32_t ulPeriod;
 		uint32_t ulMark;
-	} WriteRingBufferParam_t;
+	} WriteLayerBufferParam_t;
 
 	/* 读缓冲区时的参数配置 */
 	typedef struct {
@@ -118,7 +116,7 @@ public:
 
 	/* @brief event types used in the ring buffer */
 	typedef enum {
-		EVENT_WRITE_RING_BUFFER = 0,
+		EVENT_WRITE_LAYER_BUFFER = 0,
 		EVENT_READ_BUFFER,
 		EVENT_STOP
 	} EventType_t;
@@ -127,7 +125,7 @@ public:
 	typedef struct {
 		EventType_t type; /* event type */
 	    union {
-	    	WriteRingBufferParam_t xWriteRingBufferParam;
+	    	WriteLayerBufferParam_t xWriteLayerBufferParam;
 	    	ReadBufferParam_t 	   xReadBufferParam;
 	    };
 	} Event_t;
@@ -137,7 +135,7 @@ public:
 
 	uint32_t 			createTileBufferList();
 	void 				resetVariablesBeforeSlice();
-	WriteRingBufferParam_t 	sliceTileBuffer(uint8_t* pulData);
+	WriteLayerBufferParam_t 	sliceTileBuffer(uint8_t* pulData);
 	void 				vPrintLayerInfo();
 
 	void initReadWriteAPI(
@@ -191,9 +189,9 @@ public:
 	std::list<Layer_t>::reverse_iterator xRit; 	// 层链表的反向迭代器
 
 	/* 读写缓冲区 */
-	uint32_t ulWriteRingBufferNum;				// 写环形缓冲区的个数
-	uint8_t* pucWriteRingBuffer;				// 写环形缓冲区的指针
-	uint8_t* pucReadBuffer; 					// 读缓冲区的指针
+	uint32_t ulWriteLayerBufferNum;				// 写层缓冲区的个数
+	uint8_t* pucWriteLayerBuffer;				// 写层缓冲区的指针
+	uint8_t* pucReadLayerBuffer; 				// 读写缓冲区的指针
 
 	/* 读写API */
 	std::function<uint32_t (uint32_t addr, uint32_t size, uint8_t* pData)> 	write;
@@ -209,7 +207,7 @@ public:
 
 	/* 以下是在协议解析程序中可更改的标志 */
 	uint32_t ulPrintSliceDetail;		// 打印实时切片信息
-	uint32_t ulSliceButNotWrite;		// 实时切片时不写数据，若为真，那么就不会在切片时申请环形缓冲区
+	uint32_t ulSliceButNotWrite;		// 实时切片时不写数据，若为真，那么就不会在切片时申请层缓冲区
 
 	uint32_t ulEventNum;				// 事件个数，决定消息队列深度
 	osMessageQueueId_t xMsgQueue;		// 消息队列

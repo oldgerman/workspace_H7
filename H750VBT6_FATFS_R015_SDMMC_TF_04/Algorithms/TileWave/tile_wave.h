@@ -20,14 +20,12 @@
   *                  例如 FATFS + SD 卡。
   *                  示例工程和测试：https://github.com/oldgerman/workspace_H7/
   *                  tree/master/H750VBT6_FATFS_R015_SDMMC_TF_03
-  *                - 写环形缓冲区并不符合狭义的环形缓冲区定义，它是从内存池申请
-  *                  释放的多个写缓冲区，只不过其在内存中分布变化有时像环形
-  *                  缓冲区的数据区在游走。实时瓦片切片任务申请该缓冲区，
-  *                  读写瓦片数据任务释放该缓冲区。
+  *                - 写层缓冲区是从内存池申请释放的多个缓冲区，实时瓦片切片任务
+  *                  申请该缓冲区， 读写瓦片数据任务释放该缓冲区。
   *    2023-03-29  - BUG 修复： 周期计数器 ulPeriod 范围从 0-2047 改为 1-2048
   *                - 任意时刻停止写入：sliceTileBuffer() 增加 EventType_t 参数，
-  *                  通常情况给 EVENT_WRITE_RING_BUFFER；当中途停止写入时需要给
-  *                  EVENT_LAST_WRITE_RING_BUFFER，不论某些层瓦片缓冲区是否存满
+  *                  通常情况给 EVENT_WRITE_Layer_BUFFER；当中途停止写入时需要给
+  *                  EVENT_LAST_WRITE_Layer_BUFFER，不论某些层瓦片缓冲区是否存满
   *                  都会打包到本次发送的缓冲区。
   *
   ******************************************************************************
@@ -112,32 +110,32 @@ public:
 		uint8_t* pucData;
 		uint32_t ulPeriod;
 		uint32_t ulMark;
-	} WriteRingBufferParam_t;
+	} WriteLayerBufferParam_t;
 
 	/* 读缓冲区时的参数配置 */
 	typedef struct {
 		uint32_t ulAddr;
 		uint32_t ulSize;
 		uint8_t* pucData;
-	} ReadBufferParam_t;
+	} ReadLayerBufferParam_t;
 
-	/* @brief event types used in the ring buffer */
+	/* @brief event types used in the Layer buffer */
 	typedef enum {
-		EVENT_STOP_READ = 0,	// 停止读
-		EVENT_STOP_WRITE,		// 停止写
-		EVENT_READ_HEADER,  	// 读文件头
-		EVENT_WRITE_HEADER, 	// 写文件头
-		EVENT_READ_RING_BUFFER,	// 读环形缓冲区
-		EVENT_WRITE_RING_BUFFER,// 写环形缓冲区
-		EVENT_LAST_WRITE_RING_BUFFER, //最后一次写环形缓冲区
+		EVENT_STOP_READ = 0,			// 停止读
+		EVENT_STOP_WRITE,				// 停止写
+		EVENT_READ_HEADER,  			// 读文件头
+		EVENT_WRITE_HEADER, 			// 写文件头
+		EVENT_READ_LAYER_BUFFER,		// 读层缓冲区
+		EVENT_WRITE_LAYER_BUFFER,		// 写层缓冲区
+		EVENT_LAST_WRITE_LAYER_BUFFER, 	// 最后一次写层缓冲区
 	} EventType_t;
 
 	/* @brief Event structure used in event queue */
 	typedef struct {
 		EventType_t type; /* event type */
 	    union {
-	    	WriteRingBufferParam_t xWriteRingBufferParam;
-	    	ReadBufferParam_t 	   xReadBufferParam;
+	    	WriteLayerBufferParam_t xWriteLayerBufferParam;
+	    	ReadLayerBufferParam_t 	xReadLayerBufferParam;
 	    };
 	} Event_t;
 
@@ -148,7 +146,7 @@ public:
 
 	uint32_t 			createTileBufferList();
 	void 				resetVariablesBeforeSlice();
-	WriteRingBufferParam_t 	sliceTileBuffer(uint8_t* pulData, EventType_t xEventType);
+	WriteLayerBufferParam_t 	sliceTileBuffer(uint8_t* pulData, EventType_t xEventType);
 	void 				vPrintLayerInfo();
 
 	void initReadWriteAPI(
@@ -191,7 +189,7 @@ public:
 	/* 波形参数 */
 	uint32_t ulWaveDispBufferSize; 				// 缓冲区大小：波形显示
 	uint32_t ulWaveFrameSize;  					// 波形帧大小，单位B
-	uint32_t ulWaveDispWidth;					// 波形显示宽度，单位Pixel
+	uint32_t ulWaveDispWidth;					// 波形显示宽度，单位Px
 	uint32_t ulWaveDispDataSize; 				// 波形显示区数据的大小，单位B
 	uint32_t ulWaveDispTileBufferSize;  		// 波形显示区的瓦片缓冲区大小，单位B
 	uint32_t ulWaveDispTileBufferSizeMin;		// 波形显示区的瓦片缓冲区最小大小，单位B
@@ -201,10 +199,10 @@ public:
 	std::list<Layer_t>::iterator xIt;			// 层链表的正向迭代器
 	std::list<Layer_t>::reverse_iterator xRit; 	// 层链表的反向迭代器
 
-	/* 读写缓冲区 */
-	uint32_t ulWriteRingBufferNum;				// 写环形缓冲区的个数
-	uint8_t* pucWriteRingBuffer;				// 写环形缓冲区的指针
-	uint8_t* pucReadBuffer; 					// 读缓冲区的指针
+	/* 读写层缓冲区 */
+	uint8_t* pucWriteLayerBuffer;				// 写层缓冲区的指针
+	uint8_t* pucReadLayerBuffer; 				// 读层缓冲区的指针
+//	uint32_t ulWriteLayerBufferNum;				// 写层缓冲区的个数
 
 	/* 读写API */
 	std::function<uint32_t (uint32_t addr, uint32_t size, uint8_t* pData)> 	write;
@@ -220,7 +218,7 @@ public:
 
 	/* 以下是在协议解析程序中可更改的标志 */
 	uint32_t ulPrintSliceDetail;		// 打印实时切片信息
-	uint32_t ulSliceButNotWrite;		// 实时切片时不写数据，若为真，那么就不会在切片时申请环形缓冲区
+	uint32_t ulSliceButNotWrite;		// 实时切片时不写数据，若为真，那么就不会在切片时申请层缓冲区
 
 	uint32_t ulEventNum;				// 事件个数，决定消息队列深度
 	osMessageQueueId_t xMsgQueue;		// 消息队列
@@ -235,14 +233,16 @@ public:
 	std::function<void  (void* ptr, size_t alignment)> 		aligned_detect;
 
 	uint32_t ulCalculateTileWaveFileSizeFull();
+	uint32_t ulCalculateFileSizeFull();
+	uint32_t ulCalculateFileSizeForAnyPeriod(uint32_t ulPeriod);
+	ReadLayerBufferParam_t ulCalculateFileSizeForAnyPeriod(float fZoom, float fProgress);
 
 private:
 	static uint32_t ulCalculateSmallestPowerOf2GreaterThan(uint32_t ulValue);
 
 	static const size_t alignment_ = 32;				// 动态内存 32 字节对齐
-
-	char** ppucStrBuffer_;								// 字符串缓冲区暂存创建层链表时输出的信息
 	static const uint32_t ulStrBufferRowCount = 64;		// 字符串缓冲区每行 64 个 char 字符
+	char** ppucStrBuffer_;								// 字符串缓冲区暂存创建层链表时输出的信息
 };
 
 }

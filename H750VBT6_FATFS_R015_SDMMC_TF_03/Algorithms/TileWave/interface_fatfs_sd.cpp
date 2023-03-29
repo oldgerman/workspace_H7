@@ -76,7 +76,7 @@ static void fatfsSDTask(void* argument)
 			// process data
 			uint32_t ret = 0; // FATFS 函数的返回状态
 
-			if(msg.type == TileWave::EVENT_WRITE_RING_BUFFER ) {
+			if(msg.type == TileWave::EVENT_WRITE_LAYER_BUFFER ) {
 				/* 计算实时频率的单次和平均值 */
 				ulTickCount = xTaskGetTickCount();	/* 获取当前的系统时间 */
 				uint32_t ulTickOffest = ulTickCount - ulTickCountOld;
@@ -93,26 +93,26 @@ static void fatfsSDTask(void* argument)
 				printf("fatfsSDTaskFreq: %3.3f, %3.3f\r\n", fRealWrittenFreq, fRealWrittenFreqAvg);
 
 				/* 将缓冲区的数据写入SD卡 */
-				if(msg.xWriteRingBufferParam.pucData != NULL) {
+				if(msg.xWriteLayerBufferParam.pucData != NULL) {
 
 					/* STM32H750 的 SDMMC1 仅支持 RAM_D1，而 SDMMC2 支持 RAM_D1 和 RAM_D2
 					 * 本工程使用 SDMMC1，以下写操作访问动态内存中的缓冲区请务必在 RAM_D1 */
 					ret = xTileWave.write(
-							msg.xWriteRingBufferParam.ulAddr,
-							msg.xWriteRingBufferParam.ulSize,
-							msg.xWriteRingBufferParam.pucData);
+							msg.xWriteLayerBufferParam.ulAddr,
+							msg.xWriteLayerBufferParam.ulSize,
+							msg.xWriteLayerBufferParam.pucData);
 
 					/* 不论 FATFS 是否写入成功，都要释放缓冲区的内存 */
-					xTileWave.aligned_free(msg.xWriteRingBufferParam.pucData);
+					xTileWave.aligned_free(msg.xWriteLayerBufferParam.pucData);
 				}
 				/* 打印本次详情 */
 				printf("| fatfsSDTask | osStatus = %d | ulPeriod = %4ld | ret = %2ld | addr = %10ld | size = %6ld | mark = %2ld | \r\n",
 						osStatus,
-						msg.xWriteRingBufferParam.ulPeriod,
+						msg.xWriteLayerBufferParam.ulPeriod,
 						ret,
-						msg.xWriteRingBufferParam.ulAddr,
-						msg.xWriteRingBufferParam.ulSize,
-						msg.xWriteRingBufferParam.ulMark);
+						msg.xWriteLayerBufferParam.ulAddr,
+						msg.xWriteLayerBufferParam.ulSize,
+						msg.xWriteLayerBufferParam.ulMark);
 
 			} else if (msg.type == TileWave::EVENT_READ_BUFFER ) {
 				;

@@ -52,7 +52,7 @@ const osThreadAttr_t frameProcessorTask_attributes = {
 };
 
 /* Exported variables --------------------------------------------------------*/
-ALIGN_32BYTES(__attribute__((section (".RAM_DTCM_Array"))) frame_format_t frame[8000]);
+ALIGN_32BYTES(__attribute__((section (".RAM_DTCM_Array"))) frame_format_t frame[8192]);
 
 osThreadId_t frameProcessorTaskHandle;
 
@@ -82,8 +82,6 @@ static void frameProcessorTask(void* argument)
 	TickType_t xLastWakeTime;
 	TickType_t xTaskPeriod;
 	xLastWakeTime = xTaskGetTickCount();	/* 获取当前的系统时间 */
-	/* 帧缓冲区全部归'.'*/
-	memset(frame, '.', sizeof(frame));
 
 	/* 切片前复位一些变量 */
 	xTileWave.resetVariablesBeforeSlice();
@@ -110,14 +108,14 @@ static void frameProcessorTask(void* argument)
 		if(frame_writeTileBuffer == 0)
 		{
 			/* 停止前需要做最后一次 52KB 特殊切片 */
-			msg.type = TileWave::EVENT_LAST_WRITE_RING_BUFFER;
+			msg.type = TileWave::EVENT_LAST_WRITE_LAYER_BUFFER;
 			if(firstSliceStop) {
 				xSliceState = SLICE_LAST_WRITE_BUFFER;
 			}
 		}
 		else
 		{
-			msg.type = TileWave::EVENT_WRITE_RING_BUFFER;
+			msg.type = TileWave::EVENT_WRITE_LAYER_BUFFER;
 			xSliceState = SLICE_WRITE_BUFFER;
 
 			/* 4096次后停止，TODO: 写满后从首地址覆盖写入 */
@@ -135,11 +133,12 @@ static void frameProcessorTask(void* argument)
 				firstSliceStop = 0;
 			}
 
-			/* 采样缓冲区第一个元素写入当前切片周期数 */
-			sprintf((char*)&(frame[0].ctrl_u8[0]), "%4ld", xTileWave.ulPeriod);
+			/* 用作数据测试 */
+			memset(frame, '.', sizeof(frame)); 									// 帧缓冲区全部归'.'
+			sprintf((char*)&(frame[0].ctrl_u8[0]), "%4ld", xTileWave.ulPeriod); // 第一个元素写入当前周期数
 
-			/* 切片瓦片缓冲区暂存到环形缓冲区 */
-			msg.xWriteRingBufferParam = xTileWave.sliceTileBuffer(frame[0].ctrl_u8, msg.type);
+			/* 切片瓦片缓冲区暂存到层缓冲区 */
+			msg.xWriteLayerBufferParam = xTileWave.sliceTileBuffer(frame[0].ctrl_u8, msg.type);
 
 			/* 向消息队列写消息，通知写事件 */
 			osStatus = osMessageQueuePut(
@@ -154,8 +153,8 @@ static void frameProcessorTask(void* argument)
 				/* 检查文件头对象的脏数据表的剩余大小 */
 
 				/* TODO 保存数据, 一次8byte */
-//				msg.xWriteRingBufferParam.ulAddr;
-//				msg.xWriteRingBufferParam.ulSize;
+//				msg.xWriteLayerBufferParam.ulAddr;
+//				msg.xWriteLayerBufferParam.ulSize;
 			}
 
 			/* 记录消息队列中消息个数 */

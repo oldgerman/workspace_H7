@@ -169,13 +169,13 @@
 >
 > ![](Images/闪迪64G_Ultra_25Hz_4096次覆盖写入_fatfsSDTask的实时平均频率直方图.png)
 >
-> 从实时单次频率直方图中串口消息可知：在本次测试中，消息队列的消息数历史最大值为 4，内存池最少可用 282216B，使用的态内存峰值为 492KB - 282216B ≈ 216KB，环形缓冲区使用的态内存峰值为  216KB - 55464B ≈ 162KB（55464B 为层瓦片缓冲和字符串缓冲区使用的内存，使用`TW+LAYER_INFO\r`命令即可获取）
+> 从实时单次频率直方图中串口消息可知：在本次测试中，消息队列的消息数历史最大值为 4，内存池最少可用 282216B，使用的态内存峰值为 492KB - 282216B ≈ 216KB，层缓冲区使用的态内存峰值为  216KB - 55464B ≈ 162KB（55464B 为层瓦片缓冲和字符串缓冲区使用的内存，使用`TW+LAYER_INFO\r`命令即可获取）
 >
 > 经过十多次测试，极少数情况出现消息队列消息数是 5：概率约10000 次写入难碰到一次
 >
 > ![](Images/闪迪64G_Ultra_25Hz_fatfsSDTask实时性抽风瞬间_消息队列放了5个.png)
 >
-> 消息队列消息数是 5 时，环形写缓冲区占用的动态内存： 492KB - 55464B - 251448B ≈ 192.3KB
+> 消息队列消息数是 5 时，层写缓冲区占用的动态内存： 492KB - 55464B - 251448B ≈ 192.3KB
 
 100Hz
 
@@ -201,7 +201,7 @@
 
 > 以固定频率调度 frameProcessorTask 实时切片并写消息解除 fatfsSDTask 的阻塞，大多部分情况下，都是 frameTask 和 fatfsSDTask 交替调度，当fatfsSDTask 的实时性抽风时，稍后会补回调度，当频率过快，消息队列还是会空间不足
 >
-> 为了保险起见，将消息队列深度给 6 ，根据在100Hz 测得的 history free min = 222728B，这时环形写缓冲区占用的动态内存： 492KB - 55464B - 222728B ≈ 220.3KB。**通过将 AXI SRAM 的 256KB 作为动态内存给环形写缓冲区使用，可以显著减少 FATFS + SD卡 以 25Hz 不定长度写入 30K~52KB 时间不确定的影响**
+> 为了保险起见，将消息队列深度给 6 ，根据在100Hz 测得的 history free min = 222728B，这时层写缓冲区占用的动态内存： 492KB - 55464B - 222728B ≈ 220.3KB。**通过将 AXI SRAM 的 256KB 作为动态内存给层写缓冲区使用，可以显著减少 FATFS + SD卡 以 25Hz 不定长度写入 30K~52KB 时间不确定的影响**
 
 50Hz（补充）
 
@@ -286,13 +286,13 @@
 2. [文件的目录结构](https://lfool.gitbook.io/operating-system/di-si-zhang-wen-jian-guan-li/4.-wen-jian-de-mu-lu-jie-gou)
 2. [空闲分区管理](https://lfool.gitbook.io/operating-system/di-si-zhang-wen-jian-guan-li/5.-kong-xian-fen-qu-guan-li)
 
-[STM32串口驱动：环形队列+内存动态分配+DMA](https://www.amobbs.com/thread-4516795-1-1.html)
+[STM32串口驱动：层队列+内存动态分配+DMA](https://www.amobbs.com/thread-4516795-1-1.html)
 
 > ::point_up: 此帖子作者写于10多年前，那个时候互联网的教程还没有这么普及，居然能展开讨论这么多，可见其功力十分深厚
 >
 > 文章中的一些剖析，直到今天仍然是值得学习的：
 >
-> 环形发送缓冲区在DMA发送过程中，无法让头指针到达缓冲区终点后，自动将指针调整到起点位置，所以对于头指针和尾指针就得做出一些修改（这个我已经在 [H750VBT6_usart_rx_idle_line_irq_ringbuff_tx_04](https://github.com/oldgerman/workspace_H7/tree/master/H750VBT6_usart_rx_idle_line_irq_ringbuff_tx_04) 玩明白了）
+> 层发送缓冲区在DMA发送过程中，无法让头指针到达缓冲区终点后，自动将指针调整到起点位置，所以对于头指针和尾指针就得做出一些修改（这个我已经在 [H750VBT6_usart_rx_idle_line_irq_ringbuff_tx_04](https://github.com/oldgerman/workspace_H7/tree/master/H750VBT6_usart_rx_idle_line_irq_ringbuff_tx_04) 玩明白了）
 >
 > ### 动态内存堆管理
 >

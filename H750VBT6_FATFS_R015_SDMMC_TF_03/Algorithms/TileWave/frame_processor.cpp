@@ -72,8 +72,6 @@ static void frameProcessorTask(void* argument)
 	TickType_t xLastWakeTime;
 	TickType_t xTaskPeriod;
 	xLastWakeTime = xTaskGetTickCount();	/* 获取当前的系统时间 */
-	/* 帧缓冲区全部归'.'*/
-	memset(frame, '.', sizeof(frame));
 
 	/* 切片前复位一些变量 */
 	xTileWave.resetVariablesBeforeSlice();
@@ -81,7 +79,7 @@ static void frameProcessorTask(void* argument)
 	osStatus_t osStatus;
 	TileWave::Event_t msg;
 	uint32_t ulPeriodCount = 0;
-	uint32_t ulQueueCount = 0;		// 当前消息队列消息数
+	uint32_t ulQueueCount = 0;				// 当前消息队列消息数
 	uint32_t ulQueueCountHistoryMax = 0;	// 历史消息队列最大消息数
 	uint32_t ulMemoryMin = 0;
 	uint32_t ulHistoryMemoryMin = 0;
@@ -112,11 +110,15 @@ static void frameProcessorTask(void* argument)
 				frame_writeTileBuffer = 0;
 			}
 
-			/* 采样缓冲区第一个元素写入当前切片周期数 */
-			sprintf((char*)&(frame[0].ctrl_u8[0]), "%4ld", xTileWave.ulPeriod);
+			/* 用作数据测试 */
+			memset(frame, '.', sizeof(frame)); 									// 帧缓冲区全部归'.'
+			sprintf((char*)&(frame[0].ctrl_u8[0]), "%4ld", xTileWave.ulPeriod); // 第一个元素写入当前周期数
 
-			msg.type = TileWave::EVENT_WRITE_RING_BUFFER;
-			msg.xWriteRingBufferParam = xTileWave.sliceTileBuffer(frame[0].ctrl_u8); // 切片瓦片缓冲区暂存到多缓冲区
+			/* 切片瓦片缓冲区暂存到层缓冲区 */
+			msg.xWriteLayerBufferParam = xTileWave.sliceTileBuffer(frame[0].ctrl_u8);
+
+			msg.type = TileWave::EVENT_WRITE_LAYER_BUFFER;
+
 			// 向消息队列写消息
 			osStatus = osMessageQueuePut(
 					xTileWave.xMsgQueue,
