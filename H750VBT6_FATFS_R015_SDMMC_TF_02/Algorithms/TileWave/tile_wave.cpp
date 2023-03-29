@@ -262,11 +262,11 @@ TileWave::TileWave(Config_t &xConfig)
   */
 void TileWave::initMemoryHeapAPI(
 		std::function<void* (size_t size, size_t alignment)>	Aligned_malloc,
-		std::function<void  (void* ptr_aligned)>				Aligend_free,
+		std::function<void  (void* ptr_aligned)>				Aligned_free,
 		std::function<void  (void* ptr, size_t alignment)> 		Aligned_detect)
 {
 	aligned_malloc = Aligned_malloc;
-	aligend_free = Aligend_free;
+	aligned_free = Aligned_free;
 	aligned_detect = Aligned_detect;
 }
 

@@ -102,8 +102,8 @@ static void fatfsSDTask(void* argument)
 							msg.xWriteRingBufferParam.ulSize,
 							msg.xWriteRingBufferParam.pucData);
 
-					/* 释放缓冲区的内存 */
-					xTileWave.aligend_free(msg.xWriteRingBufferParam.pucData);
+					/* 不论 FATFS 是否写入成功，都要释放缓冲区的内存 */
+					xTileWave.aligned_free(msg.xWriteRingBufferParam.pucData);
 				}
 				/* 打印本次详情 */
 				printf("| fatfsSDTask | osStatus = %d | ulPeriod = %4ld | ret = %2ld | addr = %10ld | size = %6ld | mark = %2ld | \r\n",

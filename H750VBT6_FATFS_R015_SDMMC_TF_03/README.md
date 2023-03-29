@@ -255,26 +255,6 @@
 
 > FATFS + SD 卡的实时性不行不能一概而论，**使用高性能 SD 卡，可以提升很少的写入实时性，关键问题还是在 FAT 本身**
 
-最后一次写入
-
-> 偏移地址 134182912B + 写入大小 30720B = 134213632B，128MB - 134213632B = 4096B，剩余4KB，没有超过 128MB，这4KB可以当作自定义波形数据文件格式的头部信息
->
-> ```c
-> |  frameTask  | osStatus = 0 | queue count = 1 | queue count hisrotry max = 1 | history free min = 395048 | 
-> fatfsSDTaskFreq: 25.000, 24.994
-> | fatfsSDTask | osStatus = 0 | ulPeriod = 2045 | ret =  0 | addr =  134119424 | size =  30720 | mark =  4 | 
-> |  frameTask  | osStatus = 0 | queue count = 1 | queue count hisrotry max = 1 | history free min = 395048 | 
-> fatfsSDTaskFreq: 25.000, 24.994
-> | fatfsSDTask | osStatus = 0 | ulPeriod = 2046 | ret =  0 | addr =  134150144 | size =  32768 | mark =  5 | 
-> |  frameTask  | osStatus = 0 | queue count = 1 | queue count hisrotry max = 1 | history free min = 395048 | 
-> fatfsSDTaskFreq: 25.000, 24.994
-> | fatfsSDTask | osStatus = 0 | ulPeriod = 2047 | ret =  0 | addr =  134182912 | size =  30720 | mark =  4 | 
-> [led_task] sysTick 9545002 ms
-> [led_task] sysTick 9550002 ms
-> [led_task] sysTick 9555002 ms
-> [led_task] sysTick 9560002 ms
-> ```
-
 ## 附
 
 ### 消息队列传指针的问题

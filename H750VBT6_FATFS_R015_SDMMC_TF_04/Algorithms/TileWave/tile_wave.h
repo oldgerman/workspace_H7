@@ -4,9 +4,9 @@
   * @author      OldGerman
   * @created on  Mar 20, 2023
   * @brief       
-  *    2023-03-23  - 实现从动态内存创建层链表
-  *                - 实现瓦片波形切片算法并写存储器
-  *    2023-03-26  - 将 .h 中的函数定义整理到 .cpp，添加详细注释
+  *    2023-03-23  - 实现从动态内存创建层链表。
+  *                - 实现瓦片波形切片算法并写存储器。
+  *    2023-03-26  - 将 .h 中的函数定义整理到 .cpp，添加详细注释。
   *                - 修复 writeTileBuffer() 中计算平均频率的 BUG
   *                  将 writeTileBuffer() 重命名为 sliceTileBuffer()
   *                - 移除几乎所有的静态成员，使每个 TileWave 对象的资源完全独立
@@ -24,6 +24,11 @@
   *                  释放的多个写缓冲区，只不过其在内存中分布变化有时像环形
   *                  缓冲区的数据区在游走。实时瓦片切片任务申请该缓冲区，
   *                  读写瓦片数据任务释放该缓冲区。
+  *    2023-03-29  - BUG 修复： 周期计数器 ulPeriod 范围从 0-2047 改为 1-2048
+  *                - 任意时刻停止写入：sliceTileBuffer() 增加 EventType_t 参数，
+  *                  通常情况给 EVENT_WRITE_RING_BUFFER；当中途停止写入时需要给
+  *                  EVENT_LAST_WRITE_RING_BUFFER，不论某些层瓦片缓冲区是否存满
+  *                  都会打包到本次发送的缓冲区。
   *
   ******************************************************************************
   * @attention
@@ -118,9 +123,13 @@ public:
 
 	/* @brief event types used in the ring buffer */
 	typedef enum {
-		EVENT_WRITE_RING_BUFFER = 0,
-		EVENT_READ_BUFFER,
-		EVENT_STOP
+		EVENT_STOP_READ = 0,	// 停止读
+		EVENT_STOP_WRITE,		// 停止写
+		EVENT_READ_HEADER,  	// 读文件头
+		EVENT_WRITE_HEADER, 	// 写文件头
+		EVENT_READ_RING_BUFFER,	// 读环形缓冲区
+		EVENT_WRITE_RING_BUFFER,// 写环形缓冲区
+		EVENT_LAST_WRITE_RING_BUFFER, //最后一次写环形缓冲区
 	} EventType_t;
 
 	/* @brief Event structure used in event queue */
@@ -134,10 +143,12 @@ public:
 
 	/* Constructor */
 	TileWave(Config_t &xConfig);
+	/* Destructor */
+	~TileWave();
 
 	uint32_t 			createTileBufferList();
 	void 				resetVariablesBeforeSlice();
-	WriteRingBufferParam_t 	sliceTileBuffer(uint8_t* pulData);
+	WriteRingBufferParam_t 	sliceTileBuffer(uint8_t* pulData, EventType_t xEventType);
 	void 				vPrintLayerInfo();
 
 	void initReadWriteAPI(
@@ -146,7 +157,7 @@ public:
 
 	void initMemoryHeapAPI(
 			std::function<void* (size_t size, size_t alignment)>	Aligned_malloc,
-			std::function<void  (void* ptr_aligned)>				Aligend_free,
+			std::function<void  (void* ptr_aligned)>				Aligned_free,
 			std::function<void  (void* ptr, size_t alignment)> 		Aligned_detect);
 
 	/** @brief  一次可以读取或写的最小数据块，单位B
@@ -211,8 +222,8 @@ public:
 	uint32_t ulPrintSliceDetail;		// 打印实时切片信息
 	uint32_t ulSliceButNotWrite;		// 实时切片时不写数据，若为真，那么就不会在切片时申请环形缓冲区
 
-	uint32_t ulEventNum;			// 事件个数，决定消息队列深度
-	osMessageQueueId_t xMsgQueue;	// 消息队列
+	uint32_t ulEventNum;				// 事件个数，决定消息队列深度
+	osMessageQueueId_t xMsgQueue;		// 消息队列
 
 	/**
 	  * 字节对齐的动态内存 API
@@ -220,8 +231,10 @@ public:
 	  * 一部分正在计算的数据，访问粒度是 4 字节，那么使用32字节对齐的动态内存能显著减少访问次数
 	  */
 	std::function<void* (size_t size, size_t alignment)>	aligned_malloc;
-	std::function<void  (void* ptr_aligned)>				aligend_free;
+	std::function<void  (void* ptr_aligned)>				aligned_free;
 	std::function<void  (void* ptr, size_t alignment)> 		aligned_detect;
+
+	uint32_t ulCalculateTileWaveFileSizeFull();
 
 private:
 	static uint32_t ulCalculateSmallestPowerOf2GreaterThan(uint32_t ulValue);

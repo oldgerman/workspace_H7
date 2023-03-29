@@ -146,7 +146,7 @@ public:
 
 	void initMemoryHeapAPI(
 			std::function<void* (size_t size, size_t alignment)>	Aligned_malloc,
-			std::function<void  (void* ptr_aligned)>				Aligend_free,
+			std::function<void  (void* ptr_aligned)>				Aligned_free,
 			std::function<void  (void* ptr, size_t alignment)> 		Aligned_detect);
 
 	/** @brief  一次可以读取或写的最小数据块，单位B
@@ -211,8 +211,8 @@ public:
 	uint32_t ulPrintSliceDetail;		// 打印实时切片信息
 	uint32_t ulSliceButNotWrite;		// 实时切片时不写数据，若为真，那么就不会在切片时申请环形缓冲区
 
-	uint32_t ulEventNum;			// 事件个数，决定消息队列深度
-	osMessageQueueId_t xMsgQueue;	// 消息队列
+	uint32_t ulEventNum;				// 事件个数，决定消息队列深度
+	osMessageQueueId_t xMsgQueue;		// 消息队列
 
 	/**
 	  * 字节对齐的动态内存 API
@@ -220,7 +220,7 @@ public:
 	  * 一部分正在计算的数据，访问粒度是 4 字节，那么使用32字节对齐的动态内存能显著减少访问次数
 	  */
 	std::function<void* (size_t size, size_t alignment)>	aligned_malloc;
-	std::function<void  (void* ptr_aligned)>				aligend_free;
+	std::function<void  (void* ptr_aligned)>				aligned_free;
 	std::function<void  (void* ptr, size_t alignment)> 		aligned_detect;
 
 private:

@@ -184,7 +184,7 @@ TileWave::WriteRingBufferParam_t TileWave::sliceTileBuffer(uint8_t* pulData)
 		{
 			(*xRit).ulTileBufferOffset = 0;							// 归零瓦片缓冲区的偏移地址
 			ulWriteBufferOffset += (*xRit).ulTileBufferSize;		// 更新向缓冲区写地址的偏移
-			++ulWriteMark;											// 更新标记记
+			++ulWriteMark;											// 更新标记
 		}
 		++xRit;														// 从最大的层迭代到最小的
 	}
@@ -192,7 +192,7 @@ TileWave::WriteRingBufferParam_t TileWave::sliceTileBuffer(uint8_t* pulData)
     /* 👆 先计算出本周期发送的瓦片缓冲区总大小 ulWriteBufferOffset
      * 然后根据这个总大小才能申请本周期的环形缓冲区的内存 */
 
-	/* 释放上个周期的环形缓冲区的动态内存在 fatfsSDtask 写完成后 ret 返回 0 时释放 */
+	/* 释放上个周期的环形缓冲区的动态内存在 fatfsSDtask 写完成后释放 */
 	// aligned_free
 
 	/* pucWriteRingBuffer 每次的地址会不一样，由 aligned_malloc 从找到的 hole 分配的地址决定
@@ -299,11 +299,11 @@ TileWave::TileWave(Config_t &xConfig)
   */
 void TileWave::initMemoryHeapAPI(
 		std::function<void* (size_t size, size_t alignment)>	Aligned_malloc,
-		std::function<void  (void* ptr_aligned)>				Aligend_free,
+		std::function<void  (void* ptr_aligned)>				Aligned_free,
 		std::function<void  (void* ptr, size_t alignment)> 		Aligned_detect)
 {
 	aligned_malloc = Aligned_malloc;
-	aligend_free = Aligend_free;
+	aligned_free = Aligned_free;
 	aligned_detect = Aligned_detect;
 }
 

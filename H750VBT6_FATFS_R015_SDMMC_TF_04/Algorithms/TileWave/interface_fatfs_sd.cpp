@@ -76,7 +76,8 @@ static void fatfsSDTask(void* argument)
 			// process data
 			uint32_t ret = 0; // FATFS 函数的返回状态
 
-			if(msg.type == TileWave::EVENT_WRITE_RING_BUFFER ) {
+			if(msg.type == TileWave::EVENT_WRITE_RING_BUFFER ||
+					msg.type == TileWave::EVENT_LAST_WRITE_RING_BUFFER) {
 				/* 计算实时频率的单次和平均值 */
 				ulTickCount = xTaskGetTickCount();	/* 获取当前的系统时间 */
 				uint32_t ulTickOffest = ulTickCount - ulTickCountOld;
@@ -102,8 +103,8 @@ static void fatfsSDTask(void* argument)
 							msg.xWriteRingBufferParam.ulSize,
 							msg.xWriteRingBufferParam.pucData);
 
-					/* 释放缓冲区的内存 */
-					xTileWave.aligend_free(msg.xWriteRingBufferParam.pucData);
+					/* 不论 FATFS 是否写入成功，都要释放缓冲区的内存 */
+					xTileWave.aligned_free(msg.xWriteRingBufferParam.pucData);
 				}
 				/* 打印本次详情 */
 				printf("| fatfsSDTask | osStatus = %d | ulPeriod = %4ld | ret = %2ld | addr = %10ld | size = %6ld | mark = %2ld | \r\n",
@@ -114,12 +115,13 @@ static void fatfsSDTask(void* argument)
 						msg.xWriteRingBufferParam.ulSize,
 						msg.xWriteRingBufferParam.ulMark);
 
-			} else if (msg.type == TileWave::EVENT_READ_BUFFER ) {
-				;
-			} else if (msg.type == TileWave::EVENT_STOP) {
-				fRealWrittenFreqSum = 0;
-				fRealWrittenFreqAvg = 0;
-				fRealWrittenFreqNum = 0;
+				if (msg.type == TileWave::EVENT_LAST_WRITE_RING_BUFFER) {
+								fRealWrittenFreqSum = 0;
+								fRealWrittenFreqAvg = 0;
+								fRealWrittenFreqNum = 0;
+				}
+			} else if (msg.type == TileWave::EVENT_READ_RING_BUFFER ) {
+				; // TODO
 			}
 		}
 	}
