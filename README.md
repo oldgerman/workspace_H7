@@ -37,7 +37,7 @@ git pull origin master
 
 ### 实际测试
 
-若有时间整理，相应工程的根目录README.md文件中有测试记录
+若有时间整理，相应工程的目录README.md文件中有测试记录
 
 ### 编译问题
 
@@ -91,6 +91,4 @@ Finished building: DS-PPK_ANALOG_01.list
 ```
 
 正常编译，此乃神坑，之前配置为绝对路径的工程暂时不改了
-
-
 
