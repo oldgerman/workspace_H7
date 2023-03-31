@@ -30,6 +30,8 @@
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
+#define constrain(amt, low, high) ((amt)<(low)?(low):((amt)>(high)?(high):(amt)))
+
 /* Exported constants --------------------------------------------------------*/
 /* Private constants ---------------------------------------------------------*/
 /* Exported variables --------------------------------------------------------*/
@@ -51,7 +53,7 @@ TileWave::TileWave(Config_t &xConfig)
     /* Layer */
 	ulLayerNum = xConfig.ulLayerNum;
 	ulLayerNumMax = xConfig.ulLayerNumMax;
-	ulLayerTilesNumMax = xConfig.ulLayerTilesNumMax;
+	ulLayerTileNumMax = xConfig.ulLayerTileNumMax;
 	/* WaveForm */
     ulWaveFrameSize = xConfig.ulWaveFrameSize;
     ulWaveDispWidth = xConfig.ulWaveDispWidth;
@@ -59,7 +61,7 @@ TileWave::TileWave(Config_t &xConfig)
 	/* Event */
 	ulEventNum = xConfig.ulEventNum;
 
-	ulLayersTileBufferSize = 0;
+	ulLayerTileBufferSizeAll = 0;
 
 	ulPeriod = 1;
 	ulPeriodMax = 0;
@@ -88,11 +90,11 @@ TileWave::~TileWave()
 
 
 /**
-  * @brief	创建瓦片缓冲区链表
+  * @brief	创建层向量
   * @param	None
   * @retval	0 - success, 1 - failure
   */
-uint32_t TileWave::createTileBufferList()
+uint32_t TileWave::createLayerTable()
 {
 	ulWaveDispDataSize = ulWaveDispWidth * ulWaveFrameSize;
 	/* 确定波形显示区的瓦片缓冲区大小有2种情况
@@ -101,7 +103,7 @@ uint32_t TileWave::createTileBufferList()
 	 * 2. ROM：IOsize越大，访问速度越快
 	 */
 	/* 大于波形显示区数据大小的最小2的幂 */
-	ulWaveDispTileBufferSizeMin = ulCalculateSmallestPowerOf2GreaterThan(ulWaveDispDataSize);
+	ulWaveDispTileBufferSizeMin = ulCalculateMinPowerOf2GreaterThan(ulWaveDispDataSize);
 
 	/* ulWaveDispTileBufferSize ≥ ulWaveDispTileBufferSizeMin 且
 	 * ulWaveDispTileBufferSize ≥ ulIOSizeMin
@@ -144,27 +146,31 @@ uint32_t TileWave::createTileBufferList()
 				.ulTileBufferSize = ulLayerTileBufferSize,
 				.ulTileBufferOffset = 0,
 				.pucTileBuffer = pucLayerTileBuffer,
-				.ulBufferSize = ulLayerTileSize * ulLayerTilesNumMax,
-				.ulTileBufferWritePeriod = ulLayerTileBufferSize / ulLayerTileSize
+				.ulLayerBufferSize = ulLayerTileSize * ulLayerTileNumMax,
+				.ulTileBufferPeriod = ulLayerTileBufferSize / ulLayerTileSize
 		};
-		/* 尾插，链表正向遍历越往后层编号越大 */
-		xLayersList.push_back(xLayer);
+		/* 计算单元个数 */
+		xLayer.ulTileBufferUnitNum = xLayer.ulTileBufferSize / ulIOSizeMin;
+		xLayer.ulLayerBufferUnitNum = xLayer.ulLayerBufferSize / ulIOSizeMin;
+
+		/* 尾插，表格正向遍历越往后层编号越大 */
+		xLayerTable.push_back(xLayer);
 
 		/* 更新所有层的瓦片缓冲区的总大小 */
-		ulLayersTileBufferSize += ulLayerTileBufferSize;
+		ulLayerTileBufferSizeAll += ulLayerTileBufferSize;
 
 		/* 倍增一些瓦片参数大小 */
 		ulLayerTileBufferSize = ulLayerTileBufferSize << 1;
 		ulLayerTileSize = ulLayerTileSize << 1;
 	}
 	/* 设置周期计数器最大值 */
-	ulPeriodMax = (*xLayersList.begin()).ulTileBufferWritePeriod;
+	ulPeriodMax = (*xLayerTable.begin()).ulTileBufferPeriod;
 
-	/* 申请读写缓冲区的动态内存 */
+	/* 申请写缓冲区的动态内存 */
 	// 实时切片时分配
-
-	// 读缓冲区暂时分 5 个 ulIOSizeMin
-//	pucReadLayerBuffer = (uint8_t*)aligned_malloc(5 * ulIOSizeMin, alignment_);
+	/* 申请读缓冲区的动态内存 */
+	// 实时读时分配
+	pucReadLayerBuffer = (uint8_t*)aligned_malloc(128*1024, alignment_);
 
 	return 0U;
 }
@@ -182,6 +188,11 @@ void TileWave::resetVariablesBeforeSlice()
 	fRealWrittenFreqSum = 0;
 	fRealWrittenFreqAvg = 0;
 	fRealWrittenFreqNum = 0;
+
+	/* 重置向瓦片缓冲区写地址的偏移 */
+	for(uint8_t i = 0; i < ulLayerNumMax; i++) {
+		xLayerTable[i].ulTileBufferOffset = 0;
+	}
 
 	static uint32_t ulEventNumOld = 0;
 	if(ulEventNum != ulEventNumOld) {
@@ -202,12 +213,7 @@ void TileWave::resetVariablesBeforeSlice()
   */
 TileWave::WriteLayerBufferParam_t TileWave::sliceTileBuffer(uint8_t* pulData, EventType_t xEventType)
 {
-	/* 重置向瓦片缓冲区写地址的偏移 */
-	xRit = xLayersList.rbegin();
-	for(uint8_t i = 0; i < ulLayerNumMax; i++) {
-		(*xRit).ulTileBufferOffset = 0;
-		++xRit;
-	}
+	std::vector<Layer_t>::reverse_iterator xRit; 	// 层表格的反向迭代器
 
 	/* 用于计算本函数被调用的实时频率的单次和平均值 */
 	static double fRealWrittenFreq = 0;
@@ -219,21 +225,33 @@ TileWave::WriteLayerBufferParam_t TileWave::sliceTileBuffer(uint8_t* pulData, Ev
 	uint32_t ulWriteMark = 0;
 
 	/* 瓦片切片 */
-	xRit = xLayersList.rbegin();
-
-	/** 从帧缓冲区中复制瓦片大小的数据到瓦片缓冲区
-	  * TODO: 从帧缓冲区计算2幂缩放倍率的瓦片大小数据
-	  */
+	xRit = xLayerTable.rbegin();
+	/* 从帧缓冲区中复制瓦片大小的数据到瓦片缓冲区 */
 	for(uint8_t i = 0; i < ulLayerNumMax; i++) {
 		memcpy((*xRit).pucTileBuffer + (*xRit).ulTileBufferOffset, 	// 瓦片缓冲区的地址注意加上地址的偏移
 				pulData, (*xRit).ulTileSize); 						// 瓦片大小
 		(*xRit).ulTileBufferOffset += (*xRit).ulTileSize; 			// 更新向瓦片缓冲区写地址的偏移
 
+		 /* 从帧缓冲区计算2倍缩放的瓦片大小数据 */
+		float* pfPtr = (float*)pulData;
+		float fVal;
+		for(uint32_t j = 0; j < (*xRit).ulTileSize / 4; j++) {
+			fVal = ( *(pfPtr + j * 2) + *(pfPtr + j * 2 + 1) ) / 2; // 暂时用2点中值
+			if(isnormal(fVal)) {	// 可能到 inf
+				*(pfPtr + j) = fVal;
+			} else {
+				for(uint32_t i = j; i < (*xRit).ulTileSize / 4; i++) {
+					*(pfPtr + i) = 0.f;
+				}
+				break;
+			}
+		}
+
 		/** 若 计数器周期 整除 层瓦片缓冲区周期
 		  * 说明该层需要向缓冲区发送瓦片缓冲区的所有数据
 		  */
 		if((xEventType == EVENT_WRITE_LAYER_BUFFER &&
-				ulPeriod % (*xRit).ulTileBufferWritePeriod == 0 )|| // 从缓冲区最大的层迭代到最小的
+				ulPeriod % (*xRit).ulTileBufferPeriod == 0 )|| // 从缓冲区最大的层迭代到最小的
 				xEventType == EVENT_LAST_WRITE_LAYER_BUFFER) {
 			(*xRit).ulTileBufferOffset = 0;							// 归零瓦片缓冲区的偏移地址
 			ulWriteBufferOffset += (*xRit).ulTileBufferSize;		// 更新向缓冲区写地址的偏移
@@ -256,11 +274,11 @@ TileWave::WriteLayerBufferParam_t TileWave::sliceTileBuffer(uint8_t* pulData, Ev
 		pucWriteLayerBuffer = NULL;
 	}
 	ulWriteBufferOffset = 0;
-	xRit = xLayersList.rbegin();
+	xRit = xLayerTable.rbegin();
 
 	for(uint8_t i = 0; i < ulLayerNumMax; i++) {
 		if((xEventType == EVENT_WRITE_LAYER_BUFFER &&
-				ulPeriod % (*xRit).ulTileBufferWritePeriod == 0 )|| // 从缓冲区最大的层迭代到最小的
+				ulPeriod % (*xRit).ulTileBufferPeriod == 0 )|| // 从缓冲区最大的层迭代到最小的
 				xEventType == EVENT_LAST_WRITE_LAYER_BUFFER) {
 			// 将DRAM中的 非连续储存 的 瓦片缓冲区数据 复制 到 写缓冲区 以变为连续储存的
 			if(pucWriteLayerBuffer != NULL) {
@@ -274,7 +292,7 @@ TileWave::WriteLayerBufferParam_t TileWave::sliceTileBuffer(uint8_t* pulData, Ev
 	}
 
 	/* 保存需要写缓冲区时的参数配置 */
-	WriteLayerBufferParam_t WriteLayerBufferParam = {
+	WriteLayerBufferParam_t xWriteLayerBufferParam = {
 			.ulAddr   = ulWriteBufferOffsetOld,
 			.ulSize   = ulWriteBufferOffset,
 			.pucData  = pucWriteLayerBuffer,
@@ -308,7 +326,7 @@ TileWave::WriteLayerBufferParam_t TileWave::sliceTileBuffer(uint8_t* pulData, Ev
 	++ulPeriod;	// = 1、2、3...2048;
 	ulWriteBufferOffsetOld += ulWriteBufferOffset;
 
-	return WriteLayerBufferParam;
+	return xWriteLayerBufferParam;
 }
 
 /**
@@ -342,7 +360,7 @@ void TileWave::initReadWriteAPI(
 }
 
 /**
-  * @brief  打执行 createTileBufferList() 时记录的层信息
+  * @brief  打执行 createTileBufferTable() 时记录的层信息
   * @param  None
   * @retval None
   */
@@ -350,15 +368,17 @@ void TileWave::vPrintLayerInfo()
 {
 	printf("| 层编号 | 瓦片大小 | 瓦片缓冲区大小 | 瓦片缓冲区地址 | 缓冲区大小 | 缓冲区发送周期 | DRAM 当前共使用 | DRAM 当前剩余 | DRAM 历史最少可用 |\r\n");
 	printf("| ------ | -------- | -------------- | -------------- | ---------- | -------------- | --------------- | ------------- | ----------------- |\r\n");
-	xIt = xLayersList.begin();
+
+	std::vector<Layer_t>::iterator xIt;			// 层表格的正向迭代器
+	xIt = xLayerTable.begin();
 	for(uint8_t i = 0; i < ulLayerNumMax; i++) {
 		printf("| %6ld | %8ld | %14ld | %14p | %10ld | %14ld %s",
 				(*xIt).ulLayerNum,
 				(*xIt).ulTileSize,
 				(*xIt).ulTileBufferSize,
 				(*xIt).pucTileBuffer,
-				(*xIt).ulBufferSize,
-				(*xIt).ulTileBufferWritePeriod,
+				(*xIt).ulLayerBufferSize,
+				(*xIt).ulTileBufferPeriod,
 				&ppucStrBuffer_[i][0]);
 		++xIt;
 	}
@@ -369,16 +389,53 @@ void TileWave::vPrintLayerInfo()
   * @param  ulValue	calculated reference value
   * @retval calculated value
   */
-uint32_t TileWave::ulCalculateSmallestPowerOf2GreaterThan(uint32_t ulValue)
+uint32_t TileWave::ulCalculateMinPowerOf2GreaterThan(uint32_t ulValue)
 {
 	uint32_t ulNth = 1;
-	for(uint8_t i = 0; i < 32; i++)
-	{
+	for(uint8_t i = 0; i < 32; i++) {
 		ulNth = ulNth << i;
-		if(ulNth > ulValue)
+		if(ulNth > ulValue) {
 			break;
+		}
 	}
 	return ulNth;
+}
+
+/**
+  * @brief  计算小于等于某数的最大2的幂
+  * @param  ulValue	calculated reference value
+  * @retval calculated value
+  */
+uint32_t TileWave::ulCalculateMaxPowerOf2LessThan(uint32_t ulValue)
+{
+	uint32_t ulNth = 1;
+	for(uint8_t i = 0; i < 32; i++) {
+		ulNth = ulNth << i;
+		if(ulNth > ulValue) {
+			ulNth = ulNth >> 1;
+			break;
+		}
+		if(ulNth == ulValue) {
+			break;
+		}
+	}
+	return ulNth;
+}
+
+/**
+  * @brief  计算2的N次幂的指数
+  * @param  ulValue 被计算数
+  * @retval 计算的幂次
+  */
+uint32_t TileWave::ulCalculateExponentPowerOf2(uint32_t ulValue)
+{
+	uint8_t ulExponent = 0;
+	for(; ulExponent < 32; ulExponent++){
+		if((ulValue >> (ulExponent + 1)) == 0){
+			break;
+		}
+	}
+	return ulExponent;
 }
 
 /**
@@ -388,8 +445,9 @@ uint32_t TileWave::ulCalculateSmallestPowerOf2GreaterThan(uint32_t ulValue)
   */
 uint32_t TileWave::ulCalculateFileSizeFull()
 {
-	xRit = xLayersList.rbegin();
-	return 2 * (*xRit).ulBufferSize;
+	std::vector<Layer_t>::reverse_iterator xRit; 	// 层表格的反向迭代器
+	xRit = xLayerTable.rbegin();
+	return 2 * (*xRit).ulLayerBufferSize;
 }
 
 /**
@@ -398,11 +456,80 @@ uint32_t TileWave::ulCalculateFileSizeFull()
   * @retval calculated value
   */
 uint32_t TileWave::ulCalculateFileSizeForAnyPeriod(uint32_t ulPeriod)
-{}
+{
+	// TODO
+	return 0U;
+}
+
 /**
-  * @brief  根据缩放倍率和进度返回读缓冲区时的参数配置
-  * @param  None
-  * @retval calculated value
+  * @brief  根据缩放倍率和进度计算读缓冲区时的参数配置
   */
-TileWave::ReadLayerBufferParam_t TileWave::ulCalculateFileSizeForAnyPeriod(float fZoom, float fProgress)
-{}
+// TODO
+
+/**
+  * @brief  根据层号、单元偏移、单元个数计算读缓冲区时的参数配置
+  *         1个单元等于最小 IO SIZE
+  *         例如 64MB 的层 有 32768 个 2KB 单元
+  * @param ulLayerNum    层编号 0-14
+  * @param ulUnitOffset  单元偏移 >=1
+  * @param ulUnitNum     单元个数 >=1
+  */
+TileWave::ReadLayerBufferParam_t TileWave::xFindUnit(
+		uint32_t ulLayerNum, uint32_t ulUnitOffset, uint32_t ulUnitNum)
+{
+	/* 约束参数到有效范围 */
+	ulLayerNum = constrain(ulLayerNum, 0, xLayerTable.back().ulLayerNum);  // 0 ~ 14
+	ulUnitOffset = constrain(ulUnitOffset, 0, xLayerTable[ulLayerNum].ulLayerBufferUnitNum - 1);     // 0 ~ 4095
+	ulUnitNum = constrain(ulUnitNum, 1, xLayerTable[ulLayerNum].ulLayerBufferUnitNum - ulUnitOffset);// 1 ~ (4096 - Offset)
+
+	uint32_t ulOffsetUnit = 0;	// 单元偏移，单位：单元大小
+	uint32_t ulPeriodQuotient;	// 周期商
+	uint32_t ulPeriodRemainder;	// 周期余数，等于目标单元在在单周期层缓冲区的偏移单元个数
+	uint32_t ulPeriodPowerOf2;	// 不大于周期商的最大2幂
+
+	ulPeriodQuotient  = xLayerTable[ulLayerNum].ulTileBufferPeriod *
+			ulUnitOffset / xLayerTable[ulLayerNum].ulTileBufferUnitNum;
+	ulPeriodRemainder = xLayerTable[ulLayerNum].ulTileBufferPeriod *
+			ulUnitOffset % xLayerTable[ulLayerNum].ulTileBufferUnitNum;
+	ulPeriodPowerOf2 = ulCalculateMaxPowerOf2LessThan(ulPeriodQuotient);
+
+	/* 计算2的幂周期单元偏移 */
+	for(uint8_t i = 0; i < ulLayerNumMax; i++) {
+		if(xLayerTable[i].ulTileBufferPeriod <= ulPeriodPowerOf2) {
+			ulOffsetUnit += ulPeriodQuotient / xLayerTable[i].ulTileBufferPeriod * xLayerTable[i].ulTileBufferSize;
+		}
+	}
+	/* 周期商刚好等于2幂周期时，单元偏移需要减去小于目标层号多加进来的其他层的单元大小 */
+	if((ulPeriodQuotient != 0) && (ulPeriodQuotient == ulPeriodPowerOf2)) {
+		for(uint8_t i = 0; i < ulLayerNum; i++) {
+			if(ulPeriodQuotient % xLayerTable[i].ulTileBufferPeriod == 0 ) {
+				ulOffsetUnit -= xLayerTable[i].ulTileBufferSize;
+			}
+		}
+	}
+	/* 由周期余数计算最后一个周期的层缓冲区内的单元偏移 */
+	if(ulPeriodRemainder != 0) {
+		for(uint8_t i = ulLayerNumMax - 1; i >= 0; i--) { // 从缓冲区最大的层迭代到最小的
+			if(i <= ulLayerNum) {
+				break;
+			}
+			if((ulPeriodQuotient + ulPeriodRemainder) % xLayerTable[i].ulTileBufferPeriod == 0 ) {
+				ulOffsetUnit += xLayerTable[i].ulTileBufferSize;
+			}
+		}
+	}
+	ulOffsetUnit += ulPeriodRemainder * ulIOSizeMin;
+	ulOffsetUnit /= ulIOSizeMin;
+	ulOffsetUnit -= 1;
+
+//	printf("ulOffsetUnit = %ld\r\n", ulOffsetUnit);
+	ReadLayerBufferParam_t xReadLayerBufferParam =
+	{
+			.ulAddr = ulOffsetUnit * ulIOSizeMin,
+			.ulSize = ulUnitNum * ulIOSizeMin,	// TODO: 单元不连续的多次读处理
+			.pucData = pucReadLayerBuffer,
+			.ulOffsetUnit = ulOffsetUnit
+	};
+//	pucReadLayerBuffer = (uint8_t*)aligned_malloc(xReadLayerBufferParam.ulSize, alignment_);
+	return  xReadLayerBufferParam;
+}

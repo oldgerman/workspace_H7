@@ -49,7 +49,7 @@ TileWave::Config_t xConfig = {
 	    /* Layer */
 	    .ulLayerNum = 0,
 	    .ulLayerNumMax = 15,
-	    .ulLayerTilesNumMax = 4096,
+	    .ulLayerTileNumMax = 4096,
 	    /* WaveForm */
 	    .ulWaveFrameSize = 4,
 	    .ulWaveDispWidth = 400,
@@ -141,7 +141,7 @@ void Main()
 	/* 绑定读写API */
 	xTileWave.initReadWriteAPI(writeWaveFile, readWaveFile);
 
-    xTileWave.createTileBufferList();
+    xTileWave.createLayerTable();
 
     fatfsSDInit();
     frame_processor_init();

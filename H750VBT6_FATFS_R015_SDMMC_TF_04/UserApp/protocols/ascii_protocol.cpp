@@ -44,7 +44,7 @@
 /* Private constants ---------------------------------------------------------*/
 /* Exported variables --------------------------------------------------------*/
 extern TileWave xTileWave;
-
+extern TileWave::ReadLayerBufferParam_t xReadLayerBufferParam;
 /* Private variables ---------------------------------------------------------*/
 /* Private function prototypes -----------------------------------------------*/
 /* Function implementations --------------------------------------------------*/
@@ -121,16 +121,23 @@ void OnAsciiCmd(const char* _cmd, size_t _len, StreamSink &_responseChannel)
             sscanf(&_cmd[21], "%ld+%ld+%ld", &times, &startSize, &alignment);
             DRAM_SRAM1.test_aligned_memory(times, startSize, alignment);
         }
+        else if(s.find("FIND_UNIT=") != std::string::npos)
+        {
+        	uint32_t ulLayerNum, ulUnitOffset, ulUnitNum;
+            sscanf(&_cmd[13], "%ld+%ld+%ld", &ulLayerNum, &ulUnitOffset, &ulUnitNum);
+            xReadLayerBufferParam = xTileWave.xFindUnit(ulLayerNum, ulUnitOffset, ulUnitNum);
+            frame_readLayerBuffer = 1;
+        }
         else if (s.find("START_SLICE") != std::string::npos)
         {
         	uint32_t value = xTileWave.ulSliceButNotWrite;
-        	frame_writeTileBuffer = 1;
+        	frame_writeLayerBuffer = 1;
         	Respond(_responseChannel, false, "波形文件 开始切片%s", (value == 1)?("不写入"):("并写入"));
         }
         else if (s.find("STOP_SLICE") != std::string::npos)
         {
         	uint32_t value = xTileWave.ulSliceButNotWrite;
-        	frame_writeTileBuffer = 0;
+        	frame_writeLayerBuffer = 0;
         	Respond(_responseChannel, false, "波形文件 停止切片%s", (value == 1)?("不写入"):("并写入"));
         }
         else if(s.find("SLICE_BUT_NOT_WRITE=") != std::string::npos)

@@ -30,11 +30,13 @@
 #include "interface_usb.hpp"
 #include "tile_wave.h"
 #include "demo_sd_fatfs.h"
+#include "arm_math.h"
 
 /* Private typedef -----------------------------------------------------------*/
 /* 切片状态 */
 typedef enum {
-	SLICE_STOP = 0,
+	SLICE_USER_STOP = 0,
+	SLICE_SELF_STOP,
 	SLICE_WRITE_BUFFER,
 	SLICE_LAST_WRITE_BUFFER
 } SliceState_t;
@@ -52,18 +54,21 @@ const osThreadAttr_t frameProcessorTask_attributes = {
 };
 
 /* Exported variables --------------------------------------------------------*/
-ALIGN_32BYTES(__attribute__((section (".RAM_DTCM_Array"))) frame_format_t frame[8192]);
+const uint32_t buffer_num = 8192;
+const float user_pi = 3.1415926f;
+ALIGN_32BYTES(__attribute__((section (".RAM_DTCM_Array"))) frame_format_t frame[buffer_num]);
 
 osThreadId_t frameProcessorTaskHandle;
 
-bool frame_writeTileBuffer = false;
+bool frame_writeLayerBuffer = false;
+bool frame_readLayerBuffer = false;
 bool frame_initExistingWaveFile= false;
 uint32_t sliceButNotWrite = 0;
 
 uint16_t frame_freq = 1; /* 每秒调度频率，单位Hz */
 
 extern TileWave xTileWave;
-
+TileWave::ReadLayerBufferParam_t xReadLayerBufferParam;
 /* Private variables ---------------------------------------------------------*/
 static SliceState_t xSliceState;
 
@@ -94,7 +99,7 @@ static void frameProcessorTask(void* argument)
 	uint32_t ulMemoryMin = 0;
 	uint32_t ulHistoryMemoryMin = 0;
 
-	xSliceState = SLICE_STOP;
+	xSliceState = SLICE_USER_STOP;
 	bool firstSliceStop = 1;			// 一轮切片中的首次停止标记
 	bool firstInitExistingWaveFile = 0;	// 初始化已有文件标记
 	for (;;)
@@ -105,13 +110,16 @@ static void frameProcessorTask(void* argument)
 			frame_initExistingWaveFile = 0;
 			if(initExistingWaveFile() == 0) {
 				firstInitExistingWaveFile = 1;
-			} else {
-				firstInitExistingWaveFile = 0;
 			}
 		}
 
-		if(firstInitExistingWaveFile) {
-			if(frame_writeTileBuffer == 0)
+		for(uint32_t i = 0; i < buffer_num / 2; i++) {
+			frame[i].ctrl_f32 = arm_sin_f32(2.0f * user_pi * i / (buffer_num / 2));
+		}
+
+		if(firstInitExistingWaveFile)
+		{
+			if(frame_writeLayerBuffer == 0)
 			{
 				/* 停止前需要做最后一次 52KB 特殊切片 */
 				msg.type = TileWave::EVENT_LAST_WRITE_LAYER_BUFFER;
@@ -123,11 +131,6 @@ static void frameProcessorTask(void* argument)
 			{
 				msg.type = TileWave::EVENT_WRITE_LAYER_BUFFER;
 				xSliceState = SLICE_WRITE_BUFFER;
-
-				/* 4096次后停止，TODO: 写满后从首地址覆盖写入 */
-				if(ulPeriodCount == xTileWave.ulLayerTilesNumMax - 1) {
-					frame_writeTileBuffer = 0;
-				}
 				firstSliceStop = 1;
 			}
 
@@ -135,13 +138,13 @@ static void frameProcessorTask(void* argument)
 			{
 				/* 若为最后一次写，则下次停止写 */
 				if(xSliceState == SLICE_LAST_WRITE_BUFFER) {
-					xSliceState = SLICE_STOP;
+					xSliceState = SLICE_USER_STOP;
 					firstSliceStop = 0;
 				}
 
 				/* 用作数据测试 */
-				memset(frame, '.', sizeof(frame)); 									// 帧缓冲区全部归'.'
-				sprintf((char*)&(frame[0].ctrl_u8[0]), "%4ld", xTileWave.ulPeriod); // 第一个元素写入当前周期数
+	//				memset(frame, '.', sizeof(frame)); 									// 帧缓冲区全部归'.'
+	//				sprintf((char*)&(frame[0].ctrl_u8[0]), "%4ld", xTileWave.ulPeriod); // 第一个元素写入当前周期数
 
 				/* 切片瓦片缓冲区暂存到层缓冲区 */
 				msg.xWriteLayerBufferParam = xTileWave.sliceTileBuffer(frame[0].ctrl_u8, msg.type);
@@ -182,7 +185,14 @@ static void frameProcessorTask(void* argument)
 				ulPeriodCount++;	// 更新周期计数器
 			}
 
-			if(frame_writeTileBuffer == 0)
+			/* 4096次后停止，TODO: 写满后从首地址覆盖写入 */
+			if(ulPeriodCount == xTileWave.ulLayerTileNumMax - 1) {
+				frame_writeLayerBuffer = 0;
+				xSliceState = SLICE_SELF_STOP;
+			}
+
+			if(frame_writeLayerBuffer == 0
+					&& (xSliceState != SLICE_SELF_STOP))
 			{
 				/* 切片前复位一些变量 */
 				xTileWave.resetVariablesBeforeSlice();
@@ -190,6 +200,13 @@ static void frameProcessorTask(void* argument)
 				ulHistoryMemoryMin = ulMemoryMin;
 				ulPeriodCount = 0;
 				ulQueueCountHistoryMax = 0;
+			}
+
+			if(frame_readLayerBuffer) {
+				frame_readLayerBuffer = 0;
+				msg.type = TileWave::EVENT_READ_LAYER_BUFFER;
+				msg.xReadLayerBufferParam = xReadLayerBufferParam;
+				osStatus = osMessageQueuePut(xTileWave.xMsgQueue, &msg, 0U, 0U);
 			}
 		}
 

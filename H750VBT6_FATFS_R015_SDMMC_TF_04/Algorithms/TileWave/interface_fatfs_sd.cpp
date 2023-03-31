@@ -121,7 +121,24 @@ static void fatfsSDTask(void* argument)
 								fRealWrittenFreqNum = 0;
 				}
 			} else if (msg.type == TileWave::EVENT_READ_LAYER_BUFFER ) {
-				; // TODO
+				ret = xTileWave.read(
+						msg.xReadLayerBufferParam.ulAddr,
+						msg.xReadLayerBufferParam.ulSize,
+						msg.xReadLayerBufferParam.pucData);
+
+				float *pfVal = (float*)(msg.xReadLayerBufferParam.pucData);
+				for(uint32_t i = 0; i < msg.xReadLayerBufferParam.ulSize / 4 / 8; i++)
+				{
+					printf("%.2f\n%.2f\n%.2f\n%.2f\n%.2f\n%.2f\n%.2f\n%.2f\r\n",
+								*(pfVal + i * 8 + 0),
+								*(pfVal + i * 8 + 1),
+								*(pfVal + i * 8 + 2),
+								*(pfVal + i * 8 + 3),
+								*(pfVal + i * 8 + 4),
+								*(pfVal + i * 8 + 5),
+								*(pfVal + i * 8 + 6),
+								*(pfVal + i * 8 + 7));
+				}
 			}
 		}
 	}

@@ -4,7 +4,7 @@
   * @author      OldGerman
   * @created on  Mar 20, 2023
   * @brief       
-  *    2023-03-23  - 实现从动态内存创建层链表。
+  *    2023-03-23  - 实现从动态内存创建层表格。
   *                - 实现瓦片波形切片算法并写存储器。
   *    2023-03-26  - 将 .h 中的函数定义整理到 .cpp，添加详细注释。
   *                - 修复 writeTileBuffer() 中计算平均频率的 BUG
@@ -27,6 +27,8 @@
   *                  通常情况给 EVENT_WRITE_LAYER_BUFFER；当中途停止写入时需要给
   *                  EVENT_LAST_WRITE_LAYER_BUFFER，不论某些层瓦片缓冲区是否存满
   *                  都会打包到本次发送的缓冲区。
+  *    2023-03-31  - 层表格由 list 改为 vector 容器
+  *                - 实现任意层的一个单元在文件中的地址算法
   *
   ******************************************************************************
   * @attention
@@ -53,7 +55,7 @@
 #define TILE_WAVE_H_
 
 #include "common_inc.h"
-#include <list>
+#include <vector>
 #include <algorithm>
 #include <functional>
 #ifdef __cplusplus
@@ -83,7 +85,7 @@ public:
 	    /* Layer */
 		uint32_t ulLayerNum;
 		uint32_t ulLayerNumMax;
-		uint32_t ulLayerTilesNumMax;
+		uint32_t ulLayerTileNumMax;
 		/* WaveForm */
 		uint32_t ulWaveFrameSize;
 		uint32_t ulWaveDispWidth;
@@ -99,8 +101,10 @@ public:
 		uint32_t ulTileBufferSize;			// RAM：瓦片缓冲区大小，单位B
 		uint32_t ulTileBufferOffset;		// 向瓦片缓冲区写地址的偏移，每次写瓦片数据，都向后偏移一个瓦片大小
 		uint8_t* pucTileBuffer;				// 瓦片缓冲区地址
-		uint32_t ulBufferSize;				// ROM：缓冲区大小，单位B
-		uint32_t ulTileBufferWritePeriod;	// 缓冲区发送周期，单位，调度周期的倍数
+		uint32_t ulLayerBufferSize;			// ROM：层缓冲区大小，单位B
+		uint32_t ulTileBufferPeriod;		// 瓦片缓冲区周期，单位，调度周期的倍数
+		uint32_t ulTileBufferUnitNum;		// 瓦片缓冲区单元个数
+		uint32_t ulLayerBufferUnitNum;		// 层缓冲区单元个数
 	} Layer_t;
 
 	/* 写缓冲区时的参数配置 */
@@ -117,6 +121,7 @@ public:
 		uint32_t ulAddr;
 		uint32_t ulSize;
 		uint8_t* pucData;
+		uint32_t ulOffsetUnit;
 	} ReadLayerBufferParam_t;
 
 	/* @brief event types used in the Layer buffer */
@@ -144,7 +149,7 @@ public:
 	/* Destructor */
 	~TileWave();
 
-	uint32_t 			createTileBufferList();
+	uint32_t 			createLayerTable();
 	void 				resetVariablesBeforeSlice();
 	WriteLayerBufferParam_t 	sliceTileBuffer(uint8_t* pulData, EventType_t xEventType);
 	void 				vPrintLayerInfo();
@@ -179,12 +184,12 @@ public:
 
 	/* 层缓冲区在FLASH */
 	uint32_t ulLayerBufferSizeMax;				// 层缓冲区大小的最大值，单位B
-	uint32_t ulLayersBufferSize;    			// 层缓冲区的总大小
+	uint32_t ulLayerTileBufferSizeAll;    		// 层缓冲区的总大小
 
 	/* 瓦片缓冲区在RAM */
 	uint32_t ulLayerTileBufferSizeMax;			// 层瓦片缓冲区大小的最大值，单位B
-	uint32_t ulLayersTileBufferSize;    		// 层瓦片缓冲区的总大小
-	uint32_t ulLayerTilesNumMax;				// 每层瓦片的最大个数，该值决定能记录多少时间，必须为 2的幂，本工程为 64MB/32K=2048
+	uint32_t ulLayerTileBufferSize;    			// 层瓦片缓冲区的总大小
+	uint32_t ulLayerTileNumMax;					// 每层瓦片的最大个数，该值决定能记录多少时间，必须为 2的幂，本工程为 64MB/32K=2048
 
 	/* 波形参数 */
 	uint32_t ulWaveDispBufferSize; 				// 缓冲区大小：波形显示
@@ -194,10 +199,8 @@ public:
 	uint32_t ulWaveDispTileBufferSize;  		// 波形显示区的瓦片缓冲区大小，单位B
 	uint32_t ulWaveDispTileBufferSizeMin;		// 波形显示区的瓦片缓冲区最小大小，单位B
 
-	/* 层链表及其迭代器 */
-	std::list<Layer_t> xLayersList; 			// 层链表(双向)
-	std::list<Layer_t>::iterator xIt;			// 层链表的正向迭代器
-	std::list<Layer_t>::reverse_iterator xRit; 	// 层链表的反向迭代器
+	/* 层表格及其迭代器 */
+	std::vector<Layer_t> xLayerTable; 			// 层表格(双向)
 
 	/* 读写层缓冲区 */
 	uint8_t* pucWriteLayerBuffer;				// 写层缓冲区的指针
@@ -236,13 +239,16 @@ public:
 	uint32_t ulCalculateFileSizeFull();
 	uint32_t ulCalculateFileSizeForAnyPeriod(uint32_t ulPeriod);
 	ReadLayerBufferParam_t ulCalculateFileSizeForAnyPeriod(float fZoom, float fProgress);
+	ReadLayerBufferParam_t xFindUnit(uint32_t ulLayerNum, uint32_t ulUnitOffset, uint32_t ulUnitNum);
 
 private:
-	static uint32_t ulCalculateSmallestPowerOf2GreaterThan(uint32_t ulValue);
+	static uint32_t ulCalculateMinPowerOf2GreaterThan(uint32_t ulValue);
+	static uint32_t ulCalculateMaxPowerOf2LessThan(uint32_t ulValue);
+	static uint32_t ulCalculateExponentPowerOf2(uint32_t ulValue);
 
 	static const size_t alignment_ = 32;				// 动态内存 32 字节对齐
 	static const uint32_t ulStrBufferRowCount_ = 64;	// 字符串缓冲区每行 64 个 char 字符
-	char** ppucStrBuffer_;								// 字符串缓冲区暂存创建层链表时输出的信息
+	char** ppucStrBuffer_;								// 字符串缓冲区暂存创建层表格时输出的信息
 };
 
 }

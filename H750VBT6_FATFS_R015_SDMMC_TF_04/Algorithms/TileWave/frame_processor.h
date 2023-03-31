@@ -53,6 +53,7 @@ typedef union{
 		}format_nRF;					/*!< nRF Connect Power Profiler 发送给上位机协议帧格式 */
 
 		uint32_t ctrl_u32;
+		float ctrl_f32;
 		uint8_t ctrl_u8[4];
 }frame_format_t;
 
@@ -60,7 +61,8 @@ typedef union{
 /* Exported macro ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
 /* Exported variables --------------------------------------------------------*/
-extern bool frame_writeTileBuffer;
+extern bool frame_writeLayerBuffer;
+extern bool frame_readLayerBuffer;
 extern bool frame_initExistingWaveFile;
 extern uint32_t sliceButNotWrite;
 extern uint16_t frame_freq;
