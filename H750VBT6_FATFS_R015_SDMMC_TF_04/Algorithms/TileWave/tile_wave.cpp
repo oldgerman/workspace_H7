@@ -80,7 +80,7 @@ TileWave::TileWave(Config_t &xConfig)
 TileWave::~TileWave()
 {
 //	aligned_free(ppucStrBuffer_, 8);
-//	ppucStrBuffer_ = (char**)aligned_malloc(sizeof(char**) * ulStrBufferRowCount, 8);
+//	ppucStrBuffer_ = (char**)aligned_malloc(sizeof(char**) * ulStrBufferRowCount_, 8);
 //	for(uint32_t i = 0; i < ulLayerNumMax; i++) {
 //		ppucStrBuffer_[i] = (char*)aligned_malloc(sizeof(char*) * ulLayerNumMax, 8);
 //	}
@@ -116,7 +116,7 @@ uint32_t TileWave::createTileBufferList()
 	/** 申请字符串缓冲区的内存，非频繁操作的缓冲区，8 字节对齐即可
 	  * reference: blog.csdn.net/fengxinlinux/article/details/51541003
 	  */
-	ppucStrBuffer_ = (char**)aligned_malloc(sizeof(char**) * ulStrBufferRowCount, 8);
+	ppucStrBuffer_ = (char**)aligned_malloc(sizeof(char**) * ulStrBufferRowCount_, 8);
 	for(uint32_t i = 0; i < ulLayerNumMax; i++) {
 		ppucStrBuffer_[i] = (char*)aligned_malloc(sizeof(char*) * ulLayerNumMax, 8);
 	}

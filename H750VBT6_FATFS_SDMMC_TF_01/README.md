@@ -372,7 +372,7 @@ FIL file 中也有一个 buf[512]，这个会不会也导致非32字节对齐？
 
 ### MPU 配置的影响
 
-本工程运行域默认使用 RAM_D1，通过在 demo_sd_fatfs.c 的宏 RAM_D2 将读写缓冲区编译到 RAM_D2 测试
+STM32H750 的 SDMMC1 仅支持 RAM_D1，而 SDMMC2 支持 RAM_D1 和 RAM_D2，本工程使用 SDMMC1，通过在 demo_sd_fatfs.c 的宏 RAM_D2 将读写缓冲区编译到 RAM_D2 测试其不能访问时的现象
 
 MPU 对 RAM_D1 和 RAM_D2 的配置如下：
 

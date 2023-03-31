@@ -65,7 +65,7 @@ uint32_t TileWave::createTileBufferList()
 	/** 申请字符串缓冲区的内存，非频繁操作的缓冲区，8 字节对齐即可
 	  * reference: blog.csdn.net/fengxinlinux/article/details/51541003
 	  */
-	ppucStrBuffer_ = (char**)aligned_malloc(sizeof(char**) * ulStrBufferRowCount, 8);
+	ppucStrBuffer_ = (char**)aligned_malloc(sizeof(char**) * ulStrBufferRowCount_, 8);
 	for(uint32_t i = 0; i < ulLayerNumMax; i++) {
 		ppucStrBuffer_[i] = (char*)aligned_malloc(sizeof(char*) * ulLayerNumMax, 8);
 	}
@@ -113,7 +113,7 @@ uint32_t TileWave::createTileBufferList()
 	// 实时切片时分配
 
 	// 读缓冲区暂时分 5 个 ulIOSizeMin
-//	pucReadBuffer = (uint8_t*)aligned_malloc(5 * ulIOSizeMin, alignment_);
+//	pucReadLayerBuffer = (uint8_t*)aligned_malloc(5 * ulIOSizeMin, alignment_);
 
 	return 0U;
 }

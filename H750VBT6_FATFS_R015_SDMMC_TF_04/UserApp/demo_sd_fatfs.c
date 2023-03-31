@@ -77,7 +77,6 @@ char DataSec_ArmflyTxt[] = {"FatFS Write Demo \r\n www.armfly.com \r\n"};
 RAM_D1 FATFS fs;
 /* 文件对象 */
 RAM_D1 FIL file;
-static FIL* fp = &file;
 /* 文件夹对象 */
 DIR DirInf;
 /* 文件信息对象 */
@@ -192,7 +191,7 @@ uint32_t delectThenCreateWaveFile()
 	/* 卸载文件系统 */
 	res += f_mount(NULL, DiskPath, 0);
 
-	printf("\r\n删除并新建 %s (%s)\r\n", filename, FR_Table[res]);
+	printf("删除并新建 %s (%s)\r\n\r\n", filename, FR_Table[res]);
 
 	return res;
 }
@@ -200,6 +199,7 @@ uint32_t delectThenCreateWaveFile()
 uint32_t initExistingWaveFile()
 {
 	FRESULT res = FR_OK;
+	FRESULT res_sum = FR_OK;
 	char path[32];
 	char* filename = "WAVE.txt";
 	sprintf(path, "%s%s", DiskPath, filename);
@@ -207,10 +207,13 @@ uint32_t initExistingWaveFile()
 	printf("\r\n尝试初始化已有的 %s ...\r\n", filename);
 
  	/* 挂载文件系统 */
-	res += f_mount(&fs, DiskPath, 0);			/* Mount a logical drive */
+	res = f_mount(&fs, DiskPath, 0);			/* Mount a logical drive */
 	if (res != FR_OK) {
 		printf("挂载文件系统失败 (%s)\r\n", FR_Table[res]);
+	} else {
+		printf("挂载文件系统成功\r\n\r\n");
 	}
+	res_sum += res;
 
 	/* 打开文件 */
 	/* 以 写入+读取 的方式访问打开的文件
@@ -221,91 +224,67 @@ uint32_t initExistingWaveFile()
 	 * 					如果是删除了原有文件再 FA_CREATE_ALWAYS，那么紧接着
 	 * 					创建的CLMT会随着文件边读边改变
 	 */
-	res += f_open(&file, path, FA_WRITE | FA_READ);
+	res = f_open(&file, path, FA_WRITE | FA_READ);
 	if (res == FR_OK)
 		printf("%s 打开成功\r\n", filename);
 	else {
 		printf("%s 打开失败(%s)\r\n", filename, FR_Table[res]);
 	}
+	res_sum += res;
 
 	/* 慢速搜索模式下 */
-	res += f_lseek (&file, WAVE_FILE_SIZE); 			/* 使用f_lseek() 拓展文件大小（集群预分配）为 128MB */
-    if (res || f_tell(&file) != WAVE_FILE_SIZE)	{	 	/* 检查文件大小增加是否成功 *//* 检查文件是否扩展成功 */
-    	printf("%s 扩展文件大小（集群预分配）%dMB 失败\r\n", filename, WAVE_FILE_SIZE / 1024 / 1024);
-    }
-    else
+	res = f_lseek (&file, WAVE_FILE_SIZE); 			/* 使用f_lseek() 拓展文件大小（集群预分配）为 128MB */
+    if (res || f_tell(&file) != WAVE_FILE_SIZE)	{	/* 检查文件大小增加是否成功 *//* 检查文件是否扩展成功 */
+    	printf("%s 扩展文件大小（集群预分配）%dMB 失败(%s)\r\n", filename, WAVE_FILE_SIZE / 1024 / 1024, FR_Table[res]);
+    } else {
     	printf("%s 扩展文件大小（集群预分配）%dMB 成功\r\n", filename, WAVE_FILE_SIZE / 1024 / 1024);
+    }
+    res_sum += res;
 
 //    res += f_close(&file);
 
 	/* 慢速搜索下先 f_lseek 偏移一个文件的大小 */
-	res += f_lseek(fp, 0);	/* This is normal seek (cltbl is nulled on file open) */
+	res = f_lseek(&file, 0);	/* This is normal seek (cltbl is nulled on file open) */
+	res_sum += res;
 
 	/* 设定快速搜索模式 */
-	fp->cltbl = clmt;
+	(&file)->cltbl = clmt;
 	clmt[0] = SZ_TBL;
-	res += f_lseek(fp, CREATE_LINKMAP);
+	res = f_lseek(&file, CREATE_LINKMAP);
+    if (res != FR_OK)	{
+    	printf("%s 设置快速搜索模式失败(%s)\r\n", filename, FR_Table[res]);
+    } else {
+    	printf("%s 设置快速搜索模式成功\r\n", filename);
+    }
+	res_sum += res;
 
-
-	printf("\r\n初始化已有的 %s (%s)\r\n", filename, FR_Table[res]);
+	printf("初始化已有的 %s (%s)\r\n", filename, FR_Table[res_sum]);
 
 	return res;
 }
 
-#if 1
 uint32_t writeWaveFile(uint32_t addr, uint32_t size, uint8_t* pData)
 {
-	FRESULT res = FR_OK;
+	FRESULT  res = FR_OK;
 	uint32_t bw;
 
-//	char path[32];
-//	sprintf(path, "%sWAVE.txt", DiskPath);
-//	res += f_open(&file, path, FA_WRITE | FA_READ);
-//	fp->cltbl = clmt;
-
-	res += f_lseek(fp, addr);
+	res += f_lseek(&file, addr);
 	res += f_write(&file, pData, size, (UINT* )&bw);
-	res += f_sync(fp);
-
-//	res += f_close(fp);
+	res += f_sync(&file);
 
 	return res;
 }
-#else
-uint32_t writeWaveFile(uint32_t addr, uint32_t size, uint8_t* pData)
-{
-	FRESULT result = FR_OK;
-	uint32_t bw;
-
-	result += f_lseek(&file, addr);
-	result += f_write(&file, pData, size, (UINT* )&bw);
-
-	/**
-	 * `f_sync`函数执行与`f_close`函数相同的过程，但文件保持打开状态，可以继续对文件进行读/写/查找操作。
-	 * 这适用于需要长时间以写入方式打开文件的应用程序，例如数据记录器。
-	 * 在一定的时间间隔执行`f_sync`功能可以最大限度地减少由于突然停电、错误的媒体移除或不可恢复的磁盘错误而导致数据丢失的风险。
-	 * 在`f_close`函数之前立即执行`f_sync`函数是没有意义的，因为它在其中执行`f_sync`函数
-	 */
-	result += f_sync(&file);
-
-	return result;
-}
-#endif
 
 uint32_t readWaveFile(uint32_t addr, uint32_t size, uint8_t* pData)
 {
-	FRESULT result = FR_OK;
+	FRESULT  res = FR_OK;
 	uint32_t bw;
 
-	char path[32];
-	sprintf(path, "%sWAVE.txt", DiskPath);
-	result += f_open(&file, path,
-			FA_WRITE | FA_READ);
+	res += f_lseek(&file, addr);
+	res += f_read(&file, pData, size, (UINT* )&bw);
+	res += f_sync(&file);
 
-	result += f_lseek(&file, addr);
-	result += f_read(&file, pData, size, (UINT* )&bw);
-
-	return result;
+	return res;
 }
 
 /*

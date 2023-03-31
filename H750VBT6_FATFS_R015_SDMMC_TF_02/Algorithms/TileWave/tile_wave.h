@@ -166,7 +166,7 @@ public:
 private:
 	/**
 	  * 字节对齐的动态内存 API
-	  * 由于实时采样数据数据需要频繁以2次幂进行缩小等计算，M7 内核的 Cahce 可以缓存
+	  * 由于实时采样数据数据需要频繁以2次幂进行缩小等计算，M7 内核的 Cache 可以缓存
 	  * 一部分正在计算的数据，访问粒度是 4 字节，那么使用32字节对齐的动态内存能显著减少访问次数
 	  */
 	std::function<void* (size_t size, size_t alignment)>	aligned_malloc;
@@ -178,7 +178,7 @@ private:
 	static const size_t alignment_ = 32;				// 内存 32 字节对齐
 
 	char** ppcuStrBuffer_;								// 字符串缓冲区暂存创建层链表时输出的信息
-	static const uint32_t ulStrBufferRowCount = 64;		// 字符串缓冲区每行 64 个 char 字符
+	static const uint32_t ulStrBufferRowCount_ = 64;	// 字符串缓冲区每行 64 个 char 字符
 };
 
 }
