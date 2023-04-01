@@ -168,3 +168,65 @@ fatfsSDTaskFreq: 25.000, 24.629
 ### 任意层的多个单元在文件中的地址
 
 多个单元可能跨越多个周期，问题比较复杂，需要生成多次读参数配置
+
+## 测试
+
+### fatfsSDTask 任务状态
+
+`osMessageQueueGet()`的`timeout`参数之前给错成 `0U`，导致不论消息队列里是否消息，`fatfsSDTask()` 都是就绪态， 将`timeout` 参数修改为`osWaitForever`正常（消息队列里没消息时，可以进入阻塞态）
+
+```c
+static void fatfsSDTask(void* argument)
+{
+...
+	for(;;)
+	{
+		osStatus = osMessageQueueGet(xTileWave.xMsgQueue, &msg, 0U, osWaitForever);   // wait for message
+        //                                                           ^~~~~~~~~~~~~
+        //                                                           从 0U 修改为 osWaitForever
+	}
+}
+```
+
+frameProcessorTask 写消息前 fatfsSDTask 是阻塞态：
+
+![frameProcessorTask写消息前fatfsSDTask是阻塞态](Images/frameProcessorTask写消息前fatfsSDTask是阻塞态.png)
+
+frameProcessorTask 写消息后 fatfsSDTask 是就绪态：
+
+![frameProcessorTask写消息后fatfsSDTask是就绪态](Images/frameProcessorTask写消息后fatfsSDTask是就绪态.png)
+
+### CPU 利用率
+
+- 25Hz 实时写入 1700次，10Hz 读取单周期的一个单元，并打印1个单元的数据
+
+  ```c
+  ---------------------------------------------
+  任务名 运行计数 使用率
+  UsbServerTask                  	518		<1%
+  IDLE                           	1129090		77%
+  ledTask                        	7		<1%
+  frameProcessorTask             	140907		9%
+  commTask                       	0		<1%
+  fatfsSDTask                    	182545		12% // printf 打印 1 个单元内的 512 个 4byte 数据
+  usbIrqTask                     	0		<1%
+  Tmr Svc                        	0		<1%
+  ---------------------------------------------
+  ```
+
+- 25Hz 实时写入 1700次，10Hz 读取单周期的一个单元，不打印单元的数据
+
+  ```c
+  ---------------------------------------------
+  任务名 运行计数 使用率
+  UsbServerTask                  	529		<1%
+  IDLE                           	1280669		86%
+  ledTask                        	6		<1%
+  frameProcessorTask             	137213		9%
+  commTask                       	0		<1%
+  fatfsSDTask                    	54979		3% // printf 不打印单元数据
+  usbIrqTask                     	0		<1%
+  Tmr Svc                        	0		<1%
+  ---------------------------------------------
+  ```
+

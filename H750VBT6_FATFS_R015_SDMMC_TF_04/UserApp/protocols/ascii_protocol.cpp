@@ -35,6 +35,7 @@
 #include <string>
 #include "demo_sd_fatfs.h"
 #include "frame_processor.h"
+#include "interface_fatfs_sd.h"
 #include "tile_wave.h"
 
 /* Private typedef -----------------------------------------------------------*/
@@ -127,6 +128,13 @@ void OnAsciiCmd(const char* _cmd, size_t _len, StreamSink &_responseChannel)
             sscanf(&_cmd[13], "%ld+%ld+%ld", &ulLayerNum, &ulUnitOffset, &ulUnitNum);
             xReadLayerBufferParam = xTileWave.xFindUnit(ulLayerNum, ulUnitOffset, ulUnitNum);
             frame_readLayerBuffer = 1;
+        }
+        else if(s.find("PRINT_UNIT_DATA=") != std::string::npos)
+        {
+            uint32_t value;
+            sscanf(&_cmd[19], "%ld", &value);
+            fatfsSD_printUnitData = value;
+            Respond(_responseChannel, false, "单元读取时%s", (value == 1)?("打印"):("不打印"));
         }
         else if (s.find("START_SLICE") != std::string::npos)
         {

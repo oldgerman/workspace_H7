@@ -47,6 +47,7 @@ const osThreadAttr_t fatfsSDTask_attributes = {
 osThreadId_t fatfsSDTaskHandle;
 extern TileWave xTileWave;
 //__attribute__((section(".RAM_D1_Array"))) ALIGN_32BYTES(uint8_t TxBuffer [64 *1024]);
+bool fatfsSD_printUnitData = 1;	//是否打印单元数据
 
 /* Private variables ---------------------------------------------------------*/
 /* Private function prototypes -----------------------------------------------*/
@@ -71,7 +72,7 @@ static void fatfsSDTask(void* argument)
 
 	for(;;)
 	{
-		osStatus = osMessageQueueGet(xTileWave.xMsgQueue, &msg, 0U, 0U);   // wait for message
+		osStatus = osMessageQueueGet(xTileWave.xMsgQueue, &msg, 0U, osWaitForever);   // wait for message
 		if (osStatus == osOK) {
 			// process data
 			uint32_t ret = 0; // FATFS 函数的返回状态
@@ -125,19 +126,20 @@ static void fatfsSDTask(void* argument)
 						msg.xReadLayerBufferParam.ulAddr,
 						msg.xReadLayerBufferParam.ulSize,
 						msg.xReadLayerBufferParam.pucData);
-
-				float *pfVal = (float*)(msg.xReadLayerBufferParam.pucData);
-				for(uint32_t i = 0; i < msg.xReadLayerBufferParam.ulSize / 4 / 8; i++)
-				{
-					printf("%.2f\n%.2f\n%.2f\n%.2f\n%.2f\n%.2f\n%.2f\n%.2f\r\n",
-								*(pfVal + i * 8 + 0),
-								*(pfVal + i * 8 + 1),
-								*(pfVal + i * 8 + 2),
-								*(pfVal + i * 8 + 3),
-								*(pfVal + i * 8 + 4),
-								*(pfVal + i * 8 + 5),
-								*(pfVal + i * 8 + 6),
-								*(pfVal + i * 8 + 7));
+				if(fatfsSD_printUnitData) {
+					float *pfVal = (float*)(msg.xReadLayerBufferParam.pucData);
+					for(uint32_t i = 0; i < msg.xReadLayerBufferParam.ulSize / 4 / 8; i++)
+					{
+						printf("%.2f\n%.2f\n%.2f\n%.2f\n%.2f\n%.2f\n%.2f\n%.2f\r\n",
+									*(pfVal + i * 8 + 0),
+									*(pfVal + i * 8 + 1),
+									*(pfVal + i * 8 + 2),
+									*(pfVal + i * 8 + 3),
+									*(pfVal + i * 8 + 4),
+									*(pfVal + i * 8 + 5),
+									*(pfVal + i * 8 + 6),
+									*(pfVal + i * 8 + 7));
+					}
 				}
 			}
 		}

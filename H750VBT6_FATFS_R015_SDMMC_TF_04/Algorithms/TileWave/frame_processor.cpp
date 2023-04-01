@@ -113,6 +113,7 @@ static void frameProcessorTask(void* argument)
 			}
 		}
 
+		/* 向帧缓冲区填充正弦波测试数据 */
 		for(uint32_t i = 0; i < buffer_num / 2; i++) {
 			frame[i].ctrl_f32 = arm_sin_f32(2.0f * user_pi * i / (buffer_num / 2)) * 25;
 		}
@@ -121,11 +122,12 @@ static void frameProcessorTask(void* argument)
 		{
 			/* 停止前需要做最后一次 52KB 特殊切片 */
 			msg.type = TileWave::EVENT_LAST_WRITE_LAYER_BUFFER;
-			if(firstSliceStop && (xSliceState != SLICE_USER_STOP)) {
+			if(firstSliceStop
+					&& (xSliceState != SLICE_USER_STOP)
+					) {
 				xSliceState = SLICE_LAST_WRITE_BUFFER;
-			} else {
-				msg.type = TileWave::EVENT_STOP_WRITE;
 			}
+			else { msg.type = TileWave::EVENT_STOP_WRITE;}
 		}
 		else
 		{

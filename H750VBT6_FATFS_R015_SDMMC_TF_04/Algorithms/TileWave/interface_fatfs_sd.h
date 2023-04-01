@@ -42,7 +42,7 @@ extern "C" {
 /* Exported variables --------------------------------------------------------*/
 /* Exported functions --------------------------------------------------------*/
 void fatfsSDInit();
-
+extern bool fatfsSD_printUnitData;
 #ifdef __cplusplus
 }
 #include "tile_wave.h"
