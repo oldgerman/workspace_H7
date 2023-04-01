@@ -121,8 +121,10 @@ static void frameProcessorTask(void* argument)
 		{
 			/* 停止前需要做最后一次 52KB 特殊切片 */
 			msg.type = TileWave::EVENT_LAST_WRITE_LAYER_BUFFER;
-			if(firstSliceStop) {
+			if(firstSliceStop && (xSliceState != SLICE_USER_STOP)) {
 				xSliceState = SLICE_LAST_WRITE_BUFFER;
+			} else {
+				msg.type = TileWave::EVENT_STOP_WRITE;
 			}
 		}
 		else
@@ -132,8 +134,7 @@ static void frameProcessorTask(void* argument)
 			firstSliceStop = 1;
 		}
 
-		if(firstInitExistingWaveFile) {
-			firstInitExistingWaveFile = 0;
+		if(firstInitExistingWaveFile == 0) {
 			xSliceState = SLICE_USER_STOP;
 		}
 
