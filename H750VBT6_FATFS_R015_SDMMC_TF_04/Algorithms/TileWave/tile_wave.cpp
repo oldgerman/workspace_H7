@@ -472,7 +472,7 @@ uint32_t TileWave::ulCalculateFileSizeForAnyPeriod(uint32_t ulPeriod)
   *         例如 64MB 的层 有 32768 个 2KB 单元
   * @param ulLayerNum    层编号 0-14
   * @param ulUnitOffset  单元偏移 >=1
-  * @param ulUnitNum     单元个数 >=1
+  * @param ulUnitNum     单元个数 >=1，不保证相对于层的单元连续性
   */
 TileWave::ReadLayerBufferParam_t TileWave::xFindUnit(
 		uint32_t ulLayerNum, uint32_t ulUnitOffset, uint32_t ulUnitNum)

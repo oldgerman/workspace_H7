@@ -159,15 +159,15 @@ fatfsSDTaskFreq: 25.000, 24.629
 
 ### 单元
 
-单元是在层、瓦片之后引入的新概念，1个单元大小 等于 `ulIOSizeMin`，该成员变量在每个 TileWave对象构造时指定，单元限制了对层缓冲区的最小读写操作大小
+单元是在层、瓦片之后引入的新概念，1个单元大小 等于 `ulIOSizeMin`，该成员变量在每个`TileWave`对象构造时指定，单元限制了对层缓冲区的最小读写操作大小
 
 ### 任意层的一个单元在文件中的地址
 
-一个瓦片可能跨越多个周期，问题比较复杂，需要生成多次读参数配置
+一个瓦片仅会在一个周期内，需要生成一次读参数配置，算法在 `TileWave::xFindUnit()` 实现
 
-### 任意层的多个单元在文件中的地址
+### 任意层的多个连续单元在文件中的地址
 
-多个单元可能跨越多个周期，问题比较复杂，需要生成多次读参数配置
+对于层缓冲区的多个连续单元，在 SD 卡上可能跨越多个周期，问题比较复杂，需要生成多次读参数配置
 
 ## 测试
 
@@ -182,8 +182,8 @@ static void fatfsSDTask(void* argument)
 	for(;;)
 	{
 		osStatus = osMessageQueueGet(xTileWave.xMsgQueue, &msg, 0U, osWaitForever);   // wait for message
-        //                                                           ^~~~~~~~~~~~~
-        //                                                           从 0U 修改为 osWaitForever
+		//                                                          ^~~~~~~~~~~~~
+		//                                                          从 0U 修改为 osWaitForever
 	}
 }
 ```
