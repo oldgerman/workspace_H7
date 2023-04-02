@@ -282,7 +282,7 @@ uint32_t readWaveFile(uint32_t addr, uint32_t size, uint8_t* pData)
 
 	res += f_lseek(&file, addr);
 	res += f_read(&file, pData, size, (UINT* )&bw);
-	res += f_sync(&file);
+//	res += f_sync(&file);
 
 	return res;
 }

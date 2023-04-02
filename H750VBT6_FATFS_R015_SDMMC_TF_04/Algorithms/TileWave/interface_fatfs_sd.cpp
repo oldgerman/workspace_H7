@@ -140,6 +140,10 @@ static void fatfsSDTask(void* argument)
 									*(pfVal + i * 8 + 6),
 									*(pfVal + i * 8 + 7));
 					}
+					printf("[read param] ulAddr = %10ld, ulSize = %6ld, ulOffsetUnit = %6ld\r\n",
+							msg.xReadLayerBufferParam.ulAddr,
+							msg.xReadLayerBufferParam.ulSize,
+							msg.xReadLayerBufferParam.ulOffsetUnit);
 				}
 			}
 		}

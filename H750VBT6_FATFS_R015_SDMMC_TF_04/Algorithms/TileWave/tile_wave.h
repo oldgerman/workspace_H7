@@ -28,7 +28,8 @@
   *                  EVENT_LAST_WRITE_LAYER_BUFFER，不论某些层瓦片缓冲区是否存满
   *                  都会打包到本次发送的缓冲区。
   *    2023-03-31  - 层表格由 list 改为 vector 容器
-  *                - 实现任意层的一个单元在文件中的地址算法
+  *                - 初步实现任意层的一个单元在文件中的地址算法 xFindUnit()
+  *    2023-04-02  - 修复 xFindUnit() 在单 ulUnitOffset 为2幂次时计算的 BUG
   *
   ******************************************************************************
   * @attention
@@ -56,6 +57,7 @@
 
 #include "common_inc.h"
 #include <vector>
+#include <list>
 #include <algorithm>
 #include <functional>
 #ifdef __cplusplus
@@ -124,6 +126,11 @@ public:
 		uint32_t ulOffsetUnit;
 	} ReadLayerBufferParam_t;
 
+	/* 连续读缓冲区时的参数配置表 */
+	typedef struct {
+		std::list<ReadLayerBufferParam_t> xParamList;
+	} ReadLayerBufferParamList_t;
+
 	/* @brief event types used in the Layer buffer */
 	typedef enum {
 		EVENT_STOP_READ = 0,			// 停止读
@@ -167,14 +174,14 @@ public:
 	  * @notice 不要与储存介质的最小 IO/SIZE 混淆
 	  *         此参数应根据诸多参数综合设置
 	  *         比如：
-				| 波形帧大小 | 波形区水平像素数 | 波形区覆盖的数据大小 | 存储器     | 存储器最小 IO/SIZE | 实际操作储存器的 IO/SZIE                            |ulMinIOSize  |
+				| 波形帧大小 | 波形区水平像素数 | 波形区覆盖的数据大小 | 存储器     | 存储器最小 IO/SIZE | 实际操作储存器的 IO/SIZE                            |ulMinIOSize  |
 				| ---------- | ---------------- | -------------------- | ---------- | ------------------ | --------------------------------------------------- | ------------ |
 				| 32bit      | 400              | 1600B                | NAND FLASH | 512B               | 4KB（2K > 1600B 就够，但4K比较快，且能减少读写次数）| 4KB          |
 				| 16bit      | 400              | 800B                 | SDRAM      | 1B                 | 1KB（1K > 800B 就够）                               | 1KB          |
 				| 8bit       | 400              | 400B                 | PSRAM      | 1B                 | 512B（512B > 400B 就够）                            | 512B         |
 	  */
-	/* IO SZIE， 必须为 2 的幂 */
-	uint32_t ulIOSize;							// 当前读写的IO SZIE
+	/* IO SIZE， 必须为 2 的幂 */
+	uint32_t ulIOSize;							// 当前读写的IO SIZE
 	uint32_t ulIOSizeMin;						// = 2048;  /* 单位 B */
 	uint32_t ulIOSizeMax;						// = 16384; /* 单位 B */
 
@@ -240,6 +247,7 @@ public:
 	uint32_t ulCalculateFileSizeForAnyPeriod(uint32_t ulPeriod);
 	ReadLayerBufferParam_t ulCalculateFileSizeForAnyPeriod(float fZoom, float fProgress);
 	ReadLayerBufferParam_t xFindUnit(uint32_t ulLayerNum, uint32_t ulUnitOffset, uint32_t ulUnitNum);
+	ReadLayerBufferParamList_t xFindUnitList(uint32_t ulLayerNum, uint32_t ulUnitOffset, uint32_t ulUnitNum);
 
 private:
 	static uint32_t ulCalculateMinPowerOf2GreaterThan(uint32_t ulValue);

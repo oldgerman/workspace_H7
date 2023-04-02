@@ -391,9 +391,9 @@ void TileWave::vPrintLayerInfo()
   */
 uint32_t TileWave::ulCalculateMinPowerOf2GreaterThan(uint32_t ulValue)
 {
-	uint32_t ulNth = 1;
+	uint32_t ulNth;
 	for(uint8_t i = 0; i < 32; i++) {
-		ulNth = ulNth << i;
+		ulNth = 1 << i;
 		if(ulNth > ulValue) {
 			break;
 		}
@@ -408,14 +408,11 @@ uint32_t TileWave::ulCalculateMinPowerOf2GreaterThan(uint32_t ulValue)
   */
 uint32_t TileWave::ulCalculateMaxPowerOf2LessThan(uint32_t ulValue)
 {
-	uint32_t ulNth = 1;
+	uint32_t ulNth;
 	for(uint8_t i = 0; i < 32; i++) {
-		ulNth = ulNth << i;
+		ulNth = 1 << i;
 		if(ulNth > ulValue) {
 			ulNth = ulNth >> 1;
-			break;
-		}
-		if(ulNth == ulValue) {
 			break;
 		}
 	}
@@ -425,7 +422,7 @@ uint32_t TileWave::ulCalculateMaxPowerOf2LessThan(uint32_t ulValue)
 /**
   * @brief  计算2的N次幂的指数
   * @param  ulValue 被计算数
-  * @retval 计算的幂次
+  * @retval 计算的指数
   */
 uint32_t TileWave::ulCalculateExponentPowerOf2(uint32_t ulValue)
 {
@@ -467,11 +464,47 @@ uint32_t TileWave::ulCalculateFileSizeForAnyPeriod(uint32_t ulPeriod)
 // TODO
 
 /**
+  * @brief  根据层号、单元偏移、单元个数计算读缓冲区时的参数配置，
+  *         多个单元可能是非连续的储存，因此返回多个
+  * @param ulLayerNum    层编号 0-14
+  * @param ulUnitOffset  单元偏移 >=0
+  * @param ulUnitNum     单元个数 >=1，不保证相对于层的单元连续性
+  */
+TileWave::ReadLayerBufferParamList_t TileWave::xFindUnitList(
+		uint32_t ulLayerNum, uint32_t ulUnitOffset, uint32_t ulUnitNum)
+{
+	ReadLayerBufferParamList_t xRead;
+
+	/* 瓦片缓冲区大小等于单元大小的层的多个单元的连续读取，读取参数组的个数一定等于被读单元数 */
+	ReadLayerBufferParam_t xParam = xFindUnit(ulLayerNum, ulUnitOffset, 1);
+	xRead.xParamList.push_front(xParam);
+	return  xRead;
+}
+
+/**
+  * @brief  根据层号、单元偏移、单元个数计算读缓冲区时的参数配置，
+  *         多个单元可能是非连续的储存，因此返回多个
+  * @param ulLayerNum    层编号 0-14
+  * @param ulUnitOffset  单元偏移 >=0
+  * @param ulUnitNum     单元个数 >=1，不保证相对于层的单元连续性
+  */
+TileWave::ReadLayerBufferParamList_t TileWave::xFindUnitList(
+		uint32_t ulLayerNum, uint32_t ulUnitOffset, uint32_t ulUnitNum)
+{
+	ReadLayerBufferParamList_t xRead;
+
+	/* 瓦片缓冲区大小等于单元大小的层的多个单元的连续读取，读取参数组的个数一定等于被读单元数 */
+	ReadLayerBufferParam_t xParam = xFindUnit(ulLayerNum, ulUnitOffset, 1);
+	xRead.xParamList.push_front(xParam);
+	return  xRead;
+}
+
+/**
   * @brief  根据层号、单元偏移、单元个数计算读缓冲区时的参数配置
   *         1个单元等于最小 IO SIZE
   *         例如 64MB 的层 有 32768 个 2KB 单元
   * @param ulLayerNum    层编号 0-14
-  * @param ulUnitOffset  单元偏移 >=1
+  * @param ulUnitOffset  单元偏移 [0, 32767]
   * @param ulUnitNum     单元个数 >=1，不保证相对于层的单元连续性
   */
 TileWave::ReadLayerBufferParam_t TileWave::xFindUnit(
@@ -480,7 +513,8 @@ TileWave::ReadLayerBufferParam_t TileWave::xFindUnit(
 	/* 约束参数到有效范围 */
 	ulLayerNum = constrain(ulLayerNum, 0, xLayerTable.back().ulLayerNum);  // 0 ~ 14
 	ulUnitOffset = constrain(ulUnitOffset, 0, xLayerTable[ulLayerNum].ulLayerBufferUnitNum - 1);     // 0 ~ 4095
-	ulUnitNum = constrain(ulUnitNum, 1, xLayerTable[ulLayerNum].ulLayerBufferUnitNum - ulUnitOffset);// 1 ~ (4096 - Offset)
+	ulUnitOffset += 1;
+//	ulUnitNum = constrain(ulUnitNum, 1, xLayerTable[ulLayerNum].ulLayerBufferUnitNum - ulUnitOffset);// 1 ~ (4096 - Offset)
 
 	uint32_t ulOffsetUnit = 0;	// 单元偏移，单位：单元大小
 	uint32_t ulPeriodQuotient;	// 周期商
@@ -500,7 +534,7 @@ TileWave::ReadLayerBufferParam_t TileWave::xFindUnit(
 		}
 	}
 	/* 周期商刚好等于2幂周期时，单元偏移需要减去小于目标层号多加进来的其他层的单元大小 */
-	if((ulPeriodQuotient != 0) && (ulPeriodQuotient == ulPeriodPowerOf2)) {
+	if((ulPeriodQuotient != 0) && ((ulPeriodQuotient + ulPeriodRemainder) == ulPeriodPowerOf2)) {
 		for(uint8_t i = 0; i < ulLayerNum; i++) {
 			if(ulPeriodQuotient % xLayerTable[i].ulTileBufferPeriod == 0 ) {
 				ulOffsetUnit -= xLayerTable[i].ulTileBufferSize;
@@ -522,8 +556,7 @@ TileWave::ReadLayerBufferParam_t TileWave::xFindUnit(
 	ulOffsetUnit /= ulIOSizeMin;
 	ulOffsetUnit -= 1;
 
-//	printf("ulOffsetUnit = %ld\r\n", ulOffsetUnit);
-	ReadLayerBufferParam_t xReadLayerBufferParam =
+	ReadLayerBufferParam_t xParam =
 	{
 			.ulAddr = ulOffsetUnit * ulIOSizeMin,
 			.ulSize = ulUnitNum * ulIOSizeMin,	// TODO: 单元不连续的多次读处理
@@ -531,5 +564,10 @@ TileWave::ReadLayerBufferParam_t TileWave::xFindUnit(
 			.ulOffsetUnit = ulOffsetUnit
 	};
 //	pucReadLayerBuffer = (uint8_t*)aligned_malloc(xReadLayerBufferParam.ulSize, alignment_);
-	return  xReadLayerBufferParam;
+//	printf("ulOffsetUnit = %ld\r\n", ulOffsetUnit);
+//	printf("[read param] ulAddr = %10ld, ulSize = %6ld, ulOffsetUnit = %6ld\r\n",
+//			xParam.ulAddr,
+//			xParam.ulSize,
+//			xParam.ulOffsetUnit);
+	return  xParam;
 }
