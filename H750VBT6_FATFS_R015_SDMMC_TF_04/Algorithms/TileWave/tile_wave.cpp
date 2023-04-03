@@ -484,6 +484,7 @@ TileWave::ReadLayerBufferParamList_t TileWave::xFindUnitList(
 	ReadLayerBufferParamList_t xParamList = {
 			.size = 0
 	};
+
 	/**
 	 * TODO：实现 vector 内发参数表 按照消息队列深度进行分组
 	 */
@@ -498,15 +499,11 @@ TileWave::ReadLayerBufferParamList_t TileWave::xFindUnitList(
 	/* 约束参数到有效范围 */
 	ulLayerNum = constrain(ulLayerNum, 0, xLayerTable.back().ulLayerNum);  // 0 ~ 14
 	ulUnitOffsetLayer = constrain(ulUnitOffsetLayer, 0, xLayerTable[ulLayerNum].ulLayerBufferUnitNum - 1);     // 0 ~ 4095
-//	ulUnitOffsetLayer += 1;
 
 	ReadLayerBufferParam_t xParam;
-//	uint32_t ulUnitOffsetLayerQuotient;		// 单元偏移商
 	uint32_t ulUnitOffsetLayerRemainder;	// 单元偏移余数
 	uint32_t ulDiffUnitNum;
 
-//	ulUnitOffsetLayerQuotient = ulUnitOffsetLayer / xLayerTable[ulLayerNum].ulTileBufferUnitNum;
-//  ^ 1 ~ 4096       ^ 1~4096                               ^ 1~4096
 	ulUnitOffsetLayerRemainder = ulUnitOffsetLayer % xLayerTable[ulLayerNum].ulTileBufferUnitNum;
 //  ^ 0 ~ 4095       ^ 1~4096                               ^ 1~4096
 
@@ -529,8 +526,8 @@ TileWave::ReadLayerBufferParamList_t TileWave::xFindUnitList(
 		// 本次运算后，剩余的单元偏移刚好对齐下个周期该层的第一个单元
 		ulUnitOffsetLayer = ulUnitOffsetLayer - ulUnitOffsetLayerRemainder + xLayerTable[ulLayerNum].ulTileBufferUnitNum;
 	}
-	if(ulUnitNum != 0) {	// 如果还有剩余的待读取单元数
-		// 最大周期时，瓦片缓冲区写入层缓冲区的次数，层 0：2次，层1：4次，层14：4096次
+	/* 如果还有剩余的待读取单元数 */
+	if(ulUnitNum != 0) {
 		uint32_t i_max = ulUnitNum / xLayerTable[ulLayerNum].ulTileBufferUnitNum + 1;
 		ulDiffUnitNum = xLayerTable[ulLayerNum].ulTileBufferUnitNum;
 		for(uint32_t i = 0; i < i_max; i++) {
@@ -569,16 +566,17 @@ TileWave::ReadLayerBufferParam_t TileWave::xFindUnit(
 {
 	/* 约束参数到有效范围 */
 	ulLayerNum = constrain(ulLayerNum, 0, xLayerTable.back().ulLayerNum);  // 0 ~ 14
-	ulUnitOffsetLayer = constrain(ulUnitOffsetLayer, 0, xLayerTable[ulLayerNum].ulLayerBufferUnitNum - 1);     // 0 ~ 4095
-//	ulUnitNum = constrain(ulUnitNum, 1, xLayerTable[ulLayerNum].ulLayerBufferUnitNum - ulUnitOffsetLayer);// 1 ~ (4096 - Offset)
+	ulUnitOffsetLayer = constrain(ulUnitOffsetLayer, 0, xLayerTable[ulLayerNum].ulLayerBufferUnitNum - 1);	// 0 ~ 4095
+//	ulUnitNum = constrain(ulUnitNum, 1, xLayerTable[ulLayerNum].ulLayerBufferUnitNum - ulUnitOffsetLayer);	// 1 ~ (4096 - Offset)
 
 	uint32_t ulUnitOffsetFile = 0;	// 单元偏移，单位：单元大小
-	uint32_t ulPeriodQuotient;	// 周期商
-	uint32_t ulPeriodRemainder;	// 周期余数，等于目标单元在在单周期层缓冲区的偏移单元个数
-	uint32_t ulPeriodPowerOf2;	// 不大于周期商的最大2幂
+	uint32_t ulPeriodQuotient;		// 周期商
+	uint32_t ulPeriodRemainder;		// 周期余数，等于目标单元在在单周期层缓冲区的偏移单元个数
 
-	// 0~32767 ---> 1~32768
-	ulUnitOffsetLayer += 1;
+	/** ulUnitOffsetLayer 不是在SD卡总地址的 实际Offset，而是相对层缓冲区的起始的 虚拟Offset ！
+	  * 连续的 虚拟Offset 对应的 实际Offset 的地址不一定是连续的，切记！
+	  */
+	ulUnitOffsetLayer += 1; // 0~32767 ---> 1~32768
 	// 总周期商
 	ulPeriodQuotient  = xLayerTable[ulLayerNum].ulTileBufferPeriod * ulUnitOffsetLayer / xLayerTable[ulLayerNum].ulTileBufferUnitNum;
 //  ^ 0 ~ 4096                                  ^ 1~2048             ^ 1~32768                                   ^ 1~8
@@ -586,37 +584,29 @@ TileWave::ReadLayerBufferParam_t TileWave::xFindUnit(
 	ulPeriodRemainder = xLayerTable[ulLayerNum].ulTileBufferPeriod * ulUnitOffsetLayer % xLayerTable[ulLayerNum].ulTileBufferUnitNum;
 //  ^ 0 ~ 7                                     ^ 1~2048             ^ 1~32768                                   ^ 1~8
 
-//	ulPeriodPowerOf2 = ulCalculateMaxPowerOf2LessThanOrEqual(ulPeriodQuotient);
-
 	/* 计算2的幂周期单元偏移 */
 	for(uint8_t i = 0; i < ulLayerNumMax; i++) {
-//		if(xLayerTable[i].ulTileBufferPeriod <= ulPeriodPowerOf2)
-		{
-			/** ulUnitOffsetLayer 不是在SD卡总地址的 实际Offset，而是相对层缓冲区的起始的 虚拟Offset ！
-			  * 连续的 虚拟Offset 对应的 实际Offset 的地址不一定是连续的，切记！
-			  */
-			ulUnitOffsetFile += ulPeriodQuotient / xLayerTable[i].ulTileBufferPeriod * xLayerTable[i].ulTileBufferSize;
-		}
+		ulUnitOffsetFile += ulPeriodQuotient / xLayerTable[i].ulTileBufferPeriod * xLayerTable[i].ulTileBufferSize;
 	}
 
 	/* 周期商刚好等于2幂周期时，单元偏移需要减去小于目标层号多加进来的其他层的单元大小 */
-	if((ulPeriodQuotient != 0 && ulPeriodRemainder == 0)
-//	&& ((ulPeriodQuotient + ulPeriodRemainder) == ulPeriodPowerOf2)
-	)
-		{
-		for(uint8_t i = 0; i <= ulLayerNum; i++) { // <= 定位到目标层的第一个 offset
+	if(ulPeriodQuotient != 0 && ulPeriodRemainder == 0)
+		// '<=' 定位到目标层的第一个 offset
+		for(uint8_t i = 0; i <= ulLayerNum; i++) {
 			if(ulPeriodQuotient % xLayerTable[i].ulTileBufferPeriod == 0 ) {
 				ulUnitOffsetFile -= xLayerTable[i].ulTileBufferSize;
 			}
-		}
 	}
+
 	/* 由周期余数计算最后一个周期的层缓冲区内的单元偏移 */
 	if(ulPeriodRemainder != 0) {
-		for(uint8_t i = ulLayerNumMax - 1; i >= 0; i--) { // 从缓冲区最大的层迭代到最小的
+		// 从缓冲区最大的层迭代到最小的
+		for(uint8_t i = ulLayerNumMax - 1; i >= 0; i--) {
 			if(i == ulLayerNum) {
 				break;
 			}
-			if((ulPeriodQuotient + 1) // 有周期余数时，这里计算时定位的周期实际上要加上1个周期，这是周期余所在的不完整周期
+			// 有周期余数时，这里计算时定位的周期实际上要加上1个周期，这是周期余所在的不完整周期
+			if((ulPeriodQuotient + 1)
 					% xLayerTable[i].ulTileBufferPeriod == 0 ) {
 				ulUnitOffsetFile += xLayerTable[i].ulTileBufferSize;
 			}
@@ -625,22 +615,23 @@ TileWave::ReadLayerBufferParam_t TileWave::xFindUnit(
 	} else {
 		ulPeriodRemainder = xLayerTable[ulLayerNum].ulTileBufferUnitNum - 1;
 	}
+
 	ulUnitOffsetFile += ulPeriodRemainder * ulIOSizeMin;
 	ulUnitOffsetFile /= ulIOSizeMin;
-//	ulUnitOffsetFile -= 1;
 
 	ReadLayerBufferParam_t xParam =
 	{
 			.ulAddr = ulUnitOffsetFile * ulIOSizeMin,
-			.ulSize = ulUnitNum * ulIOSizeMin,	// TODO: 单元不连续的多次读处理
+			.ulSize = ulUnitNum * ulIOSizeMin,
 			.pucData = pucReadLayerBuffer,
 			.ulUnitOffsetFile = ulUnitOffsetFile
 	};
+
 //	pucReadLayerBuffer = (uint8_t*)aligned_malloc(xReadLayerBufferParam.ulSize, alignment_);
-//	printf("ulUnitOffsetFile = %ld\r\n", ulUnitOffsetFile);
 //	printf("[read param] ulAddr = %10ld, ulSize = %6ld, ulUnitOffsetFile = %6ld\r\n",
 //			xParam.ulAddr,
 //			xParam.ulSize,
 //			xParam.ulUnitOffsetFile);
+
 	return  xParam;
 }
