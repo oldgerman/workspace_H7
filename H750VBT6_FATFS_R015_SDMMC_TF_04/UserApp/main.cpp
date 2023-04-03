@@ -49,7 +49,7 @@ TileWave::Config_t xConfig = {
 	    /* Layer */
 	    .ulLayerNum = 0,
 	    .ulLayerNumMax = 15,
-	    .ulLayerTileNumMax = 4096,
+	    .ulLayerBufferTileNum = 4096,
 	    /* WaveForm */
 	    .ulWaveFrameSize = 4,
 	    .ulWaveDispWidth = 400,

@@ -46,6 +46,7 @@
 /* Exported variables --------------------------------------------------------*/
 extern TileWave xTileWave;
 extern TileWave::ReadLayerBufferParam_t xReadLayerBufferParam;
+extern TileWave::ReadLayerBufferParamList_t xReadLayerBufferParamList;
 /* Private variables ---------------------------------------------------------*/
 /* Private function prototypes -----------------------------------------------*/
 /* Function implementations --------------------------------------------------*/
@@ -128,6 +129,13 @@ void OnAsciiCmd(const char* _cmd, size_t _len, StreamSink &_responseChannel)
             sscanf(&_cmd[13], "%ld+%ld+%ld", &ulLayerNum, &ulUnitOffset, &ulUnitNum);
             xReadLayerBufferParam = xTileWave.xFindUnit(ulLayerNum, ulUnitOffset, ulUnitNum);
             frame_readLayerBuffer = 1;
+        }
+        else if(s.find("FIND_UNIT_LIST=") != std::string::npos)
+        {
+        	uint32_t ulLayerNum, ulUnitOffset, ulUnitNum;
+            sscanf(&_cmd[18], "%ld+%ld+%ld", &ulLayerNum, &ulUnitOffset, &ulUnitNum);
+            xReadLayerBufferParamList = xTileWave.xFindUnitList(ulLayerNum, ulUnitOffset, ulUnitNum);
+            frame_readLayerBufferList = 1;
         }
         else if(s.find("PRINT_UNIT_DATA=") != std::string::npos)
         {

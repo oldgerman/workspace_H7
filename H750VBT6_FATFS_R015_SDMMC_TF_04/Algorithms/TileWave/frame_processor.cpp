@@ -60,15 +60,17 @@ ALIGN_32BYTES(__attribute__((section (".RAM_DTCM_Array"))) frame_format_t frame[
 
 osThreadId_t frameProcessorTaskHandle;
 
-bool frame_writeLayerBuffer = false;
-bool frame_readLayerBuffer = false;
-bool frame_initExistingWaveFile= false;
+bool frame_writeLayerBuffer = 0;
+bool frame_readLayerBuffer = 0;
+bool frame_readLayerBufferList = 0;
+bool frame_initExistingWaveFile= 0;
 uint32_t sliceButNotWrite = 0;
 
 uint16_t frame_freq = 1; /* 每秒调度频率，单位Hz */
 
 extern TileWave xTileWave;
 TileWave::ReadLayerBufferParam_t xReadLayerBufferParam;
+TileWave::ReadLayerBufferParamList_t xReadLayerBufferParamList;
 /* Private variables ---------------------------------------------------------*/
 static SliceState_t xSliceState;
 
@@ -192,7 +194,7 @@ static void frameProcessorTask(void* argument)
 		}
 
 		/* 4096次后停止，TODO: 写满后从首地址覆盖写入 */
-		if(ulPeriodCount == xTileWave.ulLayerTileNumMax - 1) {
+		if(ulPeriodCount == xTileWave.ulLayerBufferTileNum - 1) {
 			frame_writeLayerBuffer = 0;
 			xSliceState = SLICE_SELF_STOP;
 		}
@@ -208,10 +210,20 @@ static void frameProcessorTask(void* argument)
 			ulQueueCountHistoryMax = 0;
 		}
 
+		/*
+		 * 注意，执行判断这些标记时，frameProcessorTask 是以可变的固定频率轮询的，
+		 * 当前 frameProcessorTask 没有实现为受 ascii_protocol 的事件驱动，因此若轮询频率太慢会有明显滞后
+		 */
 		if(frame_readLayerBuffer) {
 			frame_readLayerBuffer = 0;
 			msg.type = TileWave::EVENT_READ_LAYER_BUFFER;
 			msg.xReadLayerBufferParam = xReadLayerBufferParam;
+			osStatus = osMessageQueuePut(xTileWave.xMsgQueue, &msg, 0U, 0U);
+		}
+		if(frame_readLayerBufferList) {
+			frame_readLayerBufferList = 0;
+			msg.type = TileWave::EVENT_READ_LAYER_BUFFER_LIST;
+			msg.xReadLayerBufferParamList = xReadLayerBufferParamList;
 			osStatus = osMessageQueuePut(xTileWave.xMsgQueue, &msg, 0U, 0U);
 		}
 

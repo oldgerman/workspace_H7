@@ -29,7 +29,10 @@
   *                  都会打包到本次发送的缓冲区。
   *    2023-03-31  - 层表格由 list 改为 vector 容器
   *                - 初步实现任意层的一个单元在文件中的地址算法 xFindUnit()
+  *                  （不支持层内瓦片波形的连续读取）
   *    2023-04-02  - 修复 xFindUnit() 在单 ulUnitOffset 为2幂次时计算的 BUG
+  *    2023-04-04  - 实现任意层的任意单元在文件中的连续读取算法 xFindUnitList()
+  *                  （支持层内瓦片波形的连续读取，生成自动跨周期的读参数表）
   *
   ******************************************************************************
   * @attention
@@ -87,7 +90,7 @@ public:
 	    /* Layer */
 		uint32_t ulLayerNum;
 		uint32_t ulLayerNumMax;
-		uint32_t ulLayerTileNumMax;
+		uint32_t ulLayerBufferTileNum;
 		/* WaveForm */
 		uint32_t ulWaveFrameSize;
 		uint32_t ulWaveDispWidth;
@@ -123,12 +126,16 @@ public:
 		uint32_t ulAddr;
 		uint32_t ulSize;
 		uint8_t* pucData;
-		uint32_t ulOffsetUnit;
+		uint32_t ulUnitOffsetFile;
 	} ReadLayerBufferParam_t;
 
-	/* 连续读缓冲区时的参数配置表 */
+	std::vector<ReadLayerBufferParam_t> xReadLayerBufferParamList; // 读层缓冲区参数表
+
+	/* 读缓冲区链时的参数配置表 */
 	typedef struct {
-		std::list<ReadLayerBufferParam_t> xParamList;
+		ReadLayerBufferParam_t* px;
+		uint32_t begin;
+		uint32_t size;
 	} ReadLayerBufferParamList_t;
 
 	/* @brief event types used in the Layer buffer */
@@ -138,6 +145,7 @@ public:
 		EVENT_READ_HEADER,  			// 读文件头
 		EVENT_WRITE_HEADER, 			// 写文件头
 		EVENT_READ_LAYER_BUFFER,		// 读层缓冲区
+		EVENT_READ_LAYER_BUFFER_LIST,	// 读层缓冲区链
 		EVENT_WRITE_LAYER_BUFFER,		// 写层缓冲区
 		EVENT_LAST_WRITE_LAYER_BUFFER, 	// 最后一次写层缓冲区
 	} EventType_t;
@@ -146,8 +154,9 @@ public:
 	typedef struct {
 		EventType_t type; /* event type */
 	    union {
-	    	WriteLayerBufferParam_t xWriteLayerBufferParam;
-	    	ReadLayerBufferParam_t 	xReadLayerBufferParam;
+	    	WriteLayerBufferParam_t 	xWriteLayerBufferParam;
+	    	ReadLayerBufferParam_t 		xReadLayerBufferParam;
+	    	ReadLayerBufferParamList_t 	xReadLayerBufferParamList;
 	    };
 	} Event_t;
 
@@ -196,7 +205,7 @@ public:
 	/* 瓦片缓冲区在RAM */
 	uint32_t ulLayerTileBufferSizeMax;			// 层瓦片缓冲区大小的最大值，单位B
 	uint32_t ulLayerTileBufferSize;    			// 层瓦片缓冲区的总大小
-	uint32_t ulLayerTileNumMax;					// 每层瓦片的最大个数，该值决定能记录多少时间，必须为 2的幂，本工程为 64MB/32K=2048
+	uint32_t ulLayerBufferTileNum;				// 层缓冲区内瓦片的最大个数，该值决定能记录多少时间，必须为 2的幂，本工程为 64MB/32K=2048
 
 	/* 波形参数 */
 	uint32_t ulWaveDispBufferSize; 				// 缓冲区大小：波形显示
@@ -251,7 +260,7 @@ public:
 
 private:
 	static uint32_t ulCalculateMinPowerOf2GreaterThan(uint32_t ulValue);
-	static uint32_t ulCalculateMaxPowerOf2LessThan(uint32_t ulValue);
+	static uint32_t ulCalculateMaxPowerOf2LessThanOrEqual(uint32_t ulValue);
 	static uint32_t ulCalculateExponentPowerOf2(uint32_t ulValue);
 
 	static const size_t alignment_ = 32;				// 动态内存 32 字节对齐

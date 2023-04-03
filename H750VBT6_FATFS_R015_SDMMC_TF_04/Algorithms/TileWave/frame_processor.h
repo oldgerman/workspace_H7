@@ -63,6 +63,7 @@ typedef union{
 /* Exported variables --------------------------------------------------------*/
 extern bool frame_writeLayerBuffer;
 extern bool frame_readLayerBuffer;
+extern bool frame_readLayerBufferList;
 extern bool frame_initExistingWaveFile;
 extern uint32_t sliceButNotWrite;
 extern uint16_t frame_freq;
