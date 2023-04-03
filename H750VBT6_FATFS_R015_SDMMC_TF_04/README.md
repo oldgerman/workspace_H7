@@ -288,6 +288,16 @@ TW+FIND_UNIT=13+0+4 到 13+3+1 步进
 
 ![](Images/TW+FIND_UNIT_LIST=14+0+8到7+0+8.png.png)
 
+TW+FIND_UNIT_LIST=12+0+4000：
+
+> 12层每个瓦片缓冲区的大小是 2 个单元，那么参数表元素个数 2000，测试正常
+
+TW+FIND_UNIT_LIST=12+0+8000：
+
+> 参数表元素个数为 8000 / 2 = 4000，xFindUnitList() 中 vector 容器不断 push_back() ，堆空间不足，在 syscalls.c 的 _exit() 内死循环：
+>
+> ![](Images/参数表元素个数4000时，用户堆空间不足，vector容器push_back进入syscalls _exit（）.png)
+
 ## 附
 
 ### 参考

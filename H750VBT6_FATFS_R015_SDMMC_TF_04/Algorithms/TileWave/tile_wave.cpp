@@ -90,7 +90,7 @@ TileWave::~TileWave()
 
 
 /**
-  * @brief	创建层向量
+  * @brief	创建层表格
   * @param	None
   * @retval	0 - success, 1 - failure
   */
