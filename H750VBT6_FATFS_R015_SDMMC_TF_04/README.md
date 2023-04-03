@@ -298,6 +298,14 @@ TW+FIND_UNIT_LIST=12+0+8000：
 >
 > ![](Images/参数表元素个数4000时，用户堆空间不足，vector容器push_back进入syscalls _exit（）.png)
 
+TW+FIND_UNIT_LIST=13+0+8000：
+
+> 13层每个瓦片缓冲区的大小是 4 个单元，那么参数表元素个数 2000，测试正常，最后的一次读参数如下
+>
+> ```c
+> [read param] ulAddr =   65501184, ulSize =   8192, ulUnitOffsetFile =  31983
+> ```
+
 ## 附
 
 ### 参考
@@ -306,3 +314,4 @@ TW+FIND_UNIT_LIST=12+0+8000：
 - [正确释放 vector 的内存 clear()，swap()，shrink_to_fit()](https://blog.csdn.net/wangshubo1989/article/details/50359750)
 - [函数返回值是容器的执行速度比容器作为参数传递要慢的多](https://www.cnblogs.com/nixiangren/p/9987775.html)
 - [vector作为函数返回值出现的问题及解决方法](https://zhuanlan.zhihu.com/p/381183992)
+- [STM32 Syscalls.c _exit() on C++ string](https://community.st.com/s/question/0D53W00001IBbowSAD/syscall-exit-on-string-manipulation)
