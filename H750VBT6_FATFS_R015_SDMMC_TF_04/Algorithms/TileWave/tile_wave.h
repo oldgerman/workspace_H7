@@ -91,10 +91,6 @@ public:
 		uint32_t ulLayerNum;
 		uint32_t ulLayerNumMax;
 		uint32_t ulLayerBufferTileNum;
-		/* WaveForm */
-		uint32_t ulWaveFrameSize;
-		uint32_t ulWaveDispWidth;
-		uint32_t ulWaveDispTileBufferSize;
 		/* Event */
 		uint32_t ulEventNum;
 	} Config_t;
@@ -110,6 +106,7 @@ public:
 		uint32_t ulTileBufferPeriod;		// 瓦片缓冲区周期，单位，调度周期的倍数
 		uint32_t ulTileBufferUnitNum;		// 瓦片缓冲区单元个数
 		uint32_t ulLayerBufferUnitNum;		// 层缓冲区单元个数
+		uint32_t ulZoomFactor;				// 层对应的缩放因子
 	} Layer_t;
 
 	/* 写缓冲区时的参数配置 */
@@ -146,6 +143,7 @@ public:
 		EVENT_WRITE_HEADER, 			// 写文件头
 		EVENT_READ_LAYER_BUFFER,		// 读层缓冲区
 		EVENT_READ_LAYER_BUFFER_LIST,	// 读层缓冲区链
+		EVENT_ZOOM_LAYER_BUFFER_LIST,	// 读层缓冲区链
 		EVENT_WRITE_LAYER_BUFFER,		// 写层缓冲区
 		EVENT_LAST_WRITE_LAYER_BUFFER, 	// 最后一次写层缓冲区
 	} EventType_t;
@@ -207,14 +205,6 @@ public:
 	uint32_t ulLayerTileBufferSize;    			// 层瓦片缓冲区的总大小
 	uint32_t ulLayerBufferTileNum;				// 层缓冲区内瓦片的最大个数，该值决定能记录多少时间，必须为 2的幂，本工程为 64MB/32K=2048
 
-	/* 波形参数 */
-	uint32_t ulWaveDispBufferSize; 				// 缓冲区大小：波形显示
-	uint32_t ulWaveFrameSize;  					// 波形帧大小，单位B
-	uint32_t ulWaveDispWidth;					// 波形显示宽度，单位Px
-	uint32_t ulWaveDispDataSize; 				// 波形显示区数据的大小，单位B
-	uint32_t ulWaveDispTileBufferSize;  		// 波形显示区的瓦片缓冲区大小，单位B
-	uint32_t ulWaveDispTileBufferSizeMin;		// 波形显示区的瓦片缓冲区最小大小，单位B
-
 	/* 层表格及其迭代器 */
 	std::vector<Layer_t> xLayerTable; 			// 层表格(双向)
 
@@ -257,6 +247,15 @@ public:
 	ReadLayerBufferParam_t ulCalculateFileSizeForAnyPeriod(float fZoom, float fProgress);
 	ReadLayerBufferParam_t xFindUnit(uint32_t ulLayerNum, uint32_t ulUnitOffset, uint32_t ulUnitNum);
 	ReadLayerBufferParamList_t xFindUnitList(uint32_t ulLayerNum, uint32_t ulUnitOffset, uint32_t ulUnitNum);
+	ReadLayerBufferParamList_t xZoomUnitList(
+			double fProgress_Midpoint,	// 中点浏览进度
+			uint32_t ulBitDepth,		// 样点位深
+			uint32_t ulZoomFocus,		// 缩放焦点
+			uint32_t ulDispWidth,		// 显示区宽度
+			uint32_t ulZoomFactor_Src,	// 当前缩放因子
+			uint32_t ulZoomFactor_Dst,	// 目标缩放因子
+			uint32_t * pulOffset_DispBeginToReadBufferBegin //
+			);
 
 private:
 	static uint32_t ulCalculateMinPowerOf2GreaterThan(uint32_t ulValue);

@@ -48,7 +48,8 @@ osThreadId_t fatfsSDTaskHandle;
 extern TileWave xTileWave;
 //__attribute__((section(".RAM_D1_Array"))) ALIGN_32BYTES(uint8_t TxBuffer [64 *1024]);
 bool fatfsSD_printUnitData = 1;	//是否打印单元数据
-
+uint32_t ulOffset_DispBeginToReadBufferBegin = 0;
+uint32_t ulDispWidthPx = 400; // 显示区宽度 400像素
 /* Private variables ---------------------------------------------------------*/
 /* Private function prototypes -----------------------------------------------*/
 /* Function implementations --------------------------------------------------*/
@@ -130,7 +131,7 @@ static void fatfsSDTask(void* argument)
 					float *pfVal = (float*)(msg.xReadLayerBufferParam.pucData);
 					for(uint32_t i = 0; i < msg.xReadLayerBufferParam.ulSize / 4 / 8; i++)
 					{
-						printf("%.2f\n%.2f\n%.2f\n%.2f\n%.2f\n%.2f\n%.2f\n%.2f\r\n",
+						printf("%.2f\n%.2f\n%.2f\n%.2f\n%.2f\n%.2f\n%.2f\n%.2f\n",
 									*(pfVal + i * 8 + 0),
 									*(pfVal + i * 8 + 1),
 									*(pfVal + i * 8 + 2),
@@ -140,7 +141,7 @@ static void fatfsSDTask(void* argument)
 									*(pfVal + i * 8 + 6),
 									*(pfVal + i * 8 + 7));
 					}
-					printf("[read param] ulAddr = %10ld, ulSize = %6ld, ulUnitOffsetFile = %6ld\r\n",
+					printf("\r\n[read param] ulAddr = %10ld, ulSize = %6ld, ulUnitOffsetFile = %6ld\r\n",
 							msg.xReadLayerBufferParam.ulAddr,
 							msg.xReadLayerBufferParam.ulSize,
 							msg.xReadLayerBufferParam.ulUnitOffsetFile);
@@ -158,7 +159,7 @@ static void fatfsSDTask(void* argument)
 						float *pfVal = (float*)(xParam.pucData);
 						for(uint32_t i = 0; i < xParam.ulSize / 4 / 8; i++)
 						{
-							printf("%.2f\n%.2f\n%.2f\n%.2f\n%.2f\n%.2f\n%.2f\n%.2f\r\n",
+							printf("%.2f\n%.2f\n%.2f\n%.2f\n%.2f\n%.2f\n%.2f\n%.2f\n",
 										*(pfVal + i * 8 + 0),
 										*(pfVal + i * 8 + 1),
 										*(pfVal + i * 8 + 2),
@@ -168,12 +169,48 @@ static void fatfsSDTask(void* argument)
 										*(pfVal + i * 8 + 6),
 										*(pfVal + i * 8 + 7));
 						}
-						printf("[read param] ulAddr = %10ld, ulSize = %6ld, ulUnitOffsetFile = %6ld\r\n",
+						printf("\r\n[read param] ulAddr = %10ld, ulSize = %6ld, ulUnitOffsetFile = %6ld\r\n",
 								xParam.ulAddr,
 								xParam.ulSize,
 								xParam.ulUnitOffsetFile);
 					}
 				}
+			} else if (msg.type == TileWave::EVENT_ZOOM_LAYER_BUFFER_LIST ) {
+				TileWave::ReadLayerBufferParam_t xParam;
+				bool firstIn = 1;
+				uint32_t count_printed = 0;
+				uint32_t count_willPrint = ulDispWidthPx;
+				for(uint32_t i = 0; i < msg.xReadLayerBufferParamList.size; i++) {
+					xParam = *(msg.xReadLayerBufferParamList.px + i);
+
+					ret = xTileWave.read(
+							xParam.ulAddr,
+							xParam.ulSize,
+							xParam.pucData);
+					if(fatfsSD_printUnitData) {
+						float *pfVal = (float*)(xParam.pucData);
+						uint32_t imax =  xParam.ulSize / 4 ;
+						if(firstIn) {
+							firstIn = 0;
+							pfVal += (ulOffset_DispBeginToReadBufferBegin / sizeof(float));
+							imax -= ulOffset_DispBeginToReadBufferBegin / sizeof(float);
+						}
+						if(count_willPrint < imax) {
+							imax = count_willPrint;
+						}
+						for(uint32_t i = 0; i < imax; i++)
+						{
+							printf("%.2f\n",
+										*(pfVal + i));
+							++count_printed;
+						}
+						count_willPrint = ulDispWidthPx - count_printed;
+					}
+				}
+				printf("\r\n[read param] ulAddr = %10ld, ulSize = %6ld, ulUnitOffsetFile = %6ld\r\n",
+						xParam.ulAddr,
+						xParam.ulSize,
+						xParam.ulUnitOffsetFile);
 			}
 		}
 	}

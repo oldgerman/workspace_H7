@@ -47,6 +47,7 @@
 extern TileWave xTileWave;
 extern TileWave::ReadLayerBufferParam_t xReadLayerBufferParam;
 extern TileWave::ReadLayerBufferParamList_t xReadLayerBufferParamList;
+extern TileWave::ReadLayerBufferParamList_t xZoomLayerBufferParamList;
 /* Private variables ---------------------------------------------------------*/
 /* Private function prototypes -----------------------------------------------*/
 /* Function implementations --------------------------------------------------*/
@@ -82,6 +83,7 @@ void OnAsciiCmd(const char* _cmd, size_t _len, StreamSink &_responseChannel)
         	RespondTaskStackUsageInWords(_responseChannel, usbIrqTaskHandle, 	UsbIrqTaskStackSize / 4);
         	RespondTaskStackUsageInWords(_responseChannel, ledTaskHandle, 		ledTaskStackSize / 4);
         	RespondTaskStackUsageInWords(_responseChannel, frameProcessorTaskHandle, frameProcessorTaskStackSize / 4);
+        	RespondTaskStackUsageInWords(_responseChannel, fatfsSDTaskHandle,   fatfsSDTaskStackSize / 4);
         }
         else if (s.find("CPU_INFO") != std::string::npos)
         {
@@ -136,6 +138,22 @@ void OnAsciiCmd(const char* _cmd, size_t _len, StreamSink &_responseChannel)
             sscanf(&_cmd[18], "%ld+%ld+%ld", &ulLayerNum, &ulUnitOffset, &ulUnitNum);
             xReadLayerBufferParamList = xTileWave.xFindUnitList(ulLayerNum, ulUnitOffset, ulUnitNum);
             frame_readLayerBufferList = 1;
+        }
+        else if(s.find("ZOOM_UNIT_LIST=") != std::string::npos)
+        {
+        	float fProgress_Midpoint;
+        	uint32_t ulZoomFocus, ulZoomFactor_Src, ulZoomFactor_Dst;
+            sscanf(&_cmd[18], "%f+%ld+%ld+%ld", &fProgress_Midpoint, &ulZoomFocus, &ulZoomFactor_Src, &ulZoomFactor_Dst);
+            xZoomLayerBufferParamList = xTileWave.xZoomUnitList(
+            		fProgress_Midpoint,
+            		32,
+					ulZoomFocus,
+					ulDispWidthPx,
+					ulZoomFactor_Src,
+					ulZoomFactor_Dst,
+					&ulOffset_DispBeginToReadBufferBegin);
+
+            frame_zoomLayerBufferList = 1;
         }
         else if(s.find("PRINT_UNIT_DATA=") != std::string::npos)
         {

@@ -43,6 +43,8 @@ extern "C" {
 /* Exported functions --------------------------------------------------------*/
 void fatfsSDInit();
 extern bool fatfsSD_printUnitData;
+extern uint32_t ulOffset_DispBeginToReadBufferBegin;
+extern uint32_t ulDispWidthPx;
 #ifdef __cplusplus
 }
 #include "tile_wave.h"

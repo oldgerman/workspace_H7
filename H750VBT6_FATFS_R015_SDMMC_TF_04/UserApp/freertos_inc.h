@@ -53,6 +53,8 @@ extern const uint32_t ledTaskStackSize;
 extern osThreadId_t ledTaskHandle;
 extern const uint32_t frameProcessorTaskStackSize;
 extern osThreadId_t frameProcessorTaskHandle;
+extern const uint32_t fatfsSDTaskStackSize;
+extern osThreadId_t fatfsSDTaskHandle;
 /*------------- xxxK (used) / xxxK (for FreeRTOS) / xxxK (total) --------------*/
 
 #ifdef __cplusplus

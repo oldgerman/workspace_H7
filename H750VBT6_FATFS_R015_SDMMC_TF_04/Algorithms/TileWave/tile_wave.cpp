@@ -9,12 +9,12 @@
   *
   * Copyright (C) 2022 OldGerman.
   *
-  * This program is free software: you can redistribute it and/or modify
+  * This program is free software: you can reDist_ribute it and/or modify
   * it under the terms of the GNU General Public License as published by
   * the Free Software Foundation, either version 3 of the License, or
   * (at your option) any later version.
   *
-  * This program is distributed in the hope that it will be useful,
+  * This program is Dist_ributed in the hope that it will be useful,
   * but WITHOUT ANY WARRANTY; without even the implied warranty of
   * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
   * GNU General Public License for more details.
@@ -54,10 +54,7 @@ TileWave::TileWave(Config_t &xConfig)
 	ulLayerNum = xConfig.ulLayerNum;
 	ulLayerNumMax = xConfig.ulLayerNumMax;
 	ulLayerBufferTileNum = xConfig.ulLayerBufferTileNum;
-	/* WaveForm */
-    ulWaveFrameSize = xConfig.ulWaveFrameSize;
-    ulWaveDispWidth = xConfig.ulWaveDispWidth;
-	ulWaveDispTileBufferSize = xConfig.ulWaveDispTileBufferSize;
+
 	/* Event */
 	ulEventNum = xConfig.ulEventNum;
 
@@ -96,25 +93,6 @@ TileWave::~TileWave()
   */
 uint32_t TileWave::createLayerTable()
 {
-	ulWaveDispDataSize = ulWaveDispWidth * ulWaveFrameSize;
-	/* 确定波形显示区的瓦片缓冲区大小有2种情况
-	 * 存储所有波形的介质IOsize在 ulWaveDispTileBufferSizeMin ~ ulIOSizeMax 范围
-	 * 1. RAM：IOsize越大，访问速度差不多
-	 * 2. ROM：IOsize越大，访问速度越快
-	 */
-	/* 大于波形显示区数据大小的最小2的幂 */
-	ulWaveDispTileBufferSizeMin = ulCalculateMinPowerOf2GreaterThan(ulWaveDispDataSize);
-
-	/* ulWaveDispTileBufferSize ≥ ulWaveDispTileBufferSizeMin 且
-	 * ulWaveDispTileBufferSize ≥ ulIOSizeMin
-	 */
-	if(ulWaveDispTileBufferSize < ulWaveDispTileBufferSizeMin) {
-		ulWaveDispTileBufferSize = ulWaveDispTileBufferSizeMin;
-	}
-	if(ulWaveDispBufferSize < ulIOSizeMin) {
-		ulWaveDispBufferSize = ulIOSizeMin;
-	}
-
 	/** 申请字符串缓冲区的内存，非频繁操作的缓冲区，8 字节对齐即可
 	  * reference: blog.csdn.net/fengxinlinux/article/details/51541003
 	  */
@@ -124,7 +102,7 @@ uint32_t TileWave::createLayerTable()
 	}
 
 	/* 创建层并申请每层的动态内存 */
-	uint32_t ulLayerTileBufferSize = ulWaveDispBufferSize;	//4KB
+	uint32_t ulLayerTileBufferSize = ulIOSizeMin;	//4KB
 	uint32_t ulLayerTileSize = 1;	// 1B
 	uint8_t *pucLayerTileBuffer;
 	for(uint32_t i = 0; i < ulLayerNumMax; i++)
@@ -147,7 +125,8 @@ uint32_t TileWave::createLayerTable()
 				.ulTileBufferOffset = 0,
 				.pucTileBuffer = pucLayerTileBuffer,
 				.ulLayerBufferSize = ulLayerTileSize * ulLayerBufferTileNum,
-				.ulTileBufferPeriod = ulLayerTileBufferSize / ulLayerTileSize
+				.ulTileBufferPeriod = ulLayerTileBufferSize / ulLayerTileSize,
+				.ulZoomFactor = 1U << i
 		};
 		/* 计算单元个数 */
 		xLayer.ulTileBufferUnitNum = xLayer.ulTileBufferSize / ulIOSizeMin;
@@ -160,8 +139,8 @@ uint32_t TileWave::createLayerTable()
 		ulLayerTileBufferSizeAll += ulLayerTileBufferSize;
 
 		/* 倍增一些瓦片参数大小 */
-		ulLayerTileBufferSize = ulLayerTileBufferSize << 1;
-		ulLayerTileSize = ulLayerTileSize << 1;
+		ulLayerTileBufferSize = ulLayerTileBufferSize << 1U;
+		ulLayerTileSize = ulLayerTileSize << 1U;
 	}
 	/* 设置周期计数器最大值 */
 	ulPeriodMax = (*xLayerTable.begin()).ulTileBufferPeriod;
@@ -467,16 +446,133 @@ uint32_t TileWave::ulCalculateFileSizeForAnyPeriod(uint32_t ulPeriod)
 }
 
 /**
-  * @brief  根据缩放倍率和进度计算读缓冲区时的参数配置
+  * @brief  根据与缩放有关的参数，计算读缓冲区时的参数配置表
+  * @note
+  *  缩放焦点用在层的百分比位置较好，因为【变换到不同层时，焦点相对变化后的层的百分比位置保持不变】
+  *  然后根据这个焦点位置百分比，和焦点前和焦点后的样点数量，我就可以快速锁定在第几层的第几个的几个单元
+  *  不需要按照画的 xZoomUnitList缩放焦点不在单元中心或在单元中心这么麻烦地进行计算了！！！
+  *  算法突然变得很简单了
+  *
+  * @param	fProgress_Midpoint 	中点浏览进度：单位 %     	显示区中间样点距离当前层第一个样点的样点数 与 当前层的样点总数 的比值
+  * @param  ulBitDepth			样点位深：    单位 bit      必须为 2的幂，例如 8bit、16bit、32bit、64bit
+  * @param 	ulZoomFocus			缩放焦点：    单位 样点数   相对显示区第一个样点的距离，只能取整数，不支持小数，比如 3.5个样点
+  * @param  ulDispWidth			显示区宽度：  单位 样点数
+  * @param 	ulZoomFactor_Src		当前缩放因子：范围 >= 1     与层对应，第0层的缩放因子是 1，第1层是2，第2层是4，第三层是8...
+  * @param
+  * @param	ulZoomFactor_Dst		目标缩放因子：范围 >= 1
+  * @retval 参数配置表
+  *                     |<----------->|  显示区宽度，样点数最好小于等于1个单元内的样点数
+  *                     .=============.
+  * .------------.------+-----.-------+----.------------.---
+  * |$           |      |$    |$   $  |    |            |       <--- 当前层的连续单元
+  * '^-----------'------+^----'^---^--+----'------------'---
+  *  |                  '|=====|===|=='
+  *  |                   |     |   ^-<-- 缩放焦点
+  *  |                   |     ^-----<-- 显示区中间样点
+  *  |                   ^-----------<-- 显示区第一个样点
+  *  ^-------------------------------<-- 当前层第一个样点
   */
-// TODO
+TileWave::ReadLayerBufferParamList_t TileWave::xZoomUnitList(
+		double fProgress_Midpoint,	// 中点浏览进度
+		uint32_t ulBitDepth,		// 样点位深
+		uint32_t ulZoomFocus,		// 缩放焦点
+		uint32_t ulDispWidth,		// 显示区宽度
+		uint32_t ulZoomFactor_Src,	// 当前缩放因子
+		uint32_t ulZoomFactor_Dst,	// 目标缩放因子
+		uint32_t * pulOffset_DispBeginToReadBufferBegin // 显示开始处到读缓冲区开始的距离，单位：B
+		)
+{
+	uint32_t ulPointSize;	// 样点大小，单位 B
+	ulPointSize = ulBitDepth / 8;
+
+	// 缩放因子计算所在层
+	// 0层即 2^0 = 1 倍缩放，1层即 2^1 = 2 倍缩放，14层即 2^14 = 16384 倍缩放
+	uint32_t ulLayerNum_Src, ulLayerNum_Dst; //当前层，目标层
+	ulLayerNum_Src = xLayerTable[ulCalculateExponentPowerOf2(ulZoomFactor_Src)].ulLayerNum;
+	ulLayerNum_Dst = xLayerTable[ulCalculateExponentPowerOf2(ulZoomFactor_Dst)].ulLayerNum;
+
+	uint32_t ulDist_MidpointToSrcLayerBegin;  // 显示区中点 与 当前层第一个样点 距离，单位：样点数
+	ulDist_MidpointToSrcLayerBegin = fProgress_Midpoint * (xLayerTable[ulLayerNum_Src].ulLayerBufferSize / ulPointSize);
+
+	uint32_t ulDist_MidpointToDispBegin;      // 显示区中点 与 显示区第一个样点 距离，单位：样点数
+	ulDist_MidpointToDispBegin = ulDispWidth / 2;
+
+	uint32_t ulDist_ZoomFocusToDispBegin;     // 缩放焦点 与 显示区第一个样点 距离，单位：样点数
+	ulDist_ZoomFocusToDispBegin = ulZoomFocus;
+
+	uint32_t ulDist_ZoomFocusToSrcLayerBegin; // 缩放焦点 与 当前层第一个样点 距离，单位：样点数
+	ulDist_ZoomFocusToSrcLayerBegin = (int32_t)ulDist_MidpointToSrcLayerBegin -
+			((int32_t)ulDist_MidpointToDispBegin - (int32_t)ulDist_ZoomFocusToDispBegin);
+
+	double fProgress_ZoomFocus;	             // 缩放焦点的浏览进度 (特性：当前层与目标层一样)
+	fProgress_ZoomFocus = (double)ulDist_ZoomFocusToSrcLayerBegin / (xLayerTable[ulLayerNum_Src].ulLayerBufferSize / ulPointSize);
+
+	uint32_t ulDist_ZoomFocusToDstLayerBegin; // 缩放焦点 与 目标层第一个样点 距离，单位：样点数
+	ulDist_ZoomFocusToDstLayerBegin = fProgress_ZoomFocus * (xLayerTable[ulLayerNum_Dst].ulLayerBufferSize / ulPointSize);
+
+	uint32_t ulDist_DispBeginToDstLayerBegin; // 显示区第一个样点与目标层第一个样点 距离，单位：样点数
+	ulDist_DispBeginToDstLayerBegin = ulDist_ZoomFocusToDstLayerBegin - ulDist_ZoomFocusToDispBegin;
+
+	uint32_t ulUnitNumQuotient_DispBeginToDstLayerBegin;  // 显示区第一个样点与目标层第一个样点距离的 单元数商
+	uint32_t ulUnitNumRemainder_DispBeginToDstLayerBegin; // 显示区第一个样点与目标层第一个样点距离的 单元数余
+	ulUnitNumQuotient_DispBeginToDstLayerBegin  = ulDist_DispBeginToDstLayerBegin * ulPointSize / ulIOSizeMin;
+	ulUnitNumRemainder_DispBeginToDstLayerBegin = ulDist_DispBeginToDstLayerBegin * ulPointSize % ulIOSizeMin;
+
+	uint32_t ulUnitOffset_Dst = 0;	// 目标层的待读取单元偏移
+	uint32_t ulUnitNum_Dst = 0;		// 目标层的待读取单元个数
+	uint32_t ulDiffUnit_UnitNumRemainder_DispBeginToDstLayerBegin = 0; // 单元大小减去 显示区第一个样点与目标层第一个样点距离的 单元数余 的大小
+
+	*pulOffset_DispBeginToReadBufferBegin = 0;
+	ulUnitOffset_Dst = ulUnitNumQuotient_DispBeginToDstLayerBegin;
+	if(ulUnitNumRemainder_DispBeginToDstLayerBegin == 0) {
+		;
+	} else {
+		ulUnitNum_Dst += 1;
+		*pulOffset_DispBeginToReadBufferBegin += ulUnitNumRemainder_DispBeginToDstLayerBegin;
+		ulDiffUnit_UnitNumRemainder_DispBeginToDstLayerBegin = ulIOSizeMin - ulUnitNumRemainder_DispBeginToDstLayerBegin;
+	}
+
+	uint32_t ulUnitNumQuotient_Diff_DispWidth;  // 显示区内剩余的 单元数商
+	uint32_t ulUnitNumRemainder_Diff_DispWidth; // 显示区内剩余的 单元数余
+	if(ulDispWidth * ulPointSize >= ulDiffUnit_UnitNumRemainder_DispBeginToDstLayerBegin) {
+		ulUnitNumQuotient_Diff_DispWidth = (ulDispWidth * ulPointSize - ulDiffUnit_UnitNumRemainder_DispBeginToDstLayerBegin)  / ulIOSizeMin;
+		ulUnitNumRemainder_Diff_DispWidth = (ulDispWidth * ulPointSize - ulDiffUnit_UnitNumRemainder_DispBeginToDstLayerBegin)  % ulIOSizeMin;
+	} else {
+		ulUnitNumQuotient_Diff_DispWidth = 0;
+		ulUnitNumRemainder_Diff_DispWidth = 0;
+	}
+
+	ulUnitNum_Dst += ulUnitNumQuotient_Diff_DispWidth;
+	if(ulUnitNumRemainder_Diff_DispWidth == 0) {
+		;
+	} else {
+		ulUnitNum_Dst += 1;
+	}
+
+	return xFindUnitList(ulLayerNum_Dst, ulUnitOffset_Dst, ulUnitNum_Dst);
+
+	//	uint32_t ulUnitNumQuotient_ZoomFocusToDstLayerBegin;  // 缩放焦点 与 目标层第一个样点 之间的 单元数商，范围：[0, 目标层的单元总数]
+	//	uint32_t ulUnitNumRemainder_ZoomFocusToDstLayerBegin; // 缩放焦点 与 目标层第一个样点 之间的 单元数余，范围：[0, 显示区的数据量]
+	//	ulUnitNumQuotient_ZoomFocusToDstLayerBegin = ulDist_ZoomFocusToDstLayerBegin * ulPointSize / ulIOSizeMin;
+	//	ulUnitNumRemainder_ZoomFocusToDstLayerBegin = ulDist_ZoomFocusToDstLayerBegin * ulPointSize % ulIOSizeMin;
+	//	uint32_t ulUnitNumQuotient_ZoomFocusToDispBegin;	// 焦点到显示区开始的 单元数商
+	//	uint32_t ulUnitNumRemainder_ZoomFocusToDispBegin;	// 焦点到显示区开始的 单元数余
+	//	ulUnitNumQuotient_ZoomFocusToDispBegin = ulDist_ZoomFocusToDispBegin * ulPointSize / ulIOSizeMin;
+	//	ulUnitNumRemainder_ZoomFocusToDispBegin = ulDist_ZoomFocusToDispBegin * ulPointSize / ulIOSizeMin;
+}
+
+/**
+  * @brief  根据缩放倍率、缩放焦点、浏览进度，计算焦点相对波形区开始样点处的距离
+  * @retval 相对波形区开始样点处的距离
+  */
 
 /**
   * @brief  根据层号、单元偏移、单元个数计算读缓冲区时的参数配置表
   *         多个单元可能跨周期（非连续的储存），因此参数表可能存有多次读配置
-  * @param ulLayerNum    层编号 0-14
-  * @param ulUnitOffset  单元偏移 >=0
-  * @param ulUnitNum     单元个数 >=1
+  * @param 	ulLayerNum			层编号 0-14
+  * @param 	ulUnitOffsetLayer	单元在层的偏移 [0, 32767]
+  * @param 	ulUnitNum			单元个数 >=1
+  * @retval 参数配置表
   */
 TileWave::ReadLayerBufferParamList_t TileWave::xFindUnitList(
 		uint32_t ulLayerNum, uint32_t ulUnitOffsetLayer, uint32_t ulUnitNum)
@@ -557,9 +653,10 @@ TileWave::ReadLayerBufferParamList_t TileWave::xFindUnitList(
   * @brief  根据层号、单元偏移、单元个数计算读缓冲区时的参数配置
   *         1个单元等于最小 IO SIZE
   *         例如 64MB 的层 有 32768 个 2KB 单元
-  * @param ulLayerNum    层编号 0-14
-  * @param ulUnitOffset  单元偏移 [0, 32767]
-  * @param ulUnitNum     单元个数 >=1
+  * @param 	ulLayerNum			层编号 0-14
+  * @param 	ulUnitOffsetLayer	单元在层的偏移 [0, 32767]
+  * @param 	ulUnitNum	单元个数 >=1
+  * @retval 参数配置
   */
 TileWave::ReadLayerBufferParam_t TileWave::xFindUnit(
 		uint32_t ulLayerNum, uint32_t ulUnitOffsetLayer, uint32_t ulUnitNum)
@@ -573,14 +670,14 @@ TileWave::ReadLayerBufferParam_t TileWave::xFindUnit(
 	uint32_t ulPeriodQuotient;		// 周期商
 	uint32_t ulPeriodRemainder;		// 周期余数，等于目标单元在在单周期层缓冲区的偏移单元个数
 
-	/** ulUnitOffsetLayer 不是在SD卡总地址的 实际Offset，而是相对层缓冲区的起始的 虚拟Offset ！
-	  * 连续的 虚拟Offset 对应的 实际Offset 的地址不一定是连续的，切记！
+	/** ulUnitOffsetLayer 不是在SD卡文件地址的 "实际Offset"，而是相对层缓冲区的起始的 "虚拟Offset"！
+	  * 连续的 "虚拟Offset" 对应的 "实际Offset" 的地址不一定是连续的！
 	  */
 	ulUnitOffsetLayer += 1; // 0~32767 ---> 1~32768
 	// 总周期商
 	ulPeriodQuotient  = xLayerTable[ulLayerNum].ulTileBufferPeriod * ulUnitOffsetLayer / xLayerTable[ulLayerNum].ulTileBufferUnitNum;
 //  ^ 0 ~ 4096                                  ^ 1~2048             ^ 1~32768                                   ^ 1~8
-	// 总周期余，当总周期余≥0时，总周期 = 总周期商 + 1，当总周期余=0时，总周期 = 总周期商
+	// 总周期余：当总周期余 ≥0 时，总周期 = 总周期商 + 1，当总周期余 = 0 时，总周期 = 总周期商
 	ulPeriodRemainder = xLayerTable[ulLayerNum].ulTileBufferPeriod * ulUnitOffsetLayer % xLayerTable[ulLayerNum].ulTileBufferUnitNum;
 //  ^ 0 ~ 7                                     ^ 1~2048             ^ 1~32768                                   ^ 1~8
 
@@ -627,7 +724,6 @@ TileWave::ReadLayerBufferParam_t TileWave::xFindUnit(
 			.ulUnitOffsetFile = ulUnitOffsetFile
 	};
 
-//	pucReadLayerBuffer = (uint8_t*)aligned_malloc(xReadLayerBufferParam.ulSize, alignment_);
 //	printf("[read param] ulAddr = %10ld, ulSize = %6ld, ulUnitOffsetFile = %6ld\r\n",
 //			xParam.ulAddr,
 //			xParam.ulSize,

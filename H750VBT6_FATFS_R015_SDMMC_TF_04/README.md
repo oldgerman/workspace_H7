@@ -296,7 +296,7 @@ TW+FIND_UNIT_LIST=12+0+8000：
 
 > 参数表元素个数为 8000 / 2 = 4000，xFindUnitList() 中 vector 容器不断 push_back() ，堆空间不足，在 syscalls.c 的 _exit() 内死循环：
 >
-> ![](Images/参数表元素个数4000时，用户堆空间不足，vector容器push_back进入syscalls _exit（）.png)
+> ![](Images/参数表元素个数4000时，用户堆空间不足，vector容器push_back进入syscalls.c的_exit（）.png)
 
 TW+FIND_UNIT_LIST=13+0+8000：
 
@@ -315,3 +315,5 @@ TW+FIND_UNIT_LIST=13+0+8000：
 - [函数返回值是容器的执行速度比容器作为参数传递要慢的多](https://www.cnblogs.com/nixiangren/p/9987775.html)
 - [vector作为函数返回值出现的问题及解决方法](https://zhuanlan.zhihu.com/p/381183992)
 - [STM32 Syscalls.c _exit() on C++ string](https://community.st.com/s/question/0D53W00001IBbowSAD/syscall-exit-on-string-manipulation)
+- [有符号数与无符号数之间运算的隐式转换](https://blog.51cto.com/yang/3859185)
+- [C语言数据类型转换（自动类型转换+强制类型转换）](http://c.biancheng.net/view/1775.html)

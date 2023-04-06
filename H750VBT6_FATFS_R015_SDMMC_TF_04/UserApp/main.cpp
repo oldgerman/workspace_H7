@@ -51,9 +51,9 @@ TileWave::Config_t xConfig = {
 	    .ulLayerNumMax = 15,
 	    .ulLayerBufferTileNum = 4096,
 	    /* WaveForm */
-	    .ulWaveFrameSize = 4,
-	    .ulWaveDispWidth = 400,
-	    .ulWaveDispTileBufferSize = 4096,
+//	    .ulWaveSamplePointSize = 4,
+//	    .ulWaveDispWidth = 400,
+//	    .ulWaveDispTileBufferSize = 4096,
 		/* Event */
 		.ulEventNum = 10,
 };

@@ -63,14 +63,16 @@ osThreadId_t frameProcessorTaskHandle;
 bool frame_writeLayerBuffer = 0;
 bool frame_readLayerBuffer = 0;
 bool frame_readLayerBufferList = 0;
+bool frame_zoomLayerBufferList = 0;
 bool frame_initExistingWaveFile= 0;
 uint32_t sliceButNotWrite = 0;
 
-uint16_t frame_freq = 1; /* 每秒调度频率，单位Hz */
+uint16_t frame_freq = 25; /* 每秒调度频率，单位Hz */
 
 extern TileWave xTileWave;
 TileWave::ReadLayerBufferParam_t xReadLayerBufferParam;
 TileWave::ReadLayerBufferParamList_t xReadLayerBufferParamList;
+TileWave::ReadLayerBufferParamList_t xZoomLayerBufferParamList;
 /* Private variables ---------------------------------------------------------*/
 static SliceState_t xSliceState;
 
@@ -224,6 +226,13 @@ static void frameProcessorTask(void* argument)
 			frame_readLayerBufferList = 0;
 			msg.type = TileWave::EVENT_READ_LAYER_BUFFER_LIST;
 			msg.xReadLayerBufferParamList = xReadLayerBufferParamList;
+			osStatus = osMessageQueuePut(xTileWave.xMsgQueue, &msg, 0U, 0U);
+		}
+
+		if(frame_zoomLayerBufferList) {
+			frame_zoomLayerBufferList = 0;
+			msg.type = TileWave::EVENT_ZOOM_LAYER_BUFFER_LIST;
+			msg.xReadLayerBufferParamList = xZoomLayerBufferParamList;
 			osStatus = osMessageQueuePut(xTileWave.xMsgQueue, &msg, 0U, 0U);
 		}
 
