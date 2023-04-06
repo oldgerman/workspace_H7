@@ -142,15 +142,14 @@ void OnAsciiCmd(const char* _cmd, size_t _len, StreamSink &_responseChannel)
         else if(s.find("ZOOM_UNIT_LIST=") != std::string::npos)
         {
         	float fProgress_Midpoint;
-        	uint32_t ulZoomFocus, ulZoomFactor_Src, ulZoomFactor_Dst;
-            sscanf(&_cmd[18], "%f+%ld+%ld+%ld", &fProgress_Midpoint, &ulZoomFocus, &ulZoomFactor_Src, &ulZoomFactor_Dst);
+        	uint32_t ulZoomFocus, ulZoomFactor;
+            sscanf(&_cmd[18], "%f+%ld+%ld", &fProgress_Midpoint, &ulZoomFocus, &ulZoomFactor);
             xZoomLayerBufferParamList = xTileWave.xZoomUnitList(
             		fProgress_Midpoint,
             		32,
 					ulZoomFocus,
 					ulDispWidthPx,
-					ulZoomFactor_Src,
-					ulZoomFactor_Dst,
+					ulZoomFactor,
 					&ulOffset_DispBeginToReadBufferBegin);
 
             frame_zoomLayerBufferList = 1;

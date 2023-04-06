@@ -306,6 +306,22 @@ TW+FIND_UNIT_LIST=13+0+8000：
 > [read param] ulAddr =   65501184, ulSize =   8192, ulUnitOffsetFile =  31983
 > ```
 
+###  TileWave::xZoomUnitList()
+
+> 命令：TW+ZOOM_UNIT_LIST=焦点处的浏览进度+焦点与显示区开始处的点距+缩放因子\r
+>
+> 焦点处的浏览进度 范围 0.00~1.00
+>
+> 焦点与显示区开始处的点距：范围 0~399
+>
+> 缩放因子：范围 1~16384
+
+可以使用测试命令组测试，当前默认显示区宽度 400点
+
+![](Images/5Hz焦点缩放的焦点示意.png)
+
+视频为Images目录  **5Hz焦点缩放.mp4**
+
 ## 附
 
 ### 参考
@@ -317,3 +333,4 @@ TW+FIND_UNIT_LIST=13+0+8000：
 - [STM32 Syscalls.c _exit() on C++ string](https://community.st.com/s/question/0D53W00001IBbowSAD/syscall-exit-on-string-manipulation)
 - [有符号数与无符号数之间运算的隐式转换](https://blog.51cto.com/yang/3859185)
 - [C语言数据类型转换（自动类型转换+强制类型转换）](http://c.biancheng.net/view/1775.html)
+

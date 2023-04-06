@@ -453,32 +453,30 @@ uint32_t TileWave::ulCalculateFileSizeForAnyPeriod(uint32_t ulPeriod)
   *  不需要按照画的 xZoomUnitList缩放焦点不在单元中心或在单元中心这么麻烦地进行计算了！！！
   *  算法突然变得很简单了
   *
-  * @param	fProgress_Midpoint 	中点浏览进度：单位 %     	显示区中间样点距离当前层第一个样点的样点数 与 当前层的样点总数 的比值
+  * @param	fProgress_ZoomFocus 缩放焦点对应的浏览进度：单位 % ，范围 [0.00~1.00]   缩放焦点距离层第一个样点的样点数 与 层的样点总数 的比值
   * @param  ulBitDepth			样点位深：    单位 bit      必须为 2的幂，例如 8bit、16bit、32bit、64bit
   * @param 	ulZoomFocus			缩放焦点：    单位 样点数   相对显示区第一个样点的距离，只能取整数，不支持小数，比如 3.5个样点
   * @param  ulDispWidth			显示区宽度：  单位 样点数
-  * @param 	ulZoomFactor_Src		当前缩放因子：范围 >= 1     与层对应，第0层的缩放因子是 1，第1层是2，第2层是4，第三层是8...
-  * @param
-  * @param	ulZoomFactor_Dst		目标缩放因子：范围 >= 1
+  * @param 	ulZoomFactor		缩放因子：范围 >= 1     与层对应，第0层的缩放因子是 1，第1层是2，第2层是4，第三层是8...
+  * @param	pulOffset_DispBeginToReadBufferBegin 显示区的第一个数据点对应读缓冲区的首地址偏移，单位 B
   * @retval 参数配置表
   *                     |<----------->|  显示区宽度，样点数最好小于等于1个单元内的样点数
   *                     .=============.
   * .------------.------+-----.-------+----.------------.---
-  * |$           |      |$    |$   $  |    |            |       <--- 当前层的连续单元
+  * |$           |      |$    |$   $  |    |            |       <--- 层的连续单元
   * '^-----------'------+^----'^---^--+----'------------'---
   *  |                  '|=====|===|=='
   *  |                   |     |   ^-<-- 缩放焦点
   *  |                   |     ^-----<-- 显示区中间样点
   *  |                   ^-----------<-- 显示区第一个样点
-  *  ^-------------------------------<-- 当前层第一个样点
+  *  ^-------------------------------<-- 层的第一个样点
   */
 TileWave::ReadLayerBufferParamList_t TileWave::xZoomUnitList(
-		double fProgress_Midpoint,	// 中点浏览进度
+		double fProgress_ZoomFocus,	// 缩放焦点对应的浏览进度
 		uint32_t ulBitDepth,		// 样点位深
 		uint32_t ulZoomFocus,		// 缩放焦点
 		uint32_t ulDispWidth,		// 显示区宽度
-		uint32_t ulZoomFactor_Src,	// 当前缩放因子
-		uint32_t ulZoomFactor_Dst,	// 目标缩放因子
+		uint32_t ulZoomFactor,		// 缩放因子
 		uint32_t * pulOffset_DispBeginToReadBufferBegin // 显示开始处到读缓冲区开始的距离，单位：B
 		)
 {
@@ -487,78 +485,57 @@ TileWave::ReadLayerBufferParamList_t TileWave::xZoomUnitList(
 
 	// 缩放因子计算所在层
 	// 0层即 2^0 = 1 倍缩放，1层即 2^1 = 2 倍缩放，14层即 2^14 = 16384 倍缩放
-	uint32_t ulLayerNum_Src, ulLayerNum_Dst; //当前层，目标层
-	ulLayerNum_Src = xLayerTable[ulCalculateExponentPowerOf2(ulZoomFactor_Src)].ulLayerNum;
-	ulLayerNum_Dst = xLayerTable[ulCalculateExponentPowerOf2(ulZoomFactor_Dst)].ulLayerNum;
+	uint32_t ulLayerNum; // 层
+	ulLayerNum = xLayerTable[ulCalculateExponentPowerOf2(ulZoomFactor)].ulLayerNum;
 
-	uint32_t ulDist_MidpointToSrcLayerBegin;  // 显示区中点 与 当前层第一个样点 距离，单位：样点数
-	ulDist_MidpointToSrcLayerBegin = fProgress_Midpoint * (xLayerTable[ulLayerNum_Src].ulLayerBufferSize / ulPointSize);
-
-	uint32_t ulDist_MidpointToDispBegin;      // 显示区中点 与 显示区第一个样点 距离，单位：样点数
-	ulDist_MidpointToDispBegin = ulDispWidth / 2;
-
-	uint32_t ulDist_ZoomFocusToDispBegin;     // 缩放焦点 与 显示区第一个样点 距离，单位：样点数
+	uint32_t ulDist_ZoomFocusToDispBegin; // 缩放焦点 与 显示区第一个样点 距离，单位：样点数
 	ulDist_ZoomFocusToDispBegin = ulZoomFocus;
 
-	uint32_t ulDist_ZoomFocusToSrcLayerBegin; // 缩放焦点 与 当前层第一个样点 距离，单位：样点数
-	ulDist_ZoomFocusToSrcLayerBegin = (int32_t)ulDist_MidpointToSrcLayerBegin -
-			((int32_t)ulDist_MidpointToDispBegin - (int32_t)ulDist_ZoomFocusToDispBegin);
+	uint32_t ulDist_ZoomFocusToLayerBegin; // 缩放焦点 与 层第一个样点 距离，单位：样点数
+	ulDist_ZoomFocusToLayerBegin = fProgress_ZoomFocus * (xLayerTable[ulLayerNum].ulLayerBufferSize / ulPointSize);
 
-	double fProgress_ZoomFocus;	             // 缩放焦点的浏览进度 (特性：当前层与目标层一样)
-	fProgress_ZoomFocus = (double)ulDist_ZoomFocusToSrcLayerBegin / (xLayerTable[ulLayerNum_Src].ulLayerBufferSize / ulPointSize);
+	uint32_t ulDist_DispBeginToLayerBegin; // 显示区第一个样点与层第一个样点 距离，单位：样点数
+	ulDist_DispBeginToLayerBegin = ulDist_ZoomFocusToLayerBegin - ulDist_ZoomFocusToDispBegin;
 
-	uint32_t ulDist_ZoomFocusToDstLayerBegin; // 缩放焦点 与 目标层第一个样点 距离，单位：样点数
-	ulDist_ZoomFocusToDstLayerBegin = fProgress_ZoomFocus * (xLayerTable[ulLayerNum_Dst].ulLayerBufferSize / ulPointSize);
+	uint32_t ulUnitNumQuotient_DispBeginToLayerBegin;  // 显示区第一个样点与层第一个样点距离的 单元数商
+	uint32_t ulUnitNumRemainder_DispBeginToLayerBegin; // 显示区第一个样点与层第一个样点距离的 单元数余
+	ulUnitNumQuotient_DispBeginToLayerBegin  = ulDist_DispBeginToLayerBegin * ulPointSize / ulIOSizeMin;
+	ulUnitNumRemainder_DispBeginToLayerBegin = ulDist_DispBeginToLayerBegin * ulPointSize % ulIOSizeMin;
 
-	uint32_t ulDist_DispBeginToDstLayerBegin; // 显示区第一个样点与目标层第一个样点 距离，单位：样点数
-	ulDist_DispBeginToDstLayerBegin = ulDist_ZoomFocusToDstLayerBegin - ulDist_ZoomFocusToDispBegin;
+	uint32_t ulUnitOffset = 0;	// 层的待读取单元偏移
+	uint32_t ulUnitNum = 0;		// 层的待读取单元个数
 
-	uint32_t ulUnitNumQuotient_DispBeginToDstLayerBegin;  // 显示区第一个样点与目标层第一个样点距离的 单元数商
-	uint32_t ulUnitNumRemainder_DispBeginToDstLayerBegin; // 显示区第一个样点与目标层第一个样点距离的 单元数余
-	ulUnitNumQuotient_DispBeginToDstLayerBegin  = ulDist_DispBeginToDstLayerBegin * ulPointSize / ulIOSizeMin;
-	ulUnitNumRemainder_DispBeginToDstLayerBegin = ulDist_DispBeginToDstLayerBegin * ulPointSize % ulIOSizeMin;
-
-	uint32_t ulUnitOffset_Dst = 0;	// 目标层的待读取单元偏移
-	uint32_t ulUnitNum_Dst = 0;		// 目标层的待读取单元个数
-	uint32_t ulDiffUnit_UnitNumRemainder_DispBeginToDstLayerBegin = 0; // 单元大小减去 显示区第一个样点与目标层第一个样点距离的 单元数余 的大小
+	// 【单元大小】 减去 【显示区第一个样点与层第一个样点距离的 单元数余】
+	uint32_t ulDiffUnit_UnitNumRemainder_DispBeginToLayerBegin = 0;
 
 	*pulOffset_DispBeginToReadBufferBegin = 0;
-	ulUnitOffset_Dst = ulUnitNumQuotient_DispBeginToDstLayerBegin;
-	if(ulUnitNumRemainder_DispBeginToDstLayerBegin == 0) {
+	ulUnitOffset = ulUnitNumQuotient_DispBeginToLayerBegin;
+	if(ulUnitNumRemainder_DispBeginToLayerBegin == 0) {
 		;
 	} else {
-		ulUnitNum_Dst += 1;
-		*pulOffset_DispBeginToReadBufferBegin += ulUnitNumRemainder_DispBeginToDstLayerBegin;
-		ulDiffUnit_UnitNumRemainder_DispBeginToDstLayerBegin = ulIOSizeMin - ulUnitNumRemainder_DispBeginToDstLayerBegin;
+		ulUnitNum += 1;
+		*pulOffset_DispBeginToReadBufferBegin += ulUnitNumRemainder_DispBeginToLayerBegin;
+		ulDiffUnit_UnitNumRemainder_DispBeginToLayerBegin = ulIOSizeMin - ulUnitNumRemainder_DispBeginToLayerBegin;
 	}
 
 	uint32_t ulUnitNumQuotient_Diff_DispWidth;  // 显示区内剩余的 单元数商
 	uint32_t ulUnitNumRemainder_Diff_DispWidth; // 显示区内剩余的 单元数余
-	if(ulDispWidth * ulPointSize >= ulDiffUnit_UnitNumRemainder_DispBeginToDstLayerBegin) {
-		ulUnitNumQuotient_Diff_DispWidth = (ulDispWidth * ulPointSize - ulDiffUnit_UnitNumRemainder_DispBeginToDstLayerBegin)  / ulIOSizeMin;
-		ulUnitNumRemainder_Diff_DispWidth = (ulDispWidth * ulPointSize - ulDiffUnit_UnitNumRemainder_DispBeginToDstLayerBegin)  % ulIOSizeMin;
+	if(ulDispWidth * ulPointSize >= ulDiffUnit_UnitNumRemainder_DispBeginToLayerBegin) {
+		ulUnitNumQuotient_Diff_DispWidth = (ulDispWidth * ulPointSize - ulDiffUnit_UnitNumRemainder_DispBeginToLayerBegin)  / ulIOSizeMin;
+		ulUnitNumRemainder_Diff_DispWidth = (ulDispWidth * ulPointSize - ulDiffUnit_UnitNumRemainder_DispBeginToLayerBegin)  % ulIOSizeMin;
 	} else {
 		ulUnitNumQuotient_Diff_DispWidth = 0;
 		ulUnitNumRemainder_Diff_DispWidth = 0;
 	}
 
-	ulUnitNum_Dst += ulUnitNumQuotient_Diff_DispWidth;
+	ulUnitNum += ulUnitNumQuotient_Diff_DispWidth;
 	if(ulUnitNumRemainder_Diff_DispWidth == 0) {
 		;
 	} else {
-		ulUnitNum_Dst += 1;
+		ulUnitNum += 1;
 	}
 
-	return xFindUnitList(ulLayerNum_Dst, ulUnitOffset_Dst, ulUnitNum_Dst);
-
-	//	uint32_t ulUnitNumQuotient_ZoomFocusToDstLayerBegin;  // 缩放焦点 与 目标层第一个样点 之间的 单元数商，范围：[0, 目标层的单元总数]
-	//	uint32_t ulUnitNumRemainder_ZoomFocusToDstLayerBegin; // 缩放焦点 与 目标层第一个样点 之间的 单元数余，范围：[0, 显示区的数据量]
-	//	ulUnitNumQuotient_ZoomFocusToDstLayerBegin = ulDist_ZoomFocusToDstLayerBegin * ulPointSize / ulIOSizeMin;
-	//	ulUnitNumRemainder_ZoomFocusToDstLayerBegin = ulDist_ZoomFocusToDstLayerBegin * ulPointSize % ulIOSizeMin;
-	//	uint32_t ulUnitNumQuotient_ZoomFocusToDispBegin;	// 焦点到显示区开始的 单元数商
-	//	uint32_t ulUnitNumRemainder_ZoomFocusToDispBegin;	// 焦点到显示区开始的 单元数余
-	//	ulUnitNumQuotient_ZoomFocusToDispBegin = ulDist_ZoomFocusToDispBegin * ulPointSize / ulIOSizeMin;
-	//	ulUnitNumRemainder_ZoomFocusToDispBegin = ulDist_ZoomFocusToDispBegin * ulPointSize / ulIOSizeMin;
+	return xFindUnitList(ulLayerNum, ulUnitOffset, ulUnitNum);
 }
 
 /**

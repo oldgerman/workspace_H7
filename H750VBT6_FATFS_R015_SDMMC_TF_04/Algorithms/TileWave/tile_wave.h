@@ -33,6 +33,7 @@
   *    2023-04-02  - 修复 xFindUnit() 在单 ulUnitOffset 为2幂次时计算的 BUG
   *    2023-04-04  - 实现任意层的任意单元在文件中的连续读取算法 xFindUnitList()
   *                  （支持层内瓦片波形的连续读取，自动生成跨周期的读参数表）
+  *    2023-04-06  - 实现波形显示区任意焦点处缩放的算法 xZoomUnitList()
   *
   ******************************************************************************
   * @attention
@@ -248,14 +249,12 @@ public:
 	ReadLayerBufferParam_t xFindUnit(uint32_t ulLayerNum, uint32_t ulUnitOffset, uint32_t ulUnitNum);
 	ReadLayerBufferParamList_t xFindUnitList(uint32_t ulLayerNum, uint32_t ulUnitOffset, uint32_t ulUnitNum);
 	ReadLayerBufferParamList_t xZoomUnitList(
-			double fProgress_Midpoint,	// 中点浏览进度
-			uint32_t ulBitDepth,		// 样点位深
-			uint32_t ulZoomFocus,		// 缩放焦点
-			uint32_t ulDispWidth,		// 显示区宽度
-			uint32_t ulZoomFactor_Src,	// 当前缩放因子
-			uint32_t ulZoomFactor_Dst,	// 目标缩放因子
-			uint32_t * pulOffset_DispBeginToReadBufferBegin //
-			);
+			double fProgress_ZoomFocus,
+			uint32_t ulBitDepth,
+			uint32_t ulZoomFocus,
+			uint32_t ulDispWidth,
+			uint32_t ulZoomFactor,
+			uint32_t * pulOffset_DispBeginToReadBufferBegin);
 
 private:
 	static uint32_t ulCalculateMinPowerOf2GreaterThan(uint32_t ulValue);

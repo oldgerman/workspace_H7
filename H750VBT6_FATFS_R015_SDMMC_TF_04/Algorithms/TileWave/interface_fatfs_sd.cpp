@@ -177,11 +177,10 @@ static void fatfsSDTask(void* argument)
 				}
 			} else if (msg.type == TileWave::EVENT_ZOOM_LAYER_BUFFER_LIST ) {
 				TileWave::ReadLayerBufferParam_t xParam;
-				bool firstIn = 1;
 				uint32_t count_printed = 0;
 				uint32_t count_willPrint = ulDispWidthPx;
-				for(uint32_t i = 0; i < msg.xReadLayerBufferParamList.size; i++) {
-					xParam = *(msg.xReadLayerBufferParamList.px + i);
+				for(uint32_t k = 0; k < msg.xReadLayerBufferParamList.size; k++) {
+					xParam = *(msg.xReadLayerBufferParamList.px + k);
 
 					ret = xTileWave.read(
 							xParam.ulAddr,
@@ -190,18 +189,33 @@ static void fatfsSDTask(void* argument)
 					if(fatfsSD_printUnitData) {
 						float *pfVal = (float*)(xParam.pucData);
 						uint32_t imax =  xParam.ulSize / 4 ;
-						if(firstIn) {
-							firstIn = 0;
+						if(k == 0) {
 							pfVal += (ulOffset_DispBeginToReadBufferBegin / sizeof(float));
 							imax -= ulOffset_DispBeginToReadBufferBegin / sizeof(float);
 						}
 						if(count_willPrint < imax) {
 							imax = count_willPrint;
 						}
-						for(uint32_t i = 0; i < imax; i++)
+						uint32_t imax_q = imax / 8;
+						uint32_t i = 0;
+						for(; i < imax_q; i++)
 						{
-							printf("%.2f\n",
-										*(pfVal + i));
+							printf("%.2f\n%.2f\n%.2f\n%.2f\n%.2f\n%.2f\n%.2f\n%.2f\n",
+										*(pfVal + i * 8 + 0),
+										*(pfVal + i * 8 + 1),
+										*(pfVal + i * 8 + 2),
+										*(pfVal + i * 8 + 3),
+										*(pfVal + i * 8 + 4),
+										*(pfVal + i * 8 + 5),
+										*(pfVal + i * 8 + 6),
+										*(pfVal + i * 8 + 7));
+							count_printed += 8;
+						}
+						float *pfVal_q = pfVal + (i - 1) * 8 + 8;
+						imax_q = imax % 8;
+						for(uint32_t j = 0; j < imax_q; j++)
+						{
+							printf("%.2f\n", *(pfVal_q + j));
 							++count_printed;
 						}
 						count_willPrint = ulDispWidthPx - count_printed;
