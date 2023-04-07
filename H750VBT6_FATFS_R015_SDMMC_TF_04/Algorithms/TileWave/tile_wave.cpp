@@ -215,7 +215,7 @@ TileWave::WriteLayerBufferParam_t TileWave::sliceTileBuffer(uint8_t* pulData, Ev
 		float* pfPtr = (float*)pulData;
 		float fVal;
 		for(uint32_t j = 0; j < (*xRit).ulTileSize / 4; j++) {
-			fVal = ( *(pfPtr + j * 2) + *(pfPtr + j * 2 + 1) ) / 2; // 暂时用2点中值
+			fVal = ( *(pfPtr + j * 2) + *(pfPtr + j * 2 + 1) ) / 2; // 暂用2点均值(局部均值缩小算法)
 			if(isnormal(fVal)) {	// 可能到 inf
 				*(pfPtr + j) = fVal;
 			} else {
@@ -453,7 +453,7 @@ uint32_t TileWave::ulCalculateFileSizeForAnyPeriod(uint32_t ulPeriod)
   *  不需要按照画的 xZoomUnitList缩放焦点不在单元中心或在单元中心这么麻烦地进行计算了！！！
   *  算法突然变得很简单了
   *
-  * @param	fProgress_ZoomFocus 缩放焦点对应的浏览进度：单位 % ，范围 [0.00~1.00]   缩放焦点距离层第一个样点的样点数 与 层的样点总数 的比值
+  * @param	fProgress_ZoomFocus 缩放焦点的浏览进度：单位 % ，范围 [0.00~1.00]   缩放焦点距离层第一个样点的样点数 与 层的样点总数 的比值
   * @param  ulBitDepth			样点位深：    单位 bit      必须为 2的幂，例如 8bit、16bit、32bit、64bit
   * @param 	ulZoomFocus			缩放焦点：    单位 样点数   相对显示区第一个样点的距离，只能取整数，不支持小数，比如 3.5个样点
   * @param  ulDispWidth			显示区宽度：  单位 样点数
@@ -472,7 +472,7 @@ uint32_t TileWave::ulCalculateFileSizeForAnyPeriod(uint32_t ulPeriod)
   *  ^-------------------------------<-- 层的第一个样点
   */
 TileWave::ReadLayerBufferParamList_t TileWave::xZoomUnitList(
-		double fProgress_ZoomFocus,	// 缩放焦点对应的浏览进度
+		double fProgress_ZoomFocus,	// 缩放焦点的浏览进度
 		uint32_t ulBitDepth,		// 样点位深
 		uint32_t ulZoomFocus,		// 缩放焦点
 		uint32_t ulDispWidth,		// 显示区宽度
@@ -490,9 +490,21 @@ TileWave::ReadLayerBufferParamList_t TileWave::xZoomUnitList(
 
 	uint32_t ulDist_ZoomFocusToDispBegin; // 缩放焦点 与 显示区第一个样点 距离，单位：样点数
 	ulDist_ZoomFocusToDispBegin = ulZoomFocus;
+	uint32_t ulDist_ZoomFocusToDispEnd; // 缩放焦点 与 显示区最后一个样点 距离，单位：样点数
+	ulDist_ZoomFocusToDispEnd = ulDispWidth - ulDist_ZoomFocusToDispBegin;
 
 	uint32_t ulDist_ZoomFocusToLayerBegin; // 缩放焦点 与 层第一个样点 距离，单位：样点数
 	ulDist_ZoomFocusToLayerBegin = fProgress_ZoomFocus * (xLayerTable[ulLayerNum].ulLayerBufferSize / ulPointSize);
+	uint32_t ulDist_ZoomFocusToLayerEnd;  // 缩放焦点 与 层最后一个样点 距离，单位：样点数
+	ulDist_ZoomFocusToLayerEnd = (xLayerTable[ulLayerNum].ulLayerBufferSize / ulPointSize) - ulDist_ZoomFocusToLayerBegin;
+
+	// 检查有效性，防止运算溢出
+	if(ulDist_ZoomFocusToLayerBegin < ulDist_ZoomFocusToDispBegin) {	// 检查焦点左边
+		ulDist_ZoomFocusToDispBegin = ulDist_ZoomFocusToLayerBegin;
+	}
+	if(ulDist_ZoomFocusToDispEnd > ulDist_ZoomFocusToLayerEnd) {		// 检查焦点右边
+		ulDist_ZoomFocusToDispBegin = ulDispWidth - ulDist_ZoomFocusToLayerEnd;
+	}
 
 	uint32_t ulDist_DispBeginToLayerBegin; // 显示区第一个样点与层第一个样点 距离，单位：样点数
 	ulDist_DispBeginToLayerBegin = ulDist_ZoomFocusToLayerBegin - ulDist_ZoomFocusToDispBegin;

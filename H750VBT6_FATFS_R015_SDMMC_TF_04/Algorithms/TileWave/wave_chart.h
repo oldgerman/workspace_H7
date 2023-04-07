@@ -87,6 +87,23 @@ public:
 			ulWaveDispTileBufferSize = ulWaveDispTileBufferSizeMin;
 		}
 	}
+
+	/**
+	  *@brief  快速缩放，仅支持2幂缩放因子
+	  *@attention 直接取切片数据显示
+	  */
+	void xZoomFast() {
+
+	}
+
+	/**
+	  *@brief  平滑缩放，支持小数缩放因子
+	  *@attention 取切片数据后需要进行运算
+	  */
+	void xZoomSmooth() {
+
+	}
+
 private:
 };
 #endif
