@@ -128,7 +128,7 @@ extern uint32_t sampleTrigFreq;
   * 4000样点此症状消失
   * 8000样点刷新太慢
   */
-const uint16_t sample_buffer_size = 800; //单位：样点数
+const uint16_t sample_buffer_size = 8000; //单位：样点数
 
 /* Exported variables --------------------------------------------------------*/
 extern float vref;
