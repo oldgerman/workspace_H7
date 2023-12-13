@@ -1,5 +1,5 @@
+.settings/
 /Debug/*
 !/Debug/*.hex
 /Release/*
 !/Release/*.hex
-/Debug/
