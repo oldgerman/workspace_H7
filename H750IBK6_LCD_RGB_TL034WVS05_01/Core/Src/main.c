@@ -371,6 +371,11 @@ void MPU_Config(void)
   MPU_InitStruct.BaseAddress = SDRAM_BANK2_ADDR;
 
   HAL_MPU_ConfigRegion(&MPU_InitStruct);
+
+  /** Initializes and configures the Region and the memory to be protected
+  */
+  MPU_InitStruct.BaseAddress = 0x240000000;
+  HAL_MPU_ConfigRegion(&MPU_InitStruct);
   /* Enables the MPU */
   HAL_MPU_Enable(MPU_PRIVILEGED_DEFAULT);
 

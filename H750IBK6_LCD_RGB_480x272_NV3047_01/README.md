@@ -1,0 +1,9 @@
+## H750IBK6_LCD_RGB_480x272_NV3047_01
+
+在 H750IBK6_SDRAM_01 工程的基础上加入纯RGB屏 480x272 驱动NV3047 测试 Demo
+
+## 参考
+
+## LTDC 配置
+
+## DMA2D配置

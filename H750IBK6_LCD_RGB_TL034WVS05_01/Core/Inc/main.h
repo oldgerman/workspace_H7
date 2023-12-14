@@ -58,19 +58,22 @@ void _Error_Handler(const char * file, uint32_t line);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define SDRAM_BANK2_ADDR 0xD0000000
-#define SDRAM_BANK1_ADDR 0xC0000000
-#define QSPI_FLASH_SIZE_2N_OFFSET 0
-#define LCD_T_HD 480
-#define LCD_T_HPW 10
-#define LCD_T_HBP 20
-#define LCD_T_HFP 10
-#define LCD_T_VD 480
 #define LCD_T_VPW 6
-#define LCD_T_VBP 10
 #define LCD_T_VFP 10
+#define SDRAM_BANK2_ADDR 0xD0000000
+#define LCD_T_HBP 20
+#define LCD_T_VBP 10
+#define SDRAM_BANK1_ADDR 0xC0000000
+#define LCD_T_HFP 10
+#define QSPI_FLASH_SIZE_2N_OFFSET 0
+#define LCD_T_HPW 10
+#define LCD_T_VD 480
+#define LCD_T_HD 480
+#define LCD_MEM_ADDR 0x24008000
 #define SPI2_MOSI_Pin GPIO_PIN_3
 #define SPI2_MOSI_GPIO_Port GPIOI
+#define LCD_RST_Pin GPIO_PIN_8
+#define LCD_RST_GPIO_Port GPIOI
 #define SPI2_SCK_Pin GPIO_PIN_3
 #define SPI2_SCK_GPIO_Port GPIOD
 #define SPI2_CS_Pin GPIO_PIN_3
