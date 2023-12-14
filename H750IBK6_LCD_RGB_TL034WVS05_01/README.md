@@ -78,62 +78,64 @@ void WriteParameter(uint16_t data)
 
 ### CS片选信号
 
-只需要在那一长串初始化命令代码最前面和最后面配置即可：
+每次发命令或参数时，都得拉低拉高一次
 
-参考： [yd03/sdk/driver/itp/itp_screen.c](https://github.com/tomyqg/yd03/blob/f471fceec1f7ea7ff51633583bbc0fb4e8583ae2/sdk/driver/itp/itp_screen.c#L278) 的 ST7701_PanelInitialCode() 函数：即使片选拉低后，发送命令和数据中途有几次调用延迟函数，也不影响
+测试下面这种仅在那一长串初始化命令代码最前面和最后面拉低和拉高，不能正常亮屏：
 
-```c
-void ST7701_PanelInitialCode(void)
-{
-
-    // 控制复位引脚
-    LCD_Nreset (1);
-    usleep (10000);           //!< 延迟函数 100us
-    LCD_Nreset (0);
-    usleep (10000);           //!< 延迟函数 100us
-    LCD_Nreset (1);
-    usleep (120*1100);           //!< 延迟函数 120ms，复位后必须等待至少120ms
-    
-    // 片选拉低
-    ithGpioClear(CFG_GPIO_LCD_CS);
-    
-    // 写命令和数据
-    St7701_WriteCommand(0x11);
-    usleep (120*1000);           //!< 延迟函数
-    St7701_WriteCommand(0xFF);
-    St7701_WriteData(0x77);
-    St7701_WriteData(0x01);
-    St7701_WriteData(0x00);
-......
-    St7701_WriteCommand(0xD0);
-    St7701_WriteData(0x88);
-    usleep(120*1000);             //!< 延迟函数
-    St7701_WriteCommand(0xEF);
-    St7701_WriteData(0x08);
-    St7701_WriteData(0x08);
-    St7701_WriteData(0x08);
-    St7701_WriteData(0x45);
-    St7701_WriteData(0x3F);
-    St7701_WriteData(0x54);
-    usleep(100*1000);           //!< 延迟函数
-    St7701_WriteCommand(0xE0);
-    St7701_WriteData(0x00);
-    St7701_WriteData(0x00);
-    St7701_WriteData(0x02);
-......
-    St7701_WriteCommand(0xFF);
-    St7701_WriteData(0x77);
-    St7701_WriteData(0x01);
-    St7701_WriteData(0x00);
-    St7701_WriteData(0x00);
-    St7701_WriteData(0x00);
-    usleep(120*1000);           //!< 延迟函数
-    St7701_WriteCommand(0x29);
-    usleep(30*1000);            //!< 延迟函数
-
-    // 片选拉低高
-    ithGpioSet(CFG_GPIO_LCD_CS);
-
-}
-```
-
+> 参考： [yd03/sdk/driver/itp/itp_screen.c](https://github.com/tomyqg/yd03/blob/f471fceec1f7ea7ff51633583bbc0fb4e8583ae2/sdk/driver/itp/itp_screen.c#L278) 的 ST7701_PanelInitialCode() 函数：片选拉低后，发送命令和数据中途有几次调用延迟函数
+>
+> ```c
+> void ST7701_PanelInitialCode(void)
+> {
+> 
+>     // 控制复位引脚
+>     LCD_Nreset (1);
+>     usleep (10000);           //!< 延迟函数 100us
+>     LCD_Nreset (0);
+>     usleep (10000);           //!< 延迟函数 100us
+>     LCD_Nreset (1);
+>     usleep (120*1100);           //!< 延迟函数 120ms，复位后必须等待至少120ms
+>     
+>     // 片选拉低
+>     ithGpioClear(CFG_GPIO_LCD_CS);
+>     
+>     // 写命令和数据
+>     St7701_WriteCommand(0x11);
+>     usleep (120*1000);           //!< 延迟函数
+>     St7701_WriteCommand(0xFF);
+>     St7701_WriteData(0x77);
+>     St7701_WriteData(0x01);
+>     St7701_WriteData(0x00);
+> ......
+>     St7701_WriteCommand(0xD0);
+>     St7701_WriteData(0x88);
+>     usleep(120*1000);             //!< 延迟函数
+>     St7701_WriteCommand(0xEF);
+>     St7701_WriteData(0x08);
+>     St7701_WriteData(0x08);
+>     St7701_WriteData(0x08);
+>     St7701_WriteData(0x45);
+>     St7701_WriteData(0x3F);
+>     St7701_WriteData(0x54);
+>     usleep(100*1000);           //!< 延迟函数
+>     St7701_WriteCommand(0xE0);
+>     St7701_WriteData(0x00);
+>     St7701_WriteData(0x00);
+>     St7701_WriteData(0x02);
+> ......
+>     St7701_WriteCommand(0xFF);
+>     St7701_WriteData(0x77);
+>     St7701_WriteData(0x01);
+>     St7701_WriteData(0x00);
+>     St7701_WriteData(0x00);
+>     St7701_WriteData(0x00);
+>     usleep(120*1000);           //!< 延迟函数
+>     St7701_WriteCommand(0x29);
+>     usleep(30*1000);            //!< 延迟函数
+> 
+>     // 片选拉低高
+>     ithGpioSet(CFG_GPIO_LCD_CS);
+> 
+> }
+> ```
+>
