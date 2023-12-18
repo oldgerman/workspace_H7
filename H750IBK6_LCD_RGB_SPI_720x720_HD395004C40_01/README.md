@@ -44,7 +44,7 @@
 
 详情可参考 AN4861 4.4.2
 
-![AN4861：4.4.2 LTDC和DMA2D+CPU同步](Images/AN4861：4.4.2 LTDC和DMA2D+CPU同步.png)
+![AN4861：4.4.2 LTDC和DMA2D_CPU同步](Images/AN4861：4.4.2 LTDC和DMA2D_CPU同步.png)
 
 ### 硬汉哥教程
 
@@ -315,6 +315,8 @@ Touch 5 :  x: 291  y: 417  size: 16
 ## LVGL综合示例测试
 
 ### O3鸡血优化
+
+测试视频：[LVGL综合示例测试O3鸡血优化.mp4](https://github.com/oldgerman/workspace_H7/blob/master/H750IBK6_LCD_RGB_SPI_720x720_HD395004C40_01/Images/LVGL综合示例测试O3鸡血优化.mp4)
 
 ![IMG_5093](Images/LVGL综合示例测试O3鸡血优化.JPG)
 
