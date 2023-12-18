@@ -44,7 +44,7 @@
 
 详情可参考 AN4861 4.4.2
 
-![AN4861：4.4.2 LTDC和DMA2D_CPU同步](Images/AN4861：4.4.2 LTDC和DMA2D_CPU同步.png)
+![AN4861：4.4.2_LTDC和DMA2D和CPU同步](Images/AN4861：4.4.2_LTDC和DMA2D和CPU同步.png)
 
 ### 硬汉哥教程
 
