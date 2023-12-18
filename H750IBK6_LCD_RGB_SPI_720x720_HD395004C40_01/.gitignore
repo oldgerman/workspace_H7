@@ -3,5 +3,3 @@
 !/Debug/*.hex
 /Release/*
 !/Release/*.hex
-/Debug/
-/Release/
