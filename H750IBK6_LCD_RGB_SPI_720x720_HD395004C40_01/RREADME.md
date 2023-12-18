@@ -1,5 +1,7 @@
 ## H750IBK6_LCD_RGB_SPI_720x720_HD395004C40_01
 
+> 2023/12/17 - 2023/12/18
+
 ## 配置信息
 
 - CPU：主频 480MHz
@@ -18,134 +20,41 @@
 
 ![](Images/CubeMX无法配置主频为480MHz是因为默认是Y版本改为V版本即可.png)
 
-
-
-## 在LVGL崩掉时，LTDC=CLK=36MHz时，LVGL缓冲区、LTDC内存、 都用 SDRAM2
-
-```
-[17:29:00.791] $SDRAM_TEST
-[17:29:00.791] 
-[17:29:00.791] 测试SDRAM1: 
-[17:29:00.792] *****************************************************************************************************
-[17:29:00.792] 进行速度测试>>>
-[17:29:01.077] 以16位数据宽度写入数据，大小：32 MB，耗时: 285 ms, 写入速度：112.28 MB/s
-[17:29:01.489] 读取数据完毕，大小：32 MB，耗时: 413 ms, 读取速度：77.48 MB/s
-[17:29:01.490] *****************************************************************************************************
-[17:29:01.490] 进行数据校验>>>
-[17:29:02.030] 16位数据宽度读写通过，以8位数据宽度写入数据
-[17:29:02.030] 写入完毕，读取数据并比较...
-[17:29:02.030] 8位数据宽度读写通过
-[17:29:02.030] SDRAM读写测试通过，系统正常
-[17:29:02.030] 
-[17:29:02.030] 测试SDRAM2: 
-[17:29:02.030] *****************************************************************************************************
-[17:29:02.030] 进行速度测试>>>
-[17:29:02.364] 以16位数据宽度写入数据，大小：32 MB，耗时: 332 ms, 写入速度：96.39 MB/s
-[17:29:04.832] 读取数据完毕，大小：32 MB，耗时: 2470 ms, 读取速度：12.96 MB/s
-[17:29:04.832] *****************************************************************************************************
-[17:29:04.833] 进行数据校验>>>
-[17:29:07.674] 16位数据宽度读写通过，以8位数据宽度写入数据
-[17:29:07.674] 写入完毕，读取数据并比较...
-[17:29:07.674] 8位数据宽度读写通过
-[17:29:07.674] SDRAM读写测试通过，系统正常
-[17:29:15.592] $CPU_INFO
-[17:29:15.593] ---------------------------------------------
-[17:29:15.593] 任务名 任务状态 优先级 剩余栈 任务序号
-[17:29:15.593] UsbServerTask                  	X	32	133	6
-[17:29:15.593] ledTask                        	R	24	94	7
-[17:29:15.593] IDLE                           	R	0	108	3
-[17:29:15.593] commTask                       	B	24	71	5
-[17:29:15.593] Tmr Svc                        	B	2	219	4
-[17:29:15.593] usbIrqTask                     	B	32	91	1
-[17:29:15.593] ---------------------------------------------
-[17:29:15.594] 任务名 运行计数 使用率
-[17:29:15.594] UsbServerTask                  	412854		3%
-[17:29:15.594] ledTask                        	11125053		95%
-[17:29:15.594] IDLE                           	60444		<1%
-[17:29:15.594] commTask                       	0		<1%
-[17:29:15.594] usbIrqTask                     	0		<1%
-[17:29:15.594] Tmr Svc                        	0		<1%
-[17:29:15.594] ---------------------------------------------
-[17:29:15.594] 
-```
-
-## 在LVGL崩掉时，LTDC=CLK=18MHz时，LVGL缓冲区、LTDC内存、 都用 SDRAM2
-
-```
-[17:36:33.031] $SDRAM_TEST
-[17:36:33.032] [led_task] sysTick 323 ms
-[17:36:33.032] 
-[17:36:33.032] 测试SDRAM1: 
-[17:36:33.032] *****************************************************************************************************
-[17:36:33.033] 进行速度测试>>>
-[17:36:33.250] 以16位数据宽度写入数据，大小：32 MB，耗时: 216 ms, 写入速度：148.15 MB/s
-[17:36:33.586] 读取数据完毕，大小：32 MB，耗时: 336 ms, 读取速度：95.24 MB/s
-[17:36:33.586] *****************************************************************************************************
-[17:36:33.586] 进行数据校验>>>
-[17:36:34.041] 16位数据宽度读写通过，以8位数据宽度写入数据
-[17:36:34.041] 写入完毕，读取数据并比较...
-[17:36:34.041] 8位数据宽度读写通过
-[17:36:34.041] SDRAM读写测试通过，系统正常
-[17:36:34.041] 
-[17:36:34.041] 测试SDRAM2: 
-[17:36:34.041] *****************************************************************************************************
-[17:36:34.041] 进行速度测试>>>
-[17:36:34.300] 以16位数据宽度写入数据，大小：32 MB，耗时: 259 ms, 写入速度：123.55 MB/s
-[17:36:36.256] 读取数据完毕，大小：32 MB，耗时: 1956 ms, 读取速度：16.36 MB/s
-[17:36:36.256] *****************************************************************************************************
-[17:36:36.256] 进行数据校验>>>
-[17:36:38.510] 16位数据宽度读写通过，以8位数据宽度写入数据
-[17:36:38.510] 写入完毕，读取数据并比较...
-[17:36:38.510] 8位数据宽度读写通过
-[17:36:38.510] SDRAM读写测试通过，系统正常
-[17:36:40.881] $CPU_INFO
-[17:36:40.882] ---------------------------------------------
-[17:36:40.882] 任务名 任务状态 优先级 剩余栈 任务序号
-[17:36:40.882] UsbServerTask                  	X	32	126	6
-[17:36:40.882] ledTask                        	R	24	94	7
-[17:36:40.882] IDLE                           	R	0	107	3
-[17:36:40.882] commTask                       	B	24	71	5
-[17:36:40.882] Tmr Svc                        	B	2	220	4
-[17:36:40.882] usbIrqTask                     	B	32	91	1
-[17:36:40.882] ---------------------------------------------
-[17:36:40.882] 任务名 运行计数 使用率
-[17:36:40.882] UsbServerTask                  	109538		18%
-[17:36:40.882] ledTask                        	400290		67%
-[17:36:40.882] IDLE                           	56482		9%
-[17:36:40.883] commTask                       	0		<1%
-[17:36:40.883] usbIrqTask                     	0		<1%
-[17:36:40.883] Tmr Svc                        	0		<1%
-[17:36:40.883] ---------------------------------------------
-[17:36:40.883] 
-```
-
 ## STM32 + LVGL 帧率提升策略 LTDC
 
 [STM32 + LVGL 帧率提升策略 LTDC](https://www.bilibili.com/video/BV1nu41117Tx/?spm_id_from=333.337.search-card.all.click&vd_source=e6ad3ca74f59d33bf575de5aa7ceb52e)
 
-## RGB屏 闪屏问题
+## RGB屏闪屏问题
 
-NV3052C 在 跑LVGL卡死时，若使用 30帧 LTDC 自刷新滤率，则全屏会很快地轻微闪烁
+### 可能的硬件原因
 
-NV3052C 在 跑LVGL卡死时，若使用 60帧 LTDC 自刷新滤率，则全屏没有肉眼可见闪烁
+背光元件不稳定，老化时间不够
 
-我估计 RGB 时钟太低导致 每两帧间刷新时，显示残影的时间延长了，导致亮度变化
+### 可能的软件原因
 
-## 硬汉
+- NV3052C 在 跑LVGL卡死时，若使用 30帧 LTDC 自刷新滤率，不论在O0还是O3编译优化时，全屏都会很快地明显闪烁，估计 RGB 时钟太低导致 每两帧间刷新时，显示残影的时间延长了，导致亮度变化
 
-> # [【实战技能】基于硬件垂直消隐的多缓冲技术在LVGL, emWin，GUIX和TouchGFX应用，含视频教程](https://www.cnblogs.com/armfly/p/17565420.html)
->
-> **原贴地址：https://www.armbbs.cn/forum.php?mod=viewthread&tid=120114**
->
-> 这两天研究了下LVGL的持单缓冲，双缓冲和配合硬件消隐的双缓冲的实现（已经分享V5，V6和V7开发板的程序模板），特别是这个整屏缓冲方案，这几款GUI的实现基本是一样的，所以专门开了一期视频做个分享。
->
->
-> **视频：**
-> https://www.bilibili.com/video/BV1rF411Q7A7/
+- NV3052C 在 跑LVGL卡死时，若使用 60帧 LTDC 自刷新滤率，在O0编译优化时，有轻微闪烁，在O3编译优化时，全屏没有肉眼可见闪烁，推测除了LTDC时钟设置满足60FPS，SDRAM带宽也要满足 CPU 绘图 + LTDC 自刷新带宽
 
-对于标志裸机可以用标志变量，RTOS必须要用信号量
+## 双缓冲垂直消隐刷屏
 
-对于硬件双缓冲垂直消隐，硬汉哥配置的缓冲区是
+### 该解决方案的优势
+
+这是最高效地利用带宽刷屏方式，也是降低撕裂感的方式，因为这种方法的SDRAM带宽开销只有CPU向缓冲区绘制图形的写带宽，以及LTDC从缓冲区自刷新屏幕的读带宽，所以就不需要DMA2D搬运LVGL绘图缓冲区到LTDC自刷新缓冲区（这即消耗SDRAM读带宽，也消耗写带宽），那么DMA2D留着到需要刷图片和图层混合的时候解放CPU
+
+详情可参考 AN4861 4.4.2
+
+![AN4861：4.4.2 LTDC和DMA2D+CPU同步](Images/AN4861：4.4.2 LTDC和DMA2D+CPU同步.png)
+
+### 硬汉哥教程
+
+[【实战技能】基于硬件垂直消隐的多缓冲技术在LVGL, emWin，GUIX和TouchGFX应用，含视频教程](https://www.armbbs.cn/forum.php?mod=viewthread&tid=120114)
+
+- [bilibili视频讲解](https://www.bilibili.com/video/BV1rF411Q7A7/)
+
+对于标志裸机可以用标志变量，RTOS必须要用信号量，硬汉的Demo是裸机方式，我是FreeRTOS得改成信号量
+
+对于硬件双缓冲垂直消隐，硬汉哥配置的缓冲区是：
 
 ```c
 /** LTDC 显存地址
@@ -174,9 +83,7 @@ pLayerCfg.FBStartAdress = LCDH7_FRAME_BUFFER;	// SDRAM 起始地址 0xC0000000�
 #endif
 ```
 
-
-
-LTDC 中断优先级，硬汉配置是 14
+LTDC 行中断优先级，硬汉配置是 14
 
 ```c
 // c:\Users\PSA\Downloads\V7-6001_LVGL8 Template(V1.0)\User\bsp\src\bsp_tft_h7.c
@@ -186,19 +93,13 @@ HAL_NVIC_SetPriority(LTDC_IRQn, 0xE, 0);
 HAL_NVIC_EnableIRQ(LTDC_IRQn);
 ```
 
-使能行中断位置
+需要找个地儿使能行中断：
 
 ```c
-void MX_LTDC_Init(void)
-{
-  /* USER CODE BEGIN LTDC_Init 2 */
-  // 使能行中断位置
-  HAL_LTDC_ProgramLineEvent(&hltdc, LCD_T_VPW + LCD_T_VBP + LTC_T_VD);
-  /* USER CODE END LTDC_Init 2 */
-}
+HAL_LTDC_ProgramLineEvent(&hltdc, LCD_T_VPW + LCD_T_VBP + LTC_T_VD);
 ```
 
-## 只进入一次 HAL_LTDC_LineEventCallback 的问题
+只进入一次 HAL_LTDC_LineEventCallback 的问题
 
 把 HAL 的 HAL_LTDC_IRQHandler(&hltdc); 注释掉，直接按照硬汉哥的，直接把这两行操作写在 LTDC_IRQHandler() 即可解决
 
@@ -233,7 +134,7 @@ void HAL_LTDC_LineEventCallback(LTDC_HandleTypeDef *hltdc)
 
 ### 绘制的对象需要重绘的像素点多
 
-### 计算量大
+### 运算量大
 
 ## 运行LVGL基准测试卡死的问题
 
@@ -335,45 +236,37 @@ static scene_dsc_t scenes[] = {
 
 ## 18bit 模式接 16bit LTDC LVGL 图片显示异常问题
 
+这种情况在 LTDC 时钟设置为 18MHz 自刷新率为30FPS时会出现，把时钟改回 36MHz 使自刷新率提升到 60FPS左右，此现象消失
+
+发送 0x3A 命令调戏 NV3052c 是没有用的！
+
 | LVGL图片过渡有亮线                                   | NV3052 0x3A命令设置16bit显示颜色还是不对（默认是18bit）      |
 | ---------------------------------------------------- | ------------------------------------------------------------ |
 | ![LVGL图片过渡有亮线](Images/LVGL图片过渡有亮线.JPG) | ![NV3052_0x3A命令设置16bit显示颜色不对](Images/NV3052_0x3A命令设置16bit显示颜色不对.JPG) |
 
-[痞子衡嵌入式：记录i.MXRT1060驱动LCD屏显示横向渐变色有亮点问题解决全过程（提问篇）](https://www.cnblogs.com/henjay724/p/12602979.html) 
+这是一种时序问题，有个类似的BUG排查记录很详细，也是时序问题：[痞子衡嵌入式：记录i.MXRT1060驱动LCD屏显示横向渐变色有亮点问题解决全过程（提问篇）](https://www.cnblogs.com/henjay724/p/12602979.html) 
 
-## 测试控件
+## GT911触摸芯片驱动适配
 
-[拾色器 | Color wheel (lv_colorwheel)](https://docs.lvgl.io/8.3/widgets/extra/colorwheel.html?highlight=wheel)
+### 第1步：魔改Arduino驱动库
 
-> 设置弧形宽度 [LVGL 之 Arc 控件介绍](https://www.wpgdadatong.com.cn/blog/detail/46125)
->
-> ```
-> void my_arc_test(void)
-> {
->     /*Create an Arc*/
->     lv_obj_t* arc = lv_arc_create(lv_scr_act());
-> 
->     lv_obj_set_style_arc_color(arc, lv_palette_darken(LV_PALETTE_BLUE_GREY, 3), LV_PART_MAIN | LV_STATE_DEFAULT);  //背景弧形颜色
->     lv_obj_set_style_arc_color(arc, lv_palette_lighten(LV_PALETTE_CYAN, 2), LV_PART_INDICATOR | LV_STATE_DEFAULT);  //前景弧形颜色
->     lv_obj_set_style_arc_width(arc, 40, LV_PART_MAIN | LV_STATE_DEFAULT);  //背景弧形宽度
->     lv_obj_set_style_arc_width(arc, 40, LV_PART_INDICATOR | LV_STATE_DEFAULT);  //前景弧形宽度
-> 
->     lv_obj_set_size(arc, 300, 300);
->     lv_arc_set_rotation(arc, 135);
->     lv_arc_set_bg_angles(arc, 0, 270);
->     //lv_arc_set_bg_angles(arc, 135, 45);
->     lv_arc_set_value(arc, 40);
->     lv_obj_center(arc);
-> }
-> ```
->
-> 
+将 [gt911-arduino](https://github.com/TAMCTec/gt911-arduino) 驱动库使用 `FRToSI2C  `的 `readWord() readWords() writeWord() writeWords()` 替换` Arduino I2C API`
 
-## GT911
+> 注意：GT911寄存器地址是`16bit`的, `FRToSI2C  `的 `readWord() readWords() writeWord() writeWords()` 是读写16位寄存器地址的函数
 
-将 [gt911-arduino](https://github.com/TAMCTec/gt911-arduino) 驱动库使用 FRToSI2C4 的 readWord readWords writeWord writeWords 替换 Arduino API
+我舍弃了GT911的复位时序函数，因为我板子把GT911的复位引脚和NV3052屏幕驱动芯片的复位引脚接一起了，所以GT911就跟着NV3052c的复位时序一起复位好了，这样复位下GT911的 7bit I2C 地址是 `0x5D`
+
+### 第2步：实现LVGL触摸接口
+
+在`Bsp/hal_stm_lvgl/touchpad/touchpad.cpp`实现回调函数`touchpad_read()`注册到 lvgl 即可
 
 ### 测试：5点触摸
+
+这是我有史以来测试过的最灵敏的5点触摸G+FF结构的触摸屏
+
+单点坐标在 `(0, 0), (0, 720), (720, 0), (720, 720)` 的触摸区域内检测十分准确
+
+两个点的坐标区分得很好，但两个触摸点离得太近时会识别为一个点（约小于5mm）
 
 ```c
 Touch 1 :  x: 124  y: 196  size: 12
@@ -393,10 +286,101 @@ Touch 4 :  x: 646  y: 619  size: 13
 Touch 5 :  x: 291  y: 417  size: 16
 ```
 
-## 综合测试
+## 测试LVGL控件：RGB色轮
 
-GT911 + lv_demo_widgets 联动正常 静止时43FPS，触摸影响屏幕图案时 27~33FPS
+[拾色器 | Color wheel (lv_colorwheel)](https://docs.lvgl.io/8.3/widgets/extra/colorwheel.html?highlight=wheel)
 
-### BUG
+> 设置弧形宽度 [LVGL 之 Arc 控件介绍](https://www.wpgdadatong.com.cn/blog/detail/46125)
+>
+> ```c
+> void my_arc_test(void)
+> {
+>  /*Create an Arc*/
+>  lv_obj_t* arc = lv_arc_create(lv_scr_act());
+> 
+>  lv_obj_set_style_arc_color(arc, lv_palette_darken(LV_PALETTE_BLUE_GREY, 3), LV_PART_MAIN | LV_STATE_DEFAULT);  //背景弧形颜色
+>  lv_obj_set_style_arc_color(arc, lv_palette_lighten(LV_PALETTE_CYAN, 2), LV_PART_INDICATOR | LV_STATE_DEFAULT);  //前景弧形颜色
+>  lv_obj_set_style_arc_width(arc, 40, LV_PART_MAIN | LV_STATE_DEFAULT);  //背景弧形宽度
+>  lv_obj_set_style_arc_width(arc, 40, LV_PART_INDICATOR | LV_STATE_DEFAULT);  //前景弧形宽度
+> 
+>  lv_obj_set_size(arc, 300, 300);
+>  lv_arc_set_rotation(arc, 135);
+>  lv_arc_set_bg_angles(arc, 0, 270);
+>  //lv_arc_set_bg_angles(arc, 135, 45);
+>  lv_arc_set_value(arc, 40);
+>  lv_obj_center(arc);
+> }
+> ```
 
-fibre 通信崩了，USB发送命令LVGL就卡死且不回复，但仅打印GT911的五点坐标正常
+## LVGL综合示例测试
+
+### O3鸡血优化
+
+![IMG_5093](Images/LVGL综合示例测试O3鸡血优化.JPG)
+
+GT911 + lv_demo_widgets 联动正常
+
+静止时43FPS，触摸影响屏幕图案时 27~33FPS
+
+GT911 5点坐标实时输出：
+
+```shell
+Touch 1 : x: 688  y: 0  size: 10
+Touch 2 : x: 50  y: 691  size: 12
+Touch 3 : x: 622  y: 584  size: 9
+Touch 4 : x: 177  y: 151  size: 18
+Touch 5 : x: 421  y: 227  size: 9
+Touch 1 : x: 688  y: 0  size: 10
+Touch 2 : x: 50  y: 691  size: 12
+Touch 3 : x: 622  y: 584  size: 9
+Touch 4 : x: 177  y: 151  size: 18
+Touch 5 : x: 421  y: 227  size: 9
+```
+
+栈信息（浏览所有LVGL页面后查看）：
+
+```shell
+$ISR_STACK
+ISR Stack : 50/256  19%
+
+$TASK_STACK
+commTask : 57/128  44%
+UsbServerTask : 355/512  69%
+usbIrqTask : 37/128  28%
+ledTask : 556/1024  54%
+```
+
+CPU利用率（屏幕静置状态）：
+
+```shell
+$CPU_INFO
+---------------------------------------------
+任务名 任务状态 优先级 剩余栈 任务序号
+UsbServerTask                  	X	32	157	6
+IDLE                           	R	0	108	3
+commTask                       	B	24	71	5
+ledTask                        	B	8	550	7
+Tmr Svc                        	B	2	219	4
+usbIrqTask                     	B	32	91	1
+---------------------------------------------
+任务名 运行计数 使用率
+UsbServerTask                  	9		<1%
+IDLE                           	357456		81%
+ledTask                        	43520		9%
+commTask                       	0		<1%
+usbIrqTask                     	0		<1%
+Tmr Svc                        	0		<1%
+---------------------------------------------
+```
+
+### O0优化
+
+帧数打对折有余
+
+### BUG（已解决）
+
+问题现象：fibre 通信崩了，USB发送命令LVGL就卡死且不回复，但USB仅打印GT911的五点坐标正常
+
+调试信息：在执行`FreeRTOS`函数`uxListRemove()`时，进`hardfault()`，故障分析器报非对齐访问错误
+
+问题原因：`lv_task_handler()`所在的任务`ledTask`任务栈空间太小，从 8KB 加大到 16KB 此现象消失

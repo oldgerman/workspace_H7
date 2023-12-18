@@ -49,7 +49,7 @@
 #define LV_MEM_CUSTOM      0
 #if LV_MEM_CUSTOM == 0
 /*Size of the memory available for `lv_mem_alloc()` in bytes (>= 2kB)*/
-#  define LV_MEM_SIZE    (512U * 1024U)          /*[bytes]*/
+#  define LV_MEM_SIZE    (128U * 1024U)          /*[bytes]*/
 
 /*Set an address for the memory pool instead of allocating it as a normal array. Can be in external SRAM too.*/
 #  define LV_MEM_ADR          0x24000000     /*0: unused*/
@@ -299,7 +299,7 @@ e.g. "stm32f769xx.h" or "stm32f429xx.h"*/
 /*Will be added where memories needs to be aligned (with -Os data might not be aligned to boundary by default).
  * 当编译器使用-Os 进行优化时,可能会导致我们的数据不是以 4 或者 8 字节对齐的,此时我们可以显式定义进行字节对齐
  * E.g. __attribute__((aligned(4)))*/
-#define LV_ATTRIBUTE_MEM_ALIGN __attribute__((aligned(4)))
+#define LV_ATTRIBUTE_MEM_ALIGN __attribute__((aligned(8)))
 
 /*Attribute to mark large constant arrays for example font's bitmaps*/
 #define LV_ATTRIBUTE_LARGE_CONST

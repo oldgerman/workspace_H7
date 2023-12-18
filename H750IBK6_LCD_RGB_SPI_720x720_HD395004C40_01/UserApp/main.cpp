@@ -37,8 +37,13 @@
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
-/* Exported constants --------------------------------------------------------*/
-const uint32_t ledTaskStackSize = 512 * 4;
+/* Exported constants -------------------------- ------------------------------*/
+/**
+ *  运行 lv_demo_widgets 时任务栈内存最大开销 ledTask : 579/1024  56%
+ *  分配 512 * 4 时，内存不够，在执行uxListRemove函数时进hardfault报非对齐访问错误
+ *  分配 1024 * 4 时，此现象消失
+ */
+const uint32_t ledTaskStackSize = 1024 * 4;
 const osThreadAttr_t ledTask_attributes = {
     .name = "ledTask",
     .stack_size = ledTaskStackSize,

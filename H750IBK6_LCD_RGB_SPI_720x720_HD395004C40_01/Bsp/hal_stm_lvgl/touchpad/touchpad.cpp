@@ -45,14 +45,12 @@ void touchpad_init(void)
     tp.begin();
     tp.setRotation(ROTATION_INVERTED);
 
-#if 1
     static lv_indev_drv_t indev_drv;                /*Descriptor of an input device driver*/
     lv_indev_drv_init(&indev_drv);                  /*Basic initialization*/
     indev_drv.type = LV_INDEV_TYPE_POINTER;         /*The touchpad is pointer type device*/
     indev_drv.read_cb = touchpad_read;
 
     lv_indev_drv_register(&indev_drv);
-#endif
 }
 
 /**********************
@@ -69,7 +67,6 @@ uint16_t debug_tpx = 0;
  */
 static void touchpad_read(lv_indev_drv_t *indev, lv_indev_data_t *data)
 {
-#if 1
     /* Read your touchpad */
     static int16_t last_x = 0;
     static int16_t last_y = 0;
@@ -99,5 +96,4 @@ static void touchpad_read(lv_indev_drv_t *indev, lv_indev_data_t *data)
         data->point.y = last_y;
         data->state = LV_INDEV_STATE_RELEASED;
     }
-#endif
 }
