@@ -40,6 +40,10 @@ extern "C" {
 #include "cmsis_os.h"
 #include "freertos_inc.h"
 
+#include "../lvgl/lvgl.h"
+#include "../lvgl/demos/lv_demos.h"
+#include "../lvgl/examples/lv_examples.h"
+
 /* Exported types ------------------------------------------------------------*/
 /* Exported define -----------------------------------------------------------*/
 #define PROJECT_FW_VERSION 1.0

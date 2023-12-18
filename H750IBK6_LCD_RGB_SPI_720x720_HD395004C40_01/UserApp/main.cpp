@@ -29,14 +29,11 @@
 //#include "arm_math.h"
 
 #include "tim.h"
-
-#include "lcd_rgb.h"
 #include "dma2d.h"
-#include "../lvgl/lvgl.h"
-#include "../lvgl/demos/lv_demos.h"
 #include "hal_stm_lvgl/tft/tft.h"
 #include "hal_stm_lvgl/touchpad/touchpad.h"
-#include "../lvgl/examples/lv_examples.h"
+
+#include "I2C_Wrapper.h"
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
@@ -45,7 +42,7 @@ const uint32_t ledTaskStackSize = 512 * 4;
 const osThreadAttr_t ledTask_attributes = {
     .name = "ledTask",
     .stack_size = ledTaskStackSize,
-    .priority = (osPriority_t) osPriorityNormal,
+    .priority = (osPriority_t) osPriorityLow,
 };
 
 /* Private constants ---------------------------------------------------------*/
@@ -59,7 +56,7 @@ osThreadId_t ledTaskHandle;
 /* Thread definitions */
 void threadLedUpdate(void* argument){
     TickType_t xLastWakeTime;
-    const TickType_t xFrequency = 1000;
+//    const TickType_t xFrequency = 1000;
     /* 获取当前的系统时间 */
     xLastWakeTime = xTaskGetTickCount();
 
@@ -79,10 +76,7 @@ void threadLedUpdate(void* argument){
 
 //        vTaskDelayUntil(&xLastWakeTime, xFrequency);
 
-//      Touch_Scan();       // 触摸扫描
-//      LED1_Toggle;        // LED指示
-
-      lv_task_handler();  // LVGL进程
+      lv_task_handler();  // LVGL进程(会调用注册了的GT911触摸扫描)
       vTaskDelayUntil(&xLastWakeTime, 20);  // GT911触摸屏扫描间隔不能小于10ms，建议设置为20ms
     }
 }
@@ -94,6 +88,9 @@ void ledUpdateInit()
 
 void Main()
 {
+    /* 初始化具有互斥锁的I2C对象 */
+    FRToSI2C4.FRToSInit();
+
 	/* 初始化动态内存对象的内存池 */
 //	DRAM_Init();
 
@@ -106,41 +103,41 @@ void Main()
     /* 初始化LED时间片任务 */
     ledUpdateInit();
 
-    /* 初始化LCD */
-    LCD_Init();
-
-    /* 烧屏专用 */
-//    for(;;) {
-//        LCD_Clear(TFT_RED);
-//        HAL_Delay(500);
-//        LCD_Clear(TFT_BLUE);
-//        HAL_Delay(500);
-//        LCD_Clear(TFT_GREEN);
-//        HAL_Delay(500);
-//        LCD_Clear(TFT_WHITE);
-//        HAL_Delay(500);
-//        LCD_Clear(TFT_BLACK);
-//        HAL_Delay(500);
-//    }
-
-    /* 清屏为黑色 */
-//    LCD_Clear(TFT_BLACK);
-//
-//
+    /* 初始化LVGL：包括初始化屏驱NV3052c、触摸芯片GT911、注册LTDC垂直消隐中断 */
     lv_init();
     tft_init();
     touchpad_init();
 
-// #if 1//LV_USE_CPICKER
-
-//lv_obj_t * cpicker;
-//cpicker = lv_cpicker_create(lv_scr_act(), NULL);
-//lv_obj_set_size(cpicker, 200, 200);
-//lv_obj_align(cpicker, NULL, LV_ALIGN_CENTER, 0, 0);
-// #endif
-    lv_demo_benchmark();
+    /* LVGL示例 */
+//    lv_demo_benchmark();
 //    lv_demo_music();
-//    lv_demo_stress();
-//    lv_demo_widgets();
+//    lv_demo_stress(); //测试 OK 2/19/34/47/50FPS都出现过，一半以上都是50FPS
+    lv_demo_widgets();
+
+    /* LVGL控件测试：绘制RGB渐变色轮 */
+//    {
+//        lv_obj_t * obj;
+//        uint16_t lv_demo_stress_time_step   = 50;
+//        obj = lv_tabview_create(lv_scr_act(), LV_DIR_TOP, 50);
+//        lv_obj_set_size(obj, LV_HOR_RES, LV_VER_RES);
+//        lv_obj_align(obj, LV_ALIGN_CENTER, 0, 0);
+//        lv_obj_t * t = lv_tabview_add_tab(obj, "First");
+//
+//        t = lv_tabview_add_tab(obj, "Second");
+//
+//
+//        lv_obj_t * c = lv_colorwheel_create(t, true);
+//
+//        lv_obj_set_style_arc_width(c, 40, LV_PART_MAIN);  // 弧形宽度
+//
+//        lv_obj_set_size(c,  600, 600);
+//        //                  c = lv_led_create(t, NULL);
+//        //                  lv_obj_set_pos(c, 160, 20);
+//        t = lv_tabview_add_tab(obj, LV_SYMBOL_EDIT " Edit");
+//        t = lv_tabview_add_tab(obj, LV_SYMBOL_CLOSE);
+//
+//        lv_tabview_set_act(obj, 1, LV_ANIM_ON);
+//        //auto_del(obj, lv_demo_stress_time_step * 5 + 30);
+//    }
 
 }

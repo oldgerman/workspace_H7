@@ -35,7 +35,8 @@ extern "C" {
 
 /* Exported functions prototypes ---------------------------------------------*/
 void bsp_Init();
-
+bool waitTime(uint32_t *timeOld, uint32_t wait);
+void i2c_scaner(I2C_HandleTypeDef *hi2c, uint8_t i2cBusNum);
 /* Private defines -----------------------------------------------------------*/
 
 /* USER CODE END C SCOPE -----------------------------------------------------*/
@@ -51,7 +52,6 @@ void bsp_Init();
 /* Exported macro ------------------------------------------------------------*/
 
 /* Exported functions prototypes ---------------------------------------------*/
-bool waitTime(uint32_t *timeOld, uint32_t wait);
 /* Private defines -----------------------------------------------------------*/
 
 /* USER CODE END C++ SCOPE ---------------------------------------------------*/

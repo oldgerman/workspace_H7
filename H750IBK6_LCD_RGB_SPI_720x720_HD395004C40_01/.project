@@ -32,6 +32,11 @@
 	</natures>
 	<linkedResources>
 		<link>
+			<name>I2C_Wrapper</name>
+			<type>2</type>
+			<location>D:/ODG-PROJECT/STM32H7/workspace_H7/Share/Libraries/I2C_Wrapper</location>
+		</link>
+		<link>
 			<name>lvgl</name>
 			<type>2</type>
 			<location>D:/ODG-PROJECT/STM32H7/workspace_H7/GUI/lvgl</location>

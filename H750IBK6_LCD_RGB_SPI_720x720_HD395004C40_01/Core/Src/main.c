@@ -20,6 +20,7 @@
 #include "main.h"
 #include "cmsis_os.h"
 #include "dma2d.h"
+#include "i2c.h"
 #include "ltdc.h"
 #include "quadspi.h"
 #include "spi.h"
@@ -80,7 +81,7 @@ int main(void)
   //#define INTERNAL_FLASH_BOOTLOADER_JUMP_TO_QSPI_FLASH_APP
 
   #if defined(INTERNAL_FLASH_BOOTLOADER_JUMP_TO_QSPI_FLASH_APP)
-      /** 将当前使用的内部flash里的中断向量表改为外部QSPI Flash里的中断向量�????????
+      /** 将当前使用的内部flash里的中断向量表改为外部QSPI Flash里的中断向量�?????????
         * Change the currently used interrupt vector table in the internal flash
         * to the interrupt vector table in the external QSPI Flash
         */
@@ -98,7 +99,7 @@ int main(void)
       uint32_t *DestAddr = (uint32_t *)D1_DTCMRAM_BASE;
       memcpy(DestAddr, SouceAddr, 0x400);
 
-      /** 设置当前的中断向量表�???????? ITCM 里复制好的中断向量表副本
+      /** 设置当前的中断向量表�????????? ITCM 里复制好的中断向量表副本
         * Set the current interrupt vector table as a copy of the copied interrupt
         * vector table in ITCM
         */
@@ -146,6 +147,7 @@ int main(void)
   MX_LTDC_Init();
   MX_SPI2_Init();
   MX_DMA2D_Init();
+  MX_I2C4_Init();
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */
@@ -187,6 +189,11 @@ void SystemClock_Config(void)
 
   while(!__HAL_PWR_GET_FLAG(PWR_FLAG_VOSRDY)) {}
 
+  __HAL_RCC_SYSCFG_CLK_ENABLE();
+  __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE0);
+
+  while(!__HAL_PWR_GET_FLAG(PWR_FLAG_VOSRDY)) {}
+
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
@@ -221,7 +228,7 @@ void SystemClock_Config(void)
   RCC_ClkInitStruct.APB2CLKDivider = RCC_APB2_DIV2;
   RCC_ClkInitStruct.APB4CLKDivider = RCC_APB4_DIV2;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK)
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_4) != HAL_OK)
   {
     Error_Handler();
   }

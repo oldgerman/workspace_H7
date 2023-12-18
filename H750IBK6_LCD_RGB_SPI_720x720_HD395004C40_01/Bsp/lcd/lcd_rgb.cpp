@@ -113,11 +113,11 @@ void LCD_Init()
 {
     /* 复位 */
     HAL_GPIO_WritePin(LCD_RST_GPIO_Port, LCD_RST_Pin, GPIO_PIN_SET);
-    LCD_Delay(10);
+    LCD_Delay(20); // 10
     HAL_GPIO_WritePin(LCD_RST_GPIO_Port, LCD_RST_Pin, GPIO_PIN_RESET);
-    LCD_Delay(20);
+    LCD_Delay(40); // 20
     HAL_GPIO_WritePin(LCD_RST_GPIO_Port, LCD_RST_Pin, GPIO_PIN_SET);
-    LCD_Delay(120);                //ms
+    LCD_Delay(200); // 120ms, 注意，如果160倍频改为192使主频480MHz，那么这个时间需要延长1.2倍，否则NV3052复位时间不足会导致刷屏水波纹
 
     /* 写命令和参数 */
 

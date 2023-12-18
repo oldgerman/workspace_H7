@@ -79,8 +79,7 @@ void MX_LTDC_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN LTDC_Init 2 */
-  // 使能行中断位置
-  HAL_LTDC_ProgramLineEvent(&hltdc, LCD_T_VPW + LCD_T_VBP + LCD_T_VD);
+
   /* USER CODE END LTDC_Init 2 */
 
 }
@@ -154,9 +153,6 @@ void HAL_LTDC_MspInit(LTDC_HandleTypeDef* ltdcHandle)
     GPIO_InitStruct.Alternate = GPIO_AF14_LTDC;
     HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
 
-    /* LTDC interrupt Init */
-    HAL_NVIC_SetPriority(LTDC_IRQn, 14, 0);
-    HAL_NVIC_EnableIRQ(LTDC_IRQn);
   /* USER CODE BEGIN LTDC_MspInit 1 */
 
   /* USER CODE END LTDC_MspInit 1 */
@@ -207,8 +203,6 @@ void HAL_LTDC_MspDeInit(LTDC_HandleTypeDef* ltdcHandle)
 
     HAL_GPIO_DeInit(GPIOF, GPIO_PIN_10);
 
-    /* LTDC interrupt Deinit */
-    HAL_NVIC_DisableIRQ(LTDC_IRQn);
   /* USER CODE BEGIN LTDC_MspDeInit 1 */
 
   /* USER CODE END LTDC_MspDeInit 1 */

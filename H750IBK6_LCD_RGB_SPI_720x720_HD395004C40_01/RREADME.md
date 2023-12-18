@@ -1,3 +1,25 @@
+## H750IBK6_LCD_RGB_SPI_720x720_HD395004C40_01
+
+## 配置信息
+
+- CPU：主频 480MHz
+- SDRAM：16位宽，时钟 120MHz
+- 屏幕：720x720 RGB565，双缓冲垂直消隐切屏刷新，使用信号量同步 LTDC中断 和 disp_flush()
+- LVGL：8.3版本
+- RTOS：FreeRTOS + CMSIS v2 封装层
+
+## CubeMX配置主频480MHz时报红叉？
+
+[如何使用STM32CubeMX使STM32H7xx MCU的系统时钟达到480MHz？](https://community.st.com/t5/stm32-mcus/how-to-reach-480mhz-for-stm32h7xx-mcus/ta-p/49800)
+
+[如果我们使用 480/4，那么 SDRAM 的频率为 120Mhz，但数据表显示 SDRAM 的最大频率为 100MHz！我们是否陷入以 60Mhz 运行 SDRAM 的困境？或者以 400Mhz 运行系统？](https://community.st.com/t5/stm32-mcus-products/stm32h7-max-sdram-clock-speed-for-480mhz/td-p/577931)
+
+[STM32H743驱动32bit SDRAM最高时钟是100MHz，实际测试120MHz也可以，提供个参考设置案例](https://www.armbbs.cn/forum.php?mod=viewthread&tid=109144&fromuid=58)
+
+![](Images/CubeMX无法配置主频为480MHz是因为默认是Y版本改为V版本即可.png)
+
+
+
 ## 在LVGL崩掉时，LTDC=CLK=36MHz时，LVGL缓冲区、LTDC内存、 都用 SDRAM2
 
 ```
@@ -310,3 +332,71 @@ static scene_dsc_t scenes[] = {
 > 该宏定义值为1，则表示使用自定义“malloc()/free()/realloc()”
 >
 > [LiteOS内存管理：TLSF算法](https://www.jianshu.com/p/01743e834432)
+
+## 18bit 模式接 16bit LTDC LVGL 图片显示异常问题
+
+| LVGL图片过渡有亮线                                   | NV3052 0x3A命令设置16bit显示颜色还是不对（默认是18bit）      |
+| ---------------------------------------------------- | ------------------------------------------------------------ |
+| ![LVGL图片过渡有亮线](Images/LVGL图片过渡有亮线.JPG) | ![NV3052_0x3A命令设置16bit显示颜色不对](Images/NV3052_0x3A命令设置16bit显示颜色不对.JPG) |
+
+[痞子衡嵌入式：记录i.MXRT1060驱动LCD屏显示横向渐变色有亮点问题解决全过程（提问篇）](https://www.cnblogs.com/henjay724/p/12602979.html) 
+
+## 测试控件
+
+[拾色器 | Color wheel (lv_colorwheel)](https://docs.lvgl.io/8.3/widgets/extra/colorwheel.html?highlight=wheel)
+
+> 设置弧形宽度 [LVGL 之 Arc 控件介绍](https://www.wpgdadatong.com.cn/blog/detail/46125)
+>
+> ```
+> void my_arc_test(void)
+> {
+>     /*Create an Arc*/
+>     lv_obj_t* arc = lv_arc_create(lv_scr_act());
+> 
+>     lv_obj_set_style_arc_color(arc, lv_palette_darken(LV_PALETTE_BLUE_GREY, 3), LV_PART_MAIN | LV_STATE_DEFAULT);  //背景弧形颜色
+>     lv_obj_set_style_arc_color(arc, lv_palette_lighten(LV_PALETTE_CYAN, 2), LV_PART_INDICATOR | LV_STATE_DEFAULT);  //前景弧形颜色
+>     lv_obj_set_style_arc_width(arc, 40, LV_PART_MAIN | LV_STATE_DEFAULT);  //背景弧形宽度
+>     lv_obj_set_style_arc_width(arc, 40, LV_PART_INDICATOR | LV_STATE_DEFAULT);  //前景弧形宽度
+> 
+>     lv_obj_set_size(arc, 300, 300);
+>     lv_arc_set_rotation(arc, 135);
+>     lv_arc_set_bg_angles(arc, 0, 270);
+>     //lv_arc_set_bg_angles(arc, 135, 45);
+>     lv_arc_set_value(arc, 40);
+>     lv_obj_center(arc);
+> }
+> ```
+>
+> 
+
+## GT911
+
+将 [gt911-arduino](https://github.com/TAMCTec/gt911-arduino) 驱动库使用 FRToSI2C4 的 readWord readWords writeWord writeWords 替换 Arduino API
+
+### 测试：5点触摸
+
+```c
+Touch 1 :  x: 124  y: 196  size: 12
+Touch 2 :  x: 684  y: 8  size: 13
+Touch 3 :  x: 84  y: 662  size: 15
+Touch 4 :  x: 646  y: 619  size: 13
+Touch 5 :  x: 291  y: 417  size: 16
+Touch 1 :  x: 124  y: 196  size: 12
+Touch 2 :  x: 684  y: 8  size: 13
+Touch 3 :  x: 84  y: 662  size: 15
+Touch 4 :  x: 646  y: 619  size: 13
+Touch 5 :  x: 291  y: 417  size: 16
+Touch 1 :  x: 124  y: 196  size: 12
+Touch 2 :  x: 684  y: 8  size: 13
+Touch 3 :  x: 84  y: 662  size: 15
+Touch 4 :  x: 646  y: 619  size: 13
+Touch 5 :  x: 291  y: 417  size: 16
+```
+
+## 综合测试
+
+GT911 + lv_demo_widgets 联动正常 静止时43FPS，触摸影响屏幕图案时 27~33FPS
+
+### BUG
+
+fibre 通信崩了，USB发送命令LVGL就卡死且不回复，但仅打印GT911的五点坐标正常

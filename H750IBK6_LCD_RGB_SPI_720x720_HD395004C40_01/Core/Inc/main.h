@@ -78,6 +78,13 @@ void _Error_Handler(const char * file, uint32_t line);
 #define SPI2_SCK_GPIO_Port GPIOD
 #define SPI2_CS_Pin GPIO_PIN_3
 #define SPI2_CS_GPIO_Port GPIOG
+#define SDA4_Pin GPIO_PIN_13
+#define SDA4_GPIO_Port GPIOD
+#define SCL4_Pin GPIO_PIN_12
+#define SCL4_GPIO_Port GPIOD
+#define EXTI11_Pin GPIO_PIN_11
+#define EXTI11_GPIO_Port GPIOD
+#define EXTI11_EXTI_IRQn EXTI15_10_IRQn
 
 /* USER CODE BEGIN Private defines */
 

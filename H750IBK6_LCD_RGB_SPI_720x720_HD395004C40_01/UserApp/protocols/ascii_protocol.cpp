@@ -39,6 +39,8 @@
 //#include "tile_wave.h"
 #include "sdram.h"
 #include "lcd_rgb.h"
+#include "i2c.h"
+#include "bsp.h"
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
@@ -126,6 +128,10 @@ void OnAsciiCmd(const char* _cmd, size_t _len, StreamSink &_responseChannel)
 
             printf("\r\n测试SDRAM2: \r\n");
             SDRAM_Test(SDRAM_BANK2_ADDR);
+        }
+        else if(s.find("I2C4_SCAN") != std::string::npos)
+        {
+            i2c_scaner(&hi2c4, 4);
         }
     }
     else if(_cmd[0] == 'L' && _cmd[1] == 'C' && _cmd[2] == 'D')

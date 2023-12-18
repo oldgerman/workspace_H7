@@ -16,6 +16,8 @@
 #include "bsp.h"
 #include "ltdc.h"
 #include "dma2d.h"
+#include "stm32h7xx_it.h"
+
 #include "lcd_rgb.h"
 
 #include "cmsis_os.h"
@@ -58,7 +60,7 @@ HAL_StatusTypeDef HAL_Status = HAL_OK;
  *  STATIC PROTOTYPES
  **********************/
 /*These 3 functions are needed by LittlevGL*/
-static void ex_disp_flush(lv_disp_drv_t *drv, const lv_area_t *area, lv_color_t * color_p);
+static void disp_flush(lv_disp_drv_t *drv, const lv_area_t *area, lv_color_t * color_p);
 static void ex_disp_clean_dcache(lv_disp_drv_t *drv);
 void my_rounder_cb(lv_disp_drv_t * disp_drv, lv_area_t * area);
 
@@ -88,7 +90,7 @@ static lv_disp_t *our_disp = NULL;
 //static int32_t            y_fill_act;
 #endif
 
-static uint32_t ltdc_clpt_count = 0;
+//static uint32_t ltdc_clpt_count = 0;
 
 //static lv_color_t buf1_1[TFT_HOR_RES * TFT_VER_RES] __attribute__((section(".RAM_D1_Array")));
 //static lv_color_t buf1_1[TFT_HOR_RES * TFT_VER_RES / 2] __attribute__((section(".RAM_D1_Array")));
@@ -111,22 +113,47 @@ static lv_color_t buf1_2[TFT_HOR_RES * TFT_VER_RES] __attribute__((section(".sdr
  **********************/
 
 /**
+  * @brief This function handles LTDC global interrupt.
+  */
+void LTDC_IRQHandler(void)
+{
+    HAL_LTDC_LineEventCallback(NULL);
+}
+
+/**
  * Initialize your display here
  */
 
 void tft_init(void)
 {
+    /* 初始化LCD */
+    LCD_Init();
 
-//	LCD_ImagePreparation(0,0, 480, 320); // 测试刷一张图片
+    /* 烧屏专用 */
+//    for(;;) {
+//        LCD_Clear(TFT_RED);
+//        HAL_Delay(500);
+//        LCD_Clear(TFT_BLUE);
+//        HAL_Delay(500);
+//        LCD_Clear(TFT_GREEN);
+//        HAL_Delay(500);
+//        LCD_Clear(TFT_WHITE);
+//        HAL_Delay(500);
+//        LCD_Clear(TFT_BLACK);
+//        HAL_Delay(500);
+//    }
 
-//	ILI9488_QuitWinMode();	//对全屏开窗口
+    /* 清屏为黑色 */
+//    LCD_Clear(TFT_BLACK);
+
+    /* 初始化 LTDC 垂直消隐中断 */
+    HAL_NVIC_SetPriority(LTDC_IRQn, 14, 0);
+    HAL_NVIC_EnableIRQ(LTDC_IRQn);
+    HAL_LTDC_ProgramLineEvent(&hltdc, LCD_T_VPW + LCD_T_VBP + LCD_T_VD); // 使能行中断位置
 
 	/* There is only one display on STM32 */
 	if(our_disp != NULL)
 		abort();
-
-//    BSP_LCD_Init(0,LCD_ORIENTATION_LANDSCAPE);
-//	BSP_LCD_DisplayOn(0);
 
    /*-----------------------------
 	* Create a buffer for drawing
@@ -159,7 +186,7 @@ void tft_init(void)
 	disp_drv.full_refresh = 1;	//单缓冲全尺寸也可以用，就是tnnd没有全屏刷新，局部刷新对齐？导致的撕裂
 
 	/*Used to copy the buffer's content to the display*/
-	disp_drv.flush_cb = ex_disp_flush;
+	disp_drv.flush_cb = disp_flush;
 
 	/*
 	 * https://docs.lvgl.io/master/porting/display.html#draw-buffer
@@ -206,54 +233,71 @@ void my_rounder_cb(lv_disp_drv_t * disp_drv, lv_area_t * area)
 	   area->x2 = (area->x2 & 0xfff8) + 8 - 1;
 }
 
+volatile bool disp_flush_enabled = true;
+
+/* Enable updating the screen (the flushing process) when disp_flush() is called by LVGL
+ */
+void disp_enable_update(void)
+{
+    disp_flush_enabled = true;
+}
+
+/* Disable updating the screen (the flushing process) when disp_flush() is called by LVGL
+ */
+void disp_disable_update(void)
+{
+    disp_flush_enabled = false;
+}
+
 /* Flush the content of the internal buffer the specific area on the display
  * You can use DMA or any hardware acceleration to do this operation in the background but
  * 'lv_flush_ready()' has to be called when finished
  * This function is required only when LV_VDB_SIZE != 0 in lv_conf.h*/
-static void ex_disp_flush(lv_disp_drv_t *disp_drv, const lv_area_t *area, lv_color_t * color_p)
+static void disp_flush(lv_disp_drv_t *disp_drv, const lv_area_t *area, lv_color_t * color_p)
 {
+    if(disp_flush_enabled) {
+        int32_t x1 = area->x1;
+        int32_t x2 = area->x2;
+        int32_t y1 = area->y1;
+        int32_t y2 = area->y2;
+        /*Return if the area is out the screen*/
+
+        if(x2 < 0) return;
+        if(y2 < 0) return;
+        if(x1 > TFT_HOR_RES - 1) return;
+        if(y1 > TFT_VER_RES - 1) return;
+
+
+        /*
+         * https://forum.lvgl.io/t/stm32-dma2d-fsmc-lvgl/4317/3
+         * SCB_CleanInvalidateDCache();
+         * 在写入显示器之前调用。您需要使缓存无效，以便 DMA2D 的更改反映在 CPU 中
+         */
+        SCB_CleanInvalidateDCache();
+        SCB_InvalidateICache();
 #if LV_USE_GPU_STM32_DMA2D
-    int32_t x1 = area->x1;
-    int32_t x2 = area->x2;
-    int32_t y1 = area->y1;
-    int32_t y2 = area->y2;
-    /*Return if the area is out the screen*/
-
-    if(x2 < 0) return;
-    if(y2 < 0) return;
-    if(x1 > TFT_HOR_RES - 1) return;
-    if(y1 > TFT_VER_RES - 1) return;
-
-
-    /*
-     * https://forum.lvgl.io/t/stm32-dma2d-fsmc-lvgl/4317/3
-     * SCB_CleanInvalidateDCache();
-     * 在写入显示器之前调用。您需要使缓存无效，以便 DMA2D 的更改反映在 CPU 中
-     */
-    SCB_CleanInvalidateDCache();
-    SCB_InvalidateICache();
-//    LCD_CopyBuffer_IT(
-//            area->x1,
-//            area->y1,
-//            area->x2 - area->x1+1,  // width
-//            area->y2 - area->y1 +1, // height
-//            (uint32_t*)color_p
-//        );
+    //    LCD_CopyBuffer_IT(
+    //            area->x1,
+    //            area->y1,
+    //            area->x2 - area->x1+1,  // width
+    //            area->y2 - area->y1 +1, // height
+    //            (uint32_t*)color_p
+    //        );
 #endif
-//    static int i = 0;
-//    if(i)
-//        return;
-//    i = 1;
+    //    static int i = 0;
+    //    if(i)
+    //        return;
+    //    i = 1;
 
-    // 永远等待信号量
-    osSemaphoreAcquire(sem_ltdc_irq, osWaitForever);
-//    while (wTransferState== 0){}
-//    wTransferState = 0;
-    // 切换LTDC显存的缓冲区
-    // 用户不需要调用 DMA2D，LVGL 8.3 库已经完成了，用户仅仅切换 LTDC 显存地址即可
-    __HAL_LTDC_LAYER(&hltdc, 0)->CFBAR =(uint32_t)color_p;
-    __HAL_LTDC_RELOAD_IMMEDIATE_CONFIG(&hltdc);
-
+        // 永远等待信号量
+        osSemaphoreAcquire(sem_ltdc_irq, osWaitForever);
+    //    while (wTransferState== 0){}
+    //    wTransferState = 0;
+        // 切换LTDC显存的缓冲区
+        // 用户不需要调用 DMA2D，LVGL 8.3 库已经完成了，用户仅仅切换 LTDC 显存地址即可
+        __HAL_LTDC_LAYER(&hltdc, 0)->CFBAR =(uint32_t)color_p;
+        __HAL_LTDC_RELOAD_IMMEDIATE_CONFIG(&hltdc);
+    }
     /*IMPORTANT!!!
      *Inform the graphics library that you are ready with the flushing*/
 
@@ -302,11 +346,9 @@ void My_DMA2D_ErrorCallback(DMA2D_HandleTypeDef *hdma2d)
   */
 void HAL_LTDC_LineEventCallback(LTDC_HandleTypeDef *hltdc)
 {
-    LTDC->ICR = (uint32_t)LTDC_IER_LIE; // 清除中断标志
+    LTDC->ICR = (uint32_t)LTDC_IER_LIE; // 清除行中断标志
 
     /* 释放信号量 */
 //    wTransferState = 1;
-//    HAL_LTDC_ProgramLineEvent(&hltdc, LCD_T_VPW + LCD_T_VBP + LCD_T_VD);
     osSemaphoreRelease(sem_ltdc_irq);
-//    ltdc_clpt_count++;
 }

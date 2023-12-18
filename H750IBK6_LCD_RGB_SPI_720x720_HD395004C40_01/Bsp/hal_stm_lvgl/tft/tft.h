@@ -34,7 +34,8 @@ void tft_init(void);
 void checkflush();
 void My_DMA2D_CpltCallback(DMA2D_HandleTypeDef *hdma2d);
 void My_DMA2D_ErrorCallback(DMA2D_HandleTypeDef *hdma2d);
-
+void disp_enable_update(void);
+void disp_disable_update(void);
 /**********************
  *      MACROS
  **********************/
