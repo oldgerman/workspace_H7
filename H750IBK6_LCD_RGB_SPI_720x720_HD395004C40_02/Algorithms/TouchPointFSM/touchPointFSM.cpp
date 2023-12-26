@@ -80,8 +80,8 @@ void TouchPointFSM::debugPrint(char *fmt, ...)
  */
 void TouchPointFSM::limitZoom(float* data)
 {
-    static const float lf_max = 1.414f;   // 最大单步放大比
-    static const float lf_min  = 1/1.414f; // 最大单步缩小比
+    static const float lf_max = M_SQRT2;      // 最大单步放大比
+    static const float lf_min  = 1.f/M_SQRT2; // 最大单步缩小比
     *data = ((*data)<(lf_min)?(lf_min):((*data)>(lf_max)?(lf_max):(*data)));
 }
 
@@ -253,7 +253,7 @@ TouchPointFSM::OutputData TouchPointFSM::update(InputData &act)
                 state_2_begin_ = true;
             }
             break;
-            /* 从1到2点切换时，需要STATE_LOCK，向LVGL传递2次假释放，退出STATE_LOCK后，
+            /* 从1到2点切换时，需要STATE_LOCK，向LVGL传递1次假释放，退出STATE_LOCK后，
              * 才能进入两点触摸事件，将两点计算的焦点作为一个点传给LVGL */
             case EVENT_1_TO_2:
             {
