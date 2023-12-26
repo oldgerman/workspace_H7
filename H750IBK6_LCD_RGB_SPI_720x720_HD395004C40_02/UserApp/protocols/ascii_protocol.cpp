@@ -41,6 +41,8 @@
 #include "lcd_rgb.h"
 #include "i2c.h"
 #include "bsp.h"
+#include "touchpad.h"
+#include "touchPointFSM.h"
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
@@ -146,6 +148,14 @@ void OnAsciiCmd(const char* _cmd, size_t _len, StreamSink &_responseChannel)
             WriteCommand(0x22);
         }
 
+    }
+    else if(_cmd[0] == 'f')
+    {
+        uint8_t a1 = touchPointFSM.switchBitsKalmanFilter_.ctrl;
+        uint8_t a2;
+        sscanf(&_cmd[1], "%d", &a2);
+        touchPointFSM.switchBitsKalmanFilter_.ctrl = a2;
+        printf("设置卡尔曼滤波器组开关标志\r\n更改前：%d\r\n更改后：%d\r\n", a1, a2);
     }
     /*---------------------------- ↑ Add Your CMDs Here ↑ -----------------------------*/
 }

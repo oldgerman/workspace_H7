@@ -34,6 +34,8 @@
 #include "hal_stm_lvgl/touchpad/touchpad.h"
 
 #include "I2C_Wrapper.h"
+
+#include "lv_user_app.h"
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
@@ -117,8 +119,12 @@ void Main()
 //    lv_demo_benchmark();
 //    lv_demo_music();
 //    lv_demo_stress(); //测试 OK 2/19/34/47/50FPS都出现过，一半以上都是50FPS
-    lv_demo_widgets();
+//    lv_demo_widgets();
 
+    /* LVGL控件示例：显示1000个点并支持缩放滚动 */
+//    lv_example_chart_5_test_x_ticks();
+//    lv_chart_slider_relative_zoom();
+      lv_chart_touch_relative_zoom();
     /* LVGL控件测试：绘制RGB渐变色轮 */
 //    {
 //        lv_obj_t * obj;

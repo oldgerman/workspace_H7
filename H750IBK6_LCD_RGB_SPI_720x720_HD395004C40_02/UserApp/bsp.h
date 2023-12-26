@@ -23,7 +23,7 @@ extern "C" {
 #include <stdlib.h>
 #include "stdbool.h"
 #include "bsp_config.h"
-
+#include "cmsis_os.h"
 /* Exported types ------------------------------------------------------------*/
 
 /* Exported constants --------------------------------------------------------*/
@@ -36,6 +36,7 @@ extern "C" {
 /* Exported functions prototypes ---------------------------------------------*/
 void bsp_Init();
 bool waitTime(uint32_t *timeOld, uint32_t wait);
+bool waitTimeOS(TickType_t *timeOld, TickType_t wait);
 void i2c_scaner(I2C_HandleTypeDef *hi2c, uint8_t i2cBusNum);
 /* Private defines -----------------------------------------------------------*/
 

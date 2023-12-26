@@ -61,7 +61,7 @@ void TAMC_GT911::reset() {
 }
 
 void TAMC_GT911::calculateChecksum() {
-    uint8_t checksum;
+    uint8_t checksum = 0;
     for (uint8_t i=0; i<GT911_CONFIG_SIZE; i++) {
         checksum += configBuf[i];
     }
@@ -99,22 +99,49 @@ void TAMC_GT911::setResolution(uint16_t _width, uint16_t _height) {
 void TAMC_GT911::read(void) {
     // Serial.println("TAMC_GT911::read");
     uint8_t data[7];
-    uint8_t id;
-    uint16_t x, y, size;
+//    uint8_t id;
+//    uint16_t x, y, size;
 
     uint8_t pointInfo = readByteData(GT911_POINT_INFO);
+    /**
+     * [0x814E]:
+     * Bit7:    Buffer status,
+     *              1 = coordinate (or key) is ready for host to read;
+     *              0 = coordinate (or key) is not ready and data is not valid.
+     *              After reading coordinates, host should configure this flag (or the entire byte) to 0 via I2C.
+     * Bit6:    large detect,
+     *              1 indicates there is large-area touch on TP.
+     * Bit4:    HaveKey（GT911 支持 4个独立的按键区域，和触摸区域分开检测，由于没有配置按键区域，该位一直是0）
+     *              1 : Have touch key;
+     *              0 : No touch key (released).
+     * Bit3~0: Number of touch points. //<! 实测手指一直在触摸屏上，Bit3~0 的值会在 0 1 0 1 反复横跳，这可咋办？
+     */
+//    int a = pointInfo;
+//    char s[10];
+//    itoa(a, s, 2);
+//    printf("GT911_POINT_INFO --> %s\r\n", s);
+//    int b = readByteData(GT911_REFRESH_RATE); // 0000.0101. = 5, 报告频率+5ms = 10ms
+//    char s2[10];
+//    itoa(b, s2, 2);
+//    printf("GT911_REFRESH_RATE --> %s\r\n", s2);
+
+
     uint8_t bufferStatus = pointInfo >> 7 & 1;
-    uint8_t proximityValid = pointInfo >> 5 & 1;
-    uint8_t haveKey = pointInfo >> 4 & 1;
+//    uint8_t proximityValid = pointInfo >> 5 & 1; // 这个移5是不是错了，应该移6位
+//    uint8_t haveKey = pointInfo >> 4 & 1; // 是否有4个按键之一按下
     isLargeDetect = pointInfo >> 6 & 1;
-    touches = pointInfo & 0xF;
+    touches = pointInfo & 0xF;          // 获取缓冲区可读点的数量
+
     // Serial.print("bufferStatus: ");Serial.println(bufferStatus);
     // Serial.print("largeDetect: ");Serial.println(isLargeDetect);
     // Serial.print("proximityValid: ");Serial.println(proximityValid);
     // Serial.print("haveKey: ");Serial.println(haveKey);
     // Serial.print("touches: ");Serial.println(touches);
-    isTouched = touches > 0;
-    if (bufferStatus == 1 && isTouched) {
+
+    /* 判断面板是否被触摸，这个写得不严谨，应该用 Bit4 判断，而不是用缓冲区可读点数判断 */
+    bufferHaveTouchPoints = touches > 0;
+
+    if (bufferStatus == 1 && bufferHaveTouchPoints) {
         for (uint8_t i=0; i<touches; i++) {
             readBlockData(data, GT911_POINT_1 + i * 8, 7);
             points[i] = readPoint(data);

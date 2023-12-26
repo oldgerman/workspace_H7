@@ -48,6 +48,7 @@ extern "C" {
 /* Exported define -----------------------------------------------------------*/
 #define PROJECT_FW_VERSION 1.0
 /* Exported macro ------------------------------------------------------------*/
+#define constrain(amt, low, high) ((amt)<(low)?(low):((amt)>(high)?(high):(amt)))
 /* Exported constants --------------------------------------------------------*/
 /* Exported variables --------------------------------------------------------*/
 /* Exported functions --------------------------------------------------------*/

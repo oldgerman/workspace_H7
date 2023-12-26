@@ -35,6 +35,21 @@ bool waitTime(uint32_t *timeOld, uint32_t wait) {
 	return false;
 }
 
+
+/* @brief 非阻塞下等待固定的时间
+ * @param timeOld 必须传入局部静态变量或全局变量
+ * @param 等待时间
+ * @return bool
+ */
+bool waitTimeOS(TickType_t *timeOld, TickType_t wait) {
+    TickType_t time = xTaskGetTickCount();
+    if ((time - *timeOld) > wait) {
+        *timeOld = time;
+        return true;
+    }
+    return false;
+}
+
 /**
   * @brief 扫描I2C从设备
   * @param hi2c     : hi2c句柄

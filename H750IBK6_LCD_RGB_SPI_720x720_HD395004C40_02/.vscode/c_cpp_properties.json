@@ -1,0 +1,49 @@
+{
+    "configurations": [
+        {
+            "name": "H750IBK6_LCD_RGB_SPI_720x720_HD395004C40_02",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "${workspaceFolder}/Core/Inc",
+                "${workspaceFolder}/Drivers/STM32H7xx_HAL_Driver/Inc",
+                "${workspaceFolder}/Drivers/STM32H7xx_HAL_Driver/Inc/Legacy",
+                "${workspaceFolder}/Drivers/CMSIS/Device/ST/STM32H7xx/Include",
+                "${workspaceFolder}/Drivers/CMSIS/Include",
+                "${workspaceFolder}/USB_DEVICE/App",
+                "${workspaceFolder}/USB_DEVICE/Target",
+                "${workspaceFolder}/Middlewares/Third_Party/FreeRTOS/Source/include",
+                "${workspaceFolder}/Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2",
+                "${workspaceFolder}/Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F",
+                "${workspaceFolder}/Middlewares/ST/STM32_USB_Device_Library/Core/Inc",
+                "${workspaceFolder}/Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc",
+                "${workspaceFolder}/UserApp",
+                "${workspaceFolder}/Bsp/communication",
+                "${workspaceFolder}/Bsp/fibre/inc",
+                "${workspaceFolder}/Bsp",
+                "${workspaceFolder}/UserApp/protocols",
+                "${workspaceFolder}/Bsp/sdram",
+                "${workspaceFolder}/Bsp/lcd",
+                "${workspaceFolder}/Bsp/frtos_spi",
+                "${workspaceFolder}/Bsp/hal_stm_lvgl/tft",
+                "${workspaceFolder}/../GUI/lvgl",
+                "${workspaceFolder}/../Share/Libraries/I2C_Wrapper",
+                "${workspaceFolder}/UserApp/lvgl",
+                "${workspaceFolder}/../Share/Libraries/CMSIS_DSP/Include",
+                "${workspaceFolder}/Bsp/hal_stm_lvgl/touchpad",
+                "${workspaceFolder}/Algorithms/filter",
+                "${workspaceFolder}/Algorithms/memoryPool"
+            ],
+            "defines": [
+                "USE_HAL_DRIVER",
+                "STM32H750xx",
+                "USE_HAL_DRIVER"
+            ],
+            "windowsSdkVersion": "10.0.22621.0",
+            "compilerPath": "E:/ST/STM32CubeIDE_1.10.1/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.10.3-2021.10.win32_1.0.200.202301161003/tools/bin/arm-none-eabi-c++.exe",
+            "cStandard": "c11",
+            "cppStandard": "c++14",
+            "intelliSenseMode": "${default}"
+        }
+    ],
+    "version": 4
+}

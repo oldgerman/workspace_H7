@@ -360,10 +360,10 @@ void LCD_Clear(uint32_t color)
   *         2. 阻塞式
   *         3. 要绘制的区域不能超过屏幕的显示区域
   *         4. 可在 lv_port_disp.c 文件中，被函数 disp_flush() 调用，用以刷新显示区域
-  * @param  x:      水平坐标，取值范围 0~479
-  * @param  y：     垂直坐标，取值范围 0~271
-  * @param  width:  图片的水平宽度，最大取值480
-  * @param  height: 图片的垂直宽度，最大取值272
+  * @param  x:      水平坐标
+  * @param  y：     垂直坐标
+  * @param  width:  图片的水平宽度
+  * @param  height: 图片的垂直宽度
   * @param  color:  要复制的缓冲区地址
   * @retval None
   */

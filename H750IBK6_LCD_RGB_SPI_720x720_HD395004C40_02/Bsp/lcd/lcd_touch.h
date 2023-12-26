@@ -189,7 +189,7 @@ public:
     void read(void);
     uint8_t isLargeDetect;
     uint8_t touches = 0;
-    bool isTouched = false;
+    bool    bufferHaveTouchPoints = false;
     // uint8_t gesture = NO_GESTURE;
     TP_Point points[5];
 

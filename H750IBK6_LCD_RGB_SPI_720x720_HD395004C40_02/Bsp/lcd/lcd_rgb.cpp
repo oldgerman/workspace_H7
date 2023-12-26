@@ -1,26 +1,11 @@
 /**
   ******************************************************************************
   * @file        lcd_rgb.cpp
-  * @author      OldGerman
+  * @modify      OldGerman
   * @created on  Dec 14, 2023
   * @brief       
   ******************************************************************************
   * @attention
-  *
-  * Copyright (C) 2022 OldGerman.
-  *
-  * This program is free software: you can redistribute it and/or modify
-  * it under the terms of the GNU General Public License as published by
-  * the Free Software Foundation, either version 3 of the License, or
-  * (at your option) any later version.
-  *
-  * This program is distributed in the hope that it will be useful,
-  * but WITHOUT ANY WARRANTY; without even the implied warranty of
-  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  * GNU General Public License for more details.
-  *
-  * You should have received a copy of the GNU General Public License
-  * along with this program.  If not, see https://www.gnu.org/licenses/.
   ******************************************************************************
   */
 
@@ -404,10 +389,10 @@ void LCD_Clear(uint32_t color)
   *         2. 阻塞式
   *         3. 要绘制的区域不能超过屏幕的显示区域
   *         4. 可在 lv_port_disp.c 文件中，被函数 disp_flush() 调用，用以刷新显示区域
-  * @param  x:      水平坐标，取值范围 0~479
-  * @param  y：     垂直坐标，取值范围 0~271
-  * @param  width:  图片的水平宽度，最大取值480
-  * @param  height: 图片的垂直宽度，最大取值272
+  * @param  x:      水平坐标
+  * @param  y：     垂直坐标
+  * @param  width:  图片的水平宽度
+  * @param  height: 图片的垂直宽度
   * @param  color:  要复制的缓冲区地址
   * @retval None
   */
@@ -434,10 +419,10 @@ void LCD_CopyBuffer(uint16_t x, uint16_t y, uint16_t width, uint16_t height,uint
   *         2. 阻塞式
   *         3. 要绘制的区域不能超过屏幕的显示区域
   *         4. 可在 lv_port_disp.c 文件中，被函数 disp_flush() 调用，用以刷新显示区域
-  * @param  x:      水平坐标，取值范围 0~479
-  * @param  y：     垂直坐标，取值范围 0~271
-  * @param  width:  图片的水平宽度，最大取值480
-  * @param  height: 图片的垂直宽度，最大取值272
+  * @param  x:      水平坐标
+  * @param  y：     垂直坐标
+  * @param  width:  图片的水平宽度
+  * @param  height: 图片的垂直宽度
   * @param  color:  要复制的缓冲区地址
   * @retval None
   */
@@ -465,43 +450,3 @@ void LCD_CopyBuffer_IT(uint16_t x, uint16_t y, uint16_t width, uint16_t height,u
 
     transferCompleteDetected = 0;                   // 设置传输完成标志
 }
-
-#if 0
-/**
-  * stm32 DMA2D使用中断LVGL,提高LVGL帧率，方式 4
-  * https://blog.csdn.net/a2267542848/article/details/111163633
-  */
-static void disp_flush(lv_disp_drv_t * disp_drv, const lv_area_t * area, lv_color_t * color_p)
-{
-    /*The most simple case (but also the slowest) to put all pixels to the screen one-by-one*/
-    //LTDC_Color_Fill(area->x1,area->y1,area->x2,area->y2,(uint16_t*)(color_p));
-
-    uint32_t h = area->y2 - area->y1;
-    uint32_t w = area->x2 - area->x1;
-
-    uint32_t OffLineSrc = LCD_WIDTH - (area->x2 - area->x1 +1);
-    uint32_t addr = LCD_FRAME_BUF_ADDR + 2*(1024*area->y1 + area->x1);
-
-    // -- 中断传输
-
-    DMA2D->CR      = 0x00000000UL | (1 << 9);           // 模式
-//    DMA2D->CR     &= ~(DMA2D_CR_START);                 // 停止DMA2D
-//    DMA2D->CR      = DMA2D_M2M;                         // 存储器到存储器
-
-    DMA2D->FGMAR   = (uint32_t)(uint16_t*)(color_p);    // 前景层内存地址
-    DMA2D->OMAR    = (uint32_t)addr;                    // 输出区内存地址
-
-    DMA2D->FGOR    = 0;                                 // 前景层地址偏移
-    DMA2D->OOR     = OffLineSrc;                        // 输出区地址偏移
-
-    DMA2D->FGPFCCR = DMA2D_OUTPUT_RGB565;               // 前景层颜色格式 RGB565 */
-    DMA2D->OPFCCR  = DMA2D_OUTPUT_RGB565;               // 输出区颜色格式 RGB565 */
-
-    DMA2D->NLR     = (area->y2-area->y1+1) | ((area->x2 -area->x1 +1) << 16); //  设定长度和宽度
-
-    DMA2D->CR     |= DMA2D_IT_TC|DMA2D_IT_TE|DMA2D_IT_CE;   // 开启DMA2D中断
-    DMA2D->CR     |= DMA2D_CR_START;                        // 启动DMA2D传输
-
-    g_gpu_state = 1;
-}
-#endif
