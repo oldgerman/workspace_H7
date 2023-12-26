@@ -48,9 +48,6 @@ extern "C" {
 }
 #endif
 
-class MemoryPool : osRtxMemory {
-    MemoryPool();
-};
 extern osRtxMemory DRAM_SRAM1;
 uint32_t DRAM_Init();
 

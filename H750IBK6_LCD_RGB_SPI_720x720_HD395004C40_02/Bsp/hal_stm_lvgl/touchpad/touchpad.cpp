@@ -79,11 +79,8 @@ void touchpad_init(void)
     lv_indev_set_cursor(mouse_indev, mouse_cursor);
 #endif
 
-    //    lv_group_t * g = lv_group_create(); // lv_group 只能枚举按键或编码器事件
-
-    // 初始化消息队列，队列深度 8
+    // 初始化消息队列
     xMsgQueueTouched = osMessageQueueNew(ucEventTouchedNum, sizeof(uEventTouched_t), NULL);
-
     xMsgQueueTouchData = osMessageQueueNew(1, sizeof(TouchData_t), NULL);
 }
 
