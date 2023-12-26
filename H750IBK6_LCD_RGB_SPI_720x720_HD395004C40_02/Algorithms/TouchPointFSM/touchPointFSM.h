@@ -62,7 +62,7 @@ class TouchPointFSM
 {
 public:
     /**
-     * @brief 3种状态
+     * @brief 4种状态
      */
     typedef enum
     {
@@ -98,7 +98,7 @@ public:
 
     typedef struct
     {
-        bool pressed; // 通知LVGL lv_indev_data_t::state，   0: 传参 LV_INDEV_STATE_RELEASED,  1: 传参 LV_INDEV_STATE_PRESSED
+        bool pressed; // 通知LVGL lv_indev_data_t::state， 0: 传参 LV_INDEV_STATE_RELEASED,  1: 传参 LV_INDEV_STATE_PRESSED
         bool zooming; // 通知LVGL控件的事件回调函数执行缩放，0: 不执行缩放,                    1: 执行缩放
         struct
         {

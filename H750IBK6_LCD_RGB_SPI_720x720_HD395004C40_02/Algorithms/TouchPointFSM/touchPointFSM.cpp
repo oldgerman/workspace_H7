@@ -39,7 +39,10 @@
 
 /**
  * @brief  构造函数
- * @param  debug 是否打印调试信息
+ * @param  debug   是否打印调试信息
+ * @param  area_w  显示缩放对象的画布宽度
+ * @param  area_h  显示缩放对象的画布高度
+ * @param  switchBitsKalmanFilter 卡尔曼滤波器开关比特
  * @retval None
  */
 TouchPointFSM::TouchPointFSM(bool debug, int16_t area_w, int16_t area_h,  SwitchBitsKalmanFilter switchBitsKalmanFilter)
