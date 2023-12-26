@@ -152,7 +152,7 @@ static void my_touch_zoom_cb(lv_event_t * e) {
         if(frist_in_chart == true) {
 //        if(chart_event_released == true) {
             lastTouchData = touchData;
-            //假设当前缩放比率都是1，实际这个需要写个算法计算出历史缩放倍率
+            //假设当前缩放比率都是1，实际这个需要写计算出历史缩放倍率
             lastTouchData.zoom.x = 5.f;
             lastTouchData.zoom.y = 5.f;
             lastTouchData.zoom.h = 5.f;
@@ -181,19 +181,14 @@ static void my_touch_zoom_cb(lv_event_t * e) {
         lastTouchData.zoom.y = constrain(lastTouchData.zoom.y, 1, 10);
         lastTouchData.zoom.h = constrain(lastTouchData.zoom.h, 1, 10);
 
-
         /*归一化乘以100输出数据*/
 //         printf("[TOUCH_CB] point(x,y) | zoom(x,y,s) : %f, %f, %f, %f, %f\r\n",
 //                 (float)lastTouchData.point.x / myChartAttr.w * 100, (float)lastTouchData.point.y / myChartAttr.h * 100,
 //                 lastTouchData.zoom.x * 100, lastTouchData.zoom.y * 100, lastTouchData.zoom.h * 100);                 //这三个缩放倍率是历史累乘量
 
-
-
         /* 计算LVGL缩放单位的缩放倍率 */
         int32_t x_zoom = lastTouchData.zoom.h * LV_IMG_ZOOM_NONE;
         int32_t y_zoom = lastTouchData.zoom.h * LV_IMG_ZOOM_NONE;
-
-
 
         lv_coord_t scroll_left_0 = lv_obj_get_scroll_left(chart);
         lv_coord_t scroll_right_0 = lv_obj_get_scroll_right(chart);
@@ -225,7 +220,6 @@ static void my_touch_zoom_cb(lv_event_t * e) {
         lv_obj_scroll_to_x(chart, x, LV_ANIM_OFF); // 禁用动画过渡，不然显式有过渡，还会浪费性能
 
         DEBUG_PRINT("scroll_left_percent_0: %f\r\n", scroll_left_percent_0);
-
 
         /* 打印 y 方向缩放的调试信息 */
          {
@@ -267,7 +261,6 @@ static void my_touch_zoom_cb(lv_event_t * e) {
         lv_obj_scroll_to_y(chart, y, LV_ANIM_OFF); // 禁用动画过渡，不然显式有过渡，还会浪费性能
 
         DEBUG_PRINT("scroll_top_percent_0: %f\r\n", scroll_top_percent_0);
-
 
         // 待 x 和 y 判断完后才更改标记
         chart_event_released = false;

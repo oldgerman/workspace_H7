@@ -81,7 +81,7 @@ void TouchPointFSM::debugPrint(char *fmt, ...)
 void TouchPointFSM::limitZoom(float* data)
 {
     static const float lf_max = M_SQRT2;      // 最大单步放大比
-    static const float lf_min  = 1.f/M_SQRT2; // 最大单步缩小比
+    static const float lf_min  = 1.f/M_SQRT2; // 最小单步缩小比
     *data = ((*data)<(lf_min)?(lf_min):((*data)>(lf_max)?(lf_max):(*data)));
 }
 
