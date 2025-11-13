@@ -37,7 +37,6 @@
 #include "frame_processor.h"
 #include "interface_fatfs_sd.h"
 #include "tile_wave.h"
-
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
