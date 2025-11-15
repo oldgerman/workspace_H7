@@ -90,10 +90,15 @@
 /* Create buffer for reception and transmission           */
 /* It's up to user to redefine and/or remove those define */
 /** Received data over USB are stored in this buffer      */
-__attribute__((aligned(4))) uint8_t UserRxBufferHS[APP_RX_DATA_SIZE];
+
+//__attribute__((aligned(4))) uint8_t UserRxBufferHS[APP_RX_DATA_SIZE];
+//__attribute__((section (".SRAM1_Array"))) uint8_t UserRxBufferHS[APP_RX_DATA_SIZE];
+__attribute__((section (".RAM_D2_Array"))) uint8_t UserRxBufferHS[APP_RX_DATA_SIZE];
 
 /** Data to send over USB CDC are stored in this buffer   */
-__attribute__((aligned(4))) uint8_t UserTxBufferHS[APP_TX_DATA_SIZE];
+//__attribute__((aligned(4))) uint8_t UserTxBufferHS[APP_RX_DATA_SIZE];
+//__attribute__((section (".SRAM1_Array"))) uint8_t UserTxBufferHS[APP_TX_DATA_SIZE];
+__attribute__((section (".RAM_D2_Array"))) uint8_t UserTxBufferHS[APP_TX_DATA_SIZE];
 
 /* USER CODE BEGIN PRIVATE_VARIABLES */
 

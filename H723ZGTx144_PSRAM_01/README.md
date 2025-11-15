@@ -1,4 +1,4 @@
-## H750IBK6_SDRAM_01
+## H750ZGTx144_PSRAM_01
 
 在 H750IBK6_ST_USB_CDC_FS_01 工程的基础上加入 SDRAM 性能测试 Demo
 
@@ -11,6 +11,14 @@
 - [STM32H7S78-DK](https://www.st.com.cn/zh/evaluation-tools/stm32h7s78-dk.html#overview)：[STM32CudeH7RS](https://github.com/STMicroelectronics/STM32CubeH7RS)
 
   > CubeMX配置：[XSPI_PSRAM_MemoryMapped.ioc](https://github.com/STMicroelectronics/STM32CubeH7RS/blob/ccf5970b1722483e6798b48e106267d6997de375/Projects/STM32H7S78-DK/Examples/XSPI/XSPI_PSRAM_MemoryMapped/XSPI_PSRAM_MemoryMapped.ioc#L183)
+  >
+  > 点击文件 STM32CubeH7RS\Projects\STM32H7S78-DK\Examples\XSPI\XSPI_PSRAM_MemoryMapped\STM32CubeIDE\project 即可导入STM32CubeIDE
+  >
+  > 注意需要参考 STM32H7S7L8HXH_FLASH.ld 修改本工程的 ld 文件添加 PSRAM 的内存映射区
+  >
+  > [库：stm32-aps256](https://github.com/STMicroelectronics/stm32-aps256)
+  >
+  > BSP驱动库，H723ZGTx144_PSRAM_01.ld
 
 - [RM0468：STM32H723_733-STM32725_735_STM32H730-value-line-advanced-armbased-32bit-mcus-stmicroelectronics.pdf](https://www.st.com/resource/en/reference_manual/rm0468-stm32h723733-stm32h725735-and-stm32h730-value-line-advanced-armbased-32bit-mcus-stmicroelectronics.pdf)
 
@@ -90,7 +98,9 @@
 
 - 
 
-## PSRAM 配置
+## CubeMX 配置
+
+### PSRAM
 
 按照核心板的PSRAM焊盘，在CubeMX中进行PSRAM管脚配置，橙色引脚即是
 
@@ -215,4 +225,91 @@
   > > tCEM：2us
   > >
   > > 那么可根据上面的参考帖子公式计算为200，再参考AN5050 的 Table 8留1的余量，取201
+
+## Cortex-M7
+
+参考工程 [H750IBK6_LCD_RGB_SPI_720x720_HD395004C40_03]() 
+
+参考：RM0468：Table 6. Memory map and default device memory area attributes (continued)
+
+![](Images/RM0468：Table_6.png)
+
+参考框图，有一段192KB大小内存，可以配置成纯 I-TCM、纯 AXI SRAM ，或混合配置
+
+~~将此192KB内存其中64K划分给I-TCM，128K划分给AXI SRAM，这样 I-TCM 总大小128K，AXI SRAM 总大小 256K~~
+
+本工程将此192KB共享内存区都划分给 AXI SRAM，MPU配置的 AXI SRAM 的 Region大小是512KB，能覆盖实际 AXI SRAM 的 320KB
+
+![Shared_AXI_I-TCM_192KB](Images/Shared_AXI_I-TCM_192KB.png)
+
+参考安富莱v7 BSP
+
+> 25.6 实际工程推荐的RAM分配方案
+>
+> 鉴于DTCM是 400MHz 的，而其它的 RAM都是 200MHz，推荐工程的主 RAM空间采用 TCM，而
+> 其它需要大 RAM或者DMA的场合，使用剩余 RAM空间。 本教程配套的例子基本都是采用的这个方案，让 TCM的性能得到最大发挥。
+
+参考 例程 V7-058_内部TCM，SRAM和外部SDRAM等六块内存的超方便使用方式.rar 配置MPU
+
+> https://www.cnblogs.com/armfly/p/12275695.html
+>
+> 配置SDRAM的MPU属性为Write back, Read allocate，Write allocate
+>
+> 以这个参考配置PSRAM
+
+参考 H7-Tool [HT_Boot(V1.03 V版 源码2021-01-19.zip)](https://forum.anfulai.cn/forum.php?mod=viewthread&tid=95468) 的 bsp.c 中对于 ETH 的DMA 访问的内存区禁止 cache
+
+> ```c
+> static void MPU_Config( void )
+> {
+> 	MPU_Region_InitTypeDef MPU_InitStruct;
+> 
+> 	/* 禁止 MPU */
+> 	HAL_MPU_Disable();
+> 	
+> #if 1
+> 	/* Configure the MPU attributes as Device not cacheable 
+> 	 for ETH DMA descriptors */
+> 	MPU_InitStruct.Enable = MPU_REGION_ENABLE;
+> 	MPU_InitStruct.BaseAddress = 0x30040000;               //!< SRAM3：地址 0x3004 0000，大小 32KB，用途不限，主要用于以太网和USB 的缓冲
+> 	MPU_InitStruct.Size = MPU_REGION_SIZE_256B;            //!< 256Byte大小
+> 	MPU_InitStruct.AccessPermission = MPU_REGION_FULL_ACCESS;
+> 	MPU_InitStruct.IsBufferable = MPU_ACCESS_BUFFERABLE;
+> 	MPU_InitStruct.IsCacheable = MPU_ACCESS_NOT_CACHEABLE; //!< 不进行Cache
+> 	MPU_InitStruct.IsShareable = MPU_ACCESS_NOT_SHAREABLE; //!<
+> 	MPU_InitStruct.Number = MPU_REGION_NUMBER0;
+> 	MPU_InitStruct.TypeExtField = MPU_TEX_LEVEL0;
+> 	MPU_InitStruct.SubRegionDisable = 0x00;
+> 	MPU_InitStruct.DisableExec = MPU_INSTRUCTION_ACCESS_ENABLE;
+> 
+> 	HAL_MPU_ConfigRegion(&MPU_InitStruct);
+> ...
+> }
+> ```
+>
+> ## 解决本工程BUG
+>
+> 本工程 USB_HS 使用了 DMA 以提高性能，起初将DMA访问的Tx和Rx缓冲区以4字节对齐放在AXI内存中，当对AXI 内存配置MPU_ACCESS_CACHEABLE 时，无法枚举USB设备，将其改为 MPU_ACCESS_NOT_CACHEABLE 后正常枚举
+>
+> USB外设的专用DMA可以通过 32bit AHB 总线矩阵访问最近的 SRAM1（下图红线），而访问 AXI SRAM 需要通过 AXI/AHB12 单总线进行跨域，这回占用带宽（下图蓝线），然后根据安富莱 V7 BSP教程的P421的SRAM3用法推荐，在 SRAM1 中划分一段 USB HS 专用的 RX 和 TX 缓冲区给 USB HS 的 DMA 用
+>
+> 由于MPU具有优先级覆盖机制，先对SRAM1全范围进行了配置后（本工程使用Region2），可以再次对SRAM1的部分内存范围进行优先级更高的配置（本工程使用Region5），我将MPU_ACCESS_NOT_CACHEABLE 配置应用于于此优先级更高的配置
+>
+> > 安富莱 V7 BSP教程的P392：
+> >
+> > **23.3 MPU的功能实现**
+> >
+> > MPU可以配置保护16 个内存区域（这 16 个内存域是独立配置的），每个区域最小要求 256 字节，每个区域还可以配置为 8 个子区域。由于子区域一般都相同大小，这样每个子区域的大小就是 32 字节， 正好跟 Cache 的Cache Line 大小一样。 
+> >
+> > MPU可以配置的 16 个内存区的序号范围是 0 到 15，还有默认区 default region，也叫作背景区，序号-1。
+> >
+> > 由于这些内存区可以嵌套和重叠，所以这些区域在嵌套或者重叠的时候有个**优先级**的问题。序号 15 的优先级最高，以此递减，序号-1，即背景区的优先级最低。这些优先级是固定的。 
+> >
+> > 下面通过一个具体的实例帮助大家理解。如下所示共有 7 个区，背景区和序号 0-5 的区。内存区 4 跟内存区 0 和 1 有重叠部分，那么重叠部分将按照内存区 4 的配置规则执行；内存区 5 被完全包含在内存区 3 里面，那么这部分内存区将按照内存区 5 的配置规则执行。
+>
+> ![](Images/USB_PHY_DMA_Buffer_SRAM.png)
+>
+> ![](Images/USB_PHY_DMA_Buffer_SRAM_02.png)
+>
+> 
 

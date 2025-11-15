@@ -6,7 +6,7 @@
 **  Author      : STM32CubeIDE
 **
 **  Abstract    : Linker script for STM32H7 series
-**                128Kbytes FLASH and 1056Kbytes RAM
+**                1024Kbytes FLASH and 560Kbytes RAM
 **
 **                Set heap size, stack size and stack location according
 **                to application requirements.
@@ -21,13 +21,12 @@
 *****************************************************************************
 ** @attention
 **
-** <h2><center>&copy; Copyright (c) 2021 STMicroelectronics.
-** All rights reserved.</center></h2>
+** Copyright (c) 2025 STMicroelectronics.
+** All rights reserved.
 **
-** This software component is licensed by ST under BSD 3-Clause license,
-** the "License"; You may not use this file except in compliance with the
-** License. You may obtain a copy of the License at:
-**                        opensource.org/licenses/BSD-3-Clause
+** This software is licensed under terms that can be found in the LICENSE file
+** in the root directory of this software component.
+** If no LICENSE file comes with this software, it is provided AS-IS.
 **
 ****************************************************************************
 */
@@ -36,22 +35,23 @@
 ENTRY(Reset_Handler)
 
 /* Highest address of the user mode stack */
-_estack = ORIGIN(RAM_D1) + LENGTH(RAM_D1);    /* end of RAM */
+_estack = ORIGIN(AXISRAM) + LENGTH(AXISRAM);    /* end of RAM */
 /* Generate a link error if heap and stack don't fit into RAM */
-_Min_Heap_Size = 0x200;      /* required amount of heap  */
-_Min_Stack_Size = 0x400; /* required amount of stack */
+_Min_Heap_Size = 0x1000;      /* required amount of heap  */
+_Min_Stack_Size = 0x2000; /* required amount of stack */
 
 /* Specify the memory areas */
 MEMORY
 {
-  FLASH (rx)     : ORIGIN = 0x08000000, LENGTH = 2048K
-  DTCMRAM (xrw)  : ORIGIN = 0x20000000, LENGTH = 128K
-  RAM_D1 (xrw)   : ORIGIN = 0x24000000, LENGTH = 512K
-  RAM_D2 (xrw)   : ORIGIN = 0x30000000, LENGTH = 288K
-  RAM_D3 (xrw)   : ORIGIN = 0x38000000, LENGTH = 64K
-  ITCMRAM (xrw)  : ORIGIN = 0x00000000, LENGTH = 64K
-  SDRAM1(rw)     : ORIGIN = 0xC0000000, LENGTH = 32M
-  SDRAM2(rw)     : ORIGIN = 0xD0000000, LENGTH = 32M
+  ITCMRAM (xrw)    : ORIGIN = 0x00000000,   LENGTH = 64K
+  DTCMRAM (xrw)    : ORIGIN = 0x20000000,   LENGTH = 128K
+  FLASH    (rx)    : ORIGIN = 0x08000000,   LENGTH = 1024K
+  AXISRAM (xrw)    : ORIGIN = 0x24000000,   LENGTH = 320K   /* RAM_D1 */
+  SRAM1   (xrw)    : ORIGIN = 0x30000000,   LENGTH = 16K    /* RAM_D2 */
+  SRAM2   (xrw)    : ORIGIN = 0x30004000,   LENGTH = 16K    /* RAM_D2 */
+  SRAM4   (xrw)    : ORIGIN = 0x38000000,   LENGTH = 16K    /* RAM_D3 */
+  BKPSRAM  (rw)    : ORIGIN = 0x38800000,   LENGTH = 4K     /* RAM_D3 */
+  PSRAM    (rw)    : ORIGIN = 0x90000000,   LENGTH = 64M
 }
 
 /* Define output sections */
@@ -91,21 +91,25 @@ SECTIONS
     . = ALIGN(4);
   } >FLASH
 
-  .ARM.extab   : { *(.ARM.extab* .gnu.linkonce.armextab.*) } >FLASH
-  .ARM : {
+  .ARM.extab (READONLY) : /* The READONLY keyword is only supported in GCC11 and later, remove it if using GCC10 or earlier. */
+  {
+    *(.ARM.extab* .gnu.linkonce.armextab.*)
+  } >FLASH
+  .ARM (READONLY) : /* The READONLY keyword is only supported in GCC11 and later, remove it if using GCC10 or earlier. */
+  {
     __exidx_start = .;
     *(.ARM.exidx*)
     __exidx_end = .;
   } >FLASH
 
-  .preinit_array     :
+  .preinit_array (READONLY) : /* The READONLY keyword is only supported in GCC11 and later, remove it if using GCC10 or earlier. */
   {
     PROVIDE_HIDDEN (__preinit_array_start = .);
     KEEP (*(.preinit_array*))
     PROVIDE_HIDDEN (__preinit_array_end = .);
   } >FLASH
 
-  .init_array :
+  .init_array (READONLY) : /* The READONLY keyword is only supported in GCC11 and later, remove it if using GCC10 or earlier. */
   {
     PROVIDE_HIDDEN (__init_array_start = .);
     KEEP (*(SORT(.init_array.*)))
@@ -113,7 +117,7 @@ SECTIONS
     PROVIDE_HIDDEN (__init_array_end = .);
   } >FLASH
 
-  .fini_array :
+  .fini_array (READONLY) : /* The READONLY keyword is only supported in GCC11 and later, remove it if using GCC10 or earlier. */
   {
     PROVIDE_HIDDEN (__fini_array_start = .);
     KEEP (*(SORT(.fini_array.*)))
@@ -136,13 +140,13 @@ SECTIONS
 
     . = ALIGN(4);
     _edata = .;        /* define a global symbol at data end */
-  } >RAM_D1 AT> FLASH
+  } >AXISRAM AT> FLASH
 
   /* Uninitialized data section */
   . = ALIGN(4);
   .bss :
   {
-    /* This is used by the startup in order to initialize the .bss secion */
+    /* This is used by the startup in order to initialize the .bss section */
     _sbss = .;         /* define a global symbol at bss start */
     __bss_start__ = _sbss;
     *(.bss)
@@ -152,15 +156,67 @@ SECTIONS
     . = ALIGN(4);
     _ebss = .;         /* define a global symbol at bss end */
     __bss_end__ = _ebss;
-  } >RAM_D1
-
-  .RAM_D2_Array (NOLOAD):
+  } >AXISRAM
+  
+  /* RAM_DTCM_Array */
+  .RAM_DTCM_Array (NOLOAD):
+  {
+    *(.RAM_DTCM_Array)
+  } >DTCMRAM
+  
+  /* RAM_ITCM_Array */
+  .RAM_ITCM_Array (NOLOAD):
+  {
+    *(.RAM_ITCM_Array)
+  } >ITCMRAM
+  
+  /* AXISRAM_Array */
+  .AXISRAM_Array (NOLOAD):
   {
     . = ALIGN(4);
-    *(.RAM_D2_Array)
+    *(.AXISRAM_Array)
     . = ALIGN(4);
-  } >RAM_D2
+  } >AXISRAM
 
+  /* SRAM1_Array */
+  .SRAM1_Array (NOLOAD):
+  {
+    . = ALIGN(4);
+    *(.SRAM1_Array)
+    . = ALIGN(4);
+  } >SRAM1
+  
+  /* SRAM2_Array */
+  .SRAM2_Array (NOLOAD):
+  {
+    . = ALIGN(4);
+    *(.SRAM2_Array)
+    . = ALIGN(4);
+  } >SRAM2
+  
+  /* SRAM4_Array */
+  .SRAM4_Array (NOLOAD):
+  {
+    . = ALIGN(4);
+    *(.SRAM4_Array)
+    . = ALIGN(4);
+  } >SRAM4
+  
+  /* BKPSRAM_Array */
+  .BKPSRAM_Array (NOLOAD):
+  {
+    *(.BKPSRAM_Array)
+  } >BKPSRAM
+  
+  /* PSRAM_Array */
+  .PSRAM_Array (NOLOAD) :
+  {
+    . = ALIGN(8);
+    *(.PSRAM_Array)
+    *(.PSRAM_Array.*)
+    . = ALIGN(8);
+  } >PSRAM
+  
   /* User_heap_stack section, used to check that there is enough RAM left */
   ._user_heap_stack :
   {
@@ -170,23 +226,7 @@ SECTIONS
     . = . + _Min_Heap_Size;
     . = . + _Min_Stack_Size;
     . = ALIGN(8);
-  } >RAM_D1
-
-  .sdram1 (NOLOAD) :
-  {
-    . = ALIGN(8);
-    *(.sdram1)
-    *(.sdram1.*)
-    . = ALIGN(8);
-  } >SDRAM1
-  
-  .sdram2 (NOLOAD) :
-  {
-    . = ALIGN(8);
-    *(.sdram2)
-    *(.sdram2.*)
-    . = ALIGN(8);
-  } >SDRAM2
+  } >AXISRAM
   
   /* Remove information from the standard libraries */
   /DISCARD/ :
@@ -198,5 +238,3 @@ SECTIONS
 
   .ARM.attributes 0 : { *(.ARM.attributes) }
 }
-
-
