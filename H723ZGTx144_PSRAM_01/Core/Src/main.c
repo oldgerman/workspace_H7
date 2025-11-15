@@ -224,7 +224,6 @@ void MPU_Config(void)
   MPU_InitStruct.Size = MPU_REGION_SIZE_64KB;
   MPU_InitStruct.SubRegionDisable = 0x0;
   MPU_InitStruct.TypeExtField = MPU_TEX_LEVEL0;
-  MPU_InitStruct.IsCacheable = MPU_ACCESS_NOT_CACHEABLE;
 
   HAL_MPU_ConfigRegion(&MPU_InitStruct);
 

@@ -226,7 +226,7 @@
   > >
   > > 那么可根据上面的参考帖子公式计算为200，再参考AN5050 的 Table 8留1的余量，取201
 
-## Cortex-M7
+### Cortex-M7
 
 参考工程 [H750IBK6_LCD_RGB_SPI_720x720_HD395004C40_03]() 
 
@@ -312,4 +312,6 @@
 > ![](Images/USB_PHY_DMA_Buffer_SRAM_02.png)
 >
 > 
+
+目前 AXI SRAM 用做主程序内存，不能开 cache，否则即时 USB HS Tx Rx 缓冲区 正确配置MPU 放在 SRAM1 也不能正常枚举设备，推测 USB HS 驱动力应该还有什么缓冲区没有指定到 SRAM1，而是放在 AXI SRAM 导致没有调用缓存维护API
 
